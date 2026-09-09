@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "intentId": "pi_01k2m3n4p5q6r7s8t9v0w1x2y3",
+  "buyerToken": "bs_01k2m3n4p5q6r7s8t9v0w1x2y4",
+  "category": "airport_parking",
+  "location": {
+    "airportCode": "JFK"
+  },
+  "serviceWindow": {
+    "start": "2026-09-03T13:00:00Z",
+    "end": "2026-09-08T22:00:00Z"
+  },
+  "requirements": {
+    "vehicleClass": "standard",
+    "covered": "preferred",
+    "shuttleMaxMinutes": 20
+  },
+  "constraints": {
+    "currency": "USD",
+    "accessibility": ["ev_charging"]
+  },
+  "disclosure": {
+    "profile": "parking_v1",
+    "approvedPayloadHash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "solicitation": {
+    "responseDeadline": "2026-08-21T15:00:00Z",
+    "counteroffersAllowed": true
+  },
+  "createdAt": "2026-08-22T16:00:00Z",
+  "expiresAt": "2026-08-22T15:00:00Z"
+}

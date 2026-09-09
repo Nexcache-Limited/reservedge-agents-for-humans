@@ -1,0 +1,44 @@
+{
+  "gate": {
+    "hold": true,
+    "jetPark": false,
+    "prototypePrice": false,
+    "gateWord": false
+  },
+  "progress": {
+    "answering": true,
+    "jetPark": false
+  },
+  "reco": {
+    "sky": true,
+    "score": true,
+    "downside": true,
+    "take": true,
+    "jetPark": false,
+    "prototypePrice": false
+  },
+  "compare": {
+    "park": true,
+    "flex": true,
+    "scores": true
+  },
+  "auth": {
+    "dialog": true,
+    "hold": true,
+    "amount": true
+  },
+  "receipt": {
+    "stamp": true,
+    "session": true,
+    "jetPark": false
+  },
+  "measured": {
+    "path": "/intents/pi_01k2m3n4p5q6r7s8t9v0w1x2y3",
+    "overflowX": 0,
+    "recoWidth": 836,
+    "reduced": true,
+    "jetPark": false,
+    "prototypePrice": false,
+    "gateWord": false
+  }
+}

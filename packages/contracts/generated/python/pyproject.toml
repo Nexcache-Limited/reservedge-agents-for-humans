@@ -1,0 +1,13 @@
+[project]
+name = "itaa-contracts-generated"
+version = "0.0.0"
+description = "Generated WP-02 Pydantic models. Do not edit by hand; regenerate with make generate-contracts."
+requires-python = ">=3.12,<3.13"
+dependencies = ["pydantic==2.12.5"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["itaa_contracts_generated"]

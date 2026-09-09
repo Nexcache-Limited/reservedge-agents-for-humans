@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="./tokens/fonts.css">
+<link rel="stylesheet" href="./tokens/colors.css">
+<link rel="stylesheet" href="./tokens/typography.css">
+<link rel="stylesheet" href="./tokens/spacing.css">
+<style>
+  body { margin:0; background:var(--ws-cream); }
+  a { color:var(--ws-accent); text-decoration:none; }
+  a:hover { color:var(--ws-accent-d); }
+  @keyframes rvFadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  @keyframes rvSpin { to{transform:rotate(360deg)} }
+  @keyframes rvPop { from{transform:scale(.7);opacity:0} to{transform:none;opacity:1} }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--ws-cream);display:flex;flex-direction:column;align-items:center;padding:34px 20px 50px;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:var(--ws-ink)">
+
+  <div style="width:410px;flex:0 0 auto;height:874px;background:#1A1714;border-radius:44px;padding:10px;box-shadow:0 40px 90px -24px rgba(40,30,15,.45)">
+    <div style="width:100%;height:100%;background:var(--ws-canvas);border-radius:34px;overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 22px 4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ws-ink);flex:0 0 auto">
+        <span>9:41</span>
+        <span style="width:17px;height:9px;border:1px solid var(--ws-ink);border-radius:2px;display:inline-block"></span>
+      </div>
+
+      <header style="flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:8px 16px 10px;border-bottom:1px solid var(--ws-border)">
+        <sc-if value="{{ showBack }}">
+          <button onClick="{{ back }}" style="width:34px;height:34px;flex:0 0 34px;border-radius:11px;background:#FFFFFF;border:1px solid var(--ws-border);color:var(--ws-ink);font-size:15px;cursor:pointer">‹</button>
+        </sc-if>
+        <sc-if value="{{ showMark }}" hint-placeholder-val="{{ true }}">
+          <span style="width:30px;height:30px;flex:0 0 30px;border-radius:10px;background:var(--grad-coral);display:grid;place-items:center"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11 3.2H5.6v9.6H11" stroke="#fff" stroke-width="1.8" stroke-linecap="round"></path><circle cx="12.7" cy="8" r="1.5" fill="#fff"></circle></svg></span>
+        </sc-if>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14.5px;font-weight:650;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headerTitle }}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ws-ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headerMeta }}</div>
+        </div>
+        <span style="flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--ws-ink-2);border:1px solid var(--ws-border);border-radius:8px;padding:4px 6px">SIM</span>
+      </header>
+
+      <sc-if value="{{ showTaskBar }}">
+        <div style="flex:0 0 auto;padding:9px 16px;border-bottom:1px solid var(--ws-border);background:#FFFFFF;display:flex;gap:4px">
+          <sc-for list="{{ taskTabs }}" as="t" hint-placeholder-count="2">
+            <button onClick="{{ t.pick }}" style="flex:1;background:{{ t.bg }};border:{{ t.border }};color:{{ t.fg }};font:600 12px 'Schibsted Grotesk',sans-serif;padding:8px 6px;border-radius:999px;cursor:pointer;min-height:36px">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="flex:1;overflow:auto;padding:14px 16px 22px">
+
+        <sc-if value="{{ show.list }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <p style="margin:0 0 12px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.55">1 decision ready · 2 in progress</p>
+            <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px">
+              <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+                <span style="flex:0 0 auto;background:{{ f.bg }};color:{{ f.fg }};border-radius:999px;padding:8px 13px;font:600 12px 'Schibsted Grotesk',sans-serif">{{ f.label }}</span>
+              </sc-for>
+            </div>
+            <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+              <div style="margin-bottom:6px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3);padding:6px 2px 8px">{{ g.label }}</div>
+                <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+                  <button onClick="{{ it.open }}" style="display:block;width:100%;text-align:left;background:{{ it.bg }};border:{{ it.border }};border-radius:16px;padding:14px;margin-bottom:9px;cursor:pointer;font-family:'Schibsted Grotesk',sans-serif;color:var(--ws-ink);min-height:44px">
+                    <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;flex-wrap:wrap">
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:7px;padding:3px 6px">{{ it.code }}</span>
+                      <span style="background:{{ it.pillBg }};color:{{ it.pillFg }};font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px">{{ it.status }}</span>
+                    </div>
+                    <div style="font-size:15px;font-weight:650;letter-spacing:-0.01em;line-height:1.35">{{ it.title }}</div>
+                    <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:4px;line-height:1.5">{{ it.sub }}</div>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.compose }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <h2 style="margin:6px 0 8px;font-size:23px;font-weight:700;letter-spacing:-0.024em;line-height:1.2;text-wrap:pretty">What are you planning or trying to get done?</h2>
+            <p style="margin:0 0 16px;font-size:13.5px;color:var(--ws-ink-2);line-height:1.6">Say it the way you'd say it out loud. Reservedge works out which bookings it implies and asks only for what it's missing.</p>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:14px">
+              <div style="min-height:88px;font-size:15px;line-height:1.6;outline:none" contenteditable="true">I'm planning a five-day trip to New York in October.</div>
+              <div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:10px;padding-top:10px;border-top:1px solid var(--ws-border-2)">Nothing is sent to any supplier from this step.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+              <sc-for list="{{ examples }}" as="e" hint-placeholder-count="3">
+                <button onClick="{{ go.clarify }}" style="text-align:left;background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:12px 14px;font:500 13px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink-2);cursor:pointer;min-height:46px">{{ e }}</button>
+              </sc-for>
+            </div>
+            <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--ws-border)">
+              <div style="font-size:12.5px;font-weight:600;color:var(--ws-ink-2)">Already know the exact booking?</div>
+              <p style="margin:5px 0 11px;font-size:12.5px;color:var(--ws-ink-3);line-height:1.6">It becomes a one-task booking, with the same approval steps.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ directDomains }}" as="d" hint-placeholder-count="3">
+                  <button onClick="{{ go.workspace }}" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--ws-border);border-radius:11px;padding:9px 12px;font:500 12.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink-2);cursor:pointer;min-height:44px"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);border-radius:7px;padding:3px 6px">{{ d.code }}</span>{{ d.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.clarify }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+              <div style="max-width:86%;background:var(--ws-accent-soft);border-radius:16px 16px 4px 16px;padding:11px 14px;font-size:13.5px;line-height:1.6">I'm planning a five-day trip to New York in October.</div>
+            </div>
+            <div style="display:flex;gap:9px;margin-bottom:12px">
+              <span style="flex:0 0 26px;width:26px;height:26px;border-radius:8px;background:var(--grad-coral)"></span>
+              <div style="background:var(--ws-muted);border-radius:16px 16px 16px 4px;padding:11px 14px;font-size:13.5px;line-height:1.65">Three answers decide most of this plan. I've grouped them so you only stop once.</div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:15px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3)">CLARIFICATION · 3 OF 3</span>
+                <span style="margin-left:auto;background:var(--amber-soft);color:var(--amber);font-size:10.5px;font-weight:650;padding:3px 8px;border-radius:999px">Blocking</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div>
+                  <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:6px">Exact dates</label>
+                  <div style="border:1px solid var(--ws-border);border-radius:11px;padding:11px 12px;font-size:14px;min-height:44px" contenteditable="true">14–19 October 2026</div>
+                  <div style="font-size:11px;color:var(--ws-ink-3);margin-top:5px;line-height:1.5">Sets parking duration, car hire window and hotel nights.</div>
+                </div>
+                <div>
+                  <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:6px">Departing from</label>
+                  <div style="border:1px solid var(--ws-border);border-radius:11px;padding:11px 12px;font-size:14px;min-height:44px" contenteditable="true">Manchester (MAN)</div>
+                  <div style="font-size:11px;color:var(--ws-ink-3);margin-top:5px;line-height:1.5">Only the airport code reaches parking suppliers. Not your address.</div>
+                </div>
+                <div>
+                  <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:8px">Will you need a car in New York?</label>
+                  <div style="display:flex;gap:8px">
+                    <button style="flex:1;background:var(--ws-accent);border:0;color:#fff;font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;border-radius:999px;cursor:pointer;min-height:44px">Yes</button>
+                    <button style="flex:1;background:transparent;border:1px solid var(--ws-border);color:var(--ws-ink-2);font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;border-radius:999px;cursor:pointer;min-height:44px">No</button>
+                    <button style="flex:1;background:transparent;border:1px solid var(--ws-border);color:var(--ws-ink-2);font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;border-radius:999px;cursor:pointer;min-height:44px">Not sure</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="background:var(--info-soft);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:12.5px;color:#1F4FB0;line-height:1.6">Skipping is fine. Unanswered fields become missing details on the affected tasks.</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.workspace }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <div style="display:flex;gap:4px;background:var(--ws-muted);border-radius:999px;padding:3px;margin-bottom:14px">
+              <sc-for list="{{ paneTabs }}" as="p" hint-placeholder-count="2">
+                <button onClick="{{ p.pick }}" style="flex:1;background:{{ p.bg }};border:0;color:{{ p.fg }};font:600 12.5px 'Schibsted Grotesk',sans-serif;padding:9px;border-radius:999px;cursor:pointer;min-height:38px;box-shadow:{{ p.shadow }}">{{ p.label }}</button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ pane.plan }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <h2 style="margin:0 0 5px;font-size:19px;font-weight:700;letter-spacing:-0.02em">{{ bookingTitle }}</h2>
+                <p style="margin:0 0 14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.55">14–19 Oct 2026 · Manchester → New York · 2 travellers</p>
+
+                <div style="background:#FFFFFF;border:1px solid var(--ws-accent);border-radius:16px;padding:14px;box-shadow:0 10px 28px -18px rgba(232,93,44,.55);margin-bottom:10px">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:8px;padding:3px 7px">Pk</span>
+                    <span style="background:var(--ws-accent-soft);color:var(--ws-accent-d);font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px">3 offers ready</span>
+                    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ws-ink-3)">pi_8f2c</span>
+                  </div>
+                  <div style="font-size:14.5px;font-weight:680;letter-spacing:-0.01em;margin-top:9px">Airport parking · Manchester</div>
+                  <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:6px;line-height:1.6">Disclosed to 4 suppliers on 29 Aug · Requirement v2 · One offer expires 14:30 today.</div>
+                  <div style="display:flex;gap:8px;margin-top:12px">
+                    <button onClick="{{ openParkingOffers }}" style="flex:1;background:var(--ws-accent);border:0;border-radius:11px;color:#fff;font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;cursor:pointer;min-height:44px">Compare offers</button>
+                    <button onClick="{{ openParkingDisclosure }}" style="background:transparent;border:1px solid var(--ws-border);border-radius:11px;color:var(--ws-ink);font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px 13px;cursor:pointer;min-height:44px">Disclosure</button>
+                  </div>
+                </div>
+
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-bottom:10px">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:8px;padding:3px 7px">Rc</span>
+                    <span style="display:inline-flex;align-items:center;gap:6px;background:var(--info-soft);color:#1F4FB0;font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px"><span style="width:9px;height:9px;border-radius:50%;border:1.5px solid #1F4FB0;border-top-color:transparent;animation:rvSpin .8s linear infinite;display:inline-block"></span>Researching</span>
+                    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ws-ink-3)">pi_3a90</span>
+                  </div>
+                  <div style="font-size:14.5px;font-weight:680;letter-spacing:-0.01em;margin-top:9px">Rental car · JFK</div>
+                  <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:6px;line-height:1.6">Reading public rates for 6 aggregators. No supplier contacted, no field disclosed.</div>
+                  <div style="height:4px;border-radius:999px;background:var(--ws-muted);margin-top:11px;overflow:hidden"><div style="width:62%;height:100%;background:var(--info);border-radius:999px"></div></div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3);margin-top:8px">4 of 6 sources · waits on flight arrival time</div>
+                  <button onClick="{{ openRentalDisclosure }}" style="width:100%;margin-top:11px;background:transparent;border:1px solid var(--ws-border);border-radius:11px;color:var(--ws-ink);font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;cursor:pointer;min-height:44px">Review disclosure and continue</button>
+                </div>
+
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-bottom:10px">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:8px;padding:3px 7px">Ht</span>
+                    <span style="background:var(--amber-soft);color:var(--amber);font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px">2 details missing</span>
+                  </div>
+                  <div style="font-size:14.5px;font-weight:680;letter-spacing:-0.01em;margin-top:9px">Hotel · Manhattan</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px">
+                    <span style="background:var(--amber-soft);color:var(--amber);border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:600">Neighbourhood or budget</span>
+                    <span style="background:var(--amber-soft);color:var(--amber);border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:600">Room configuration</span>
+                  </div>
+                  <button style="width:100%;margin-top:11px;background:transparent;border:1px solid var(--ws-border);border-radius:11px;color:var(--ws-ink);font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;cursor:pointer;min-height:44px">Fill in 2 details</button>
+                </div>
+
+                <div style="background:#FFFFFF;border:1px dashed var(--ws-border-2);border-radius:16px;padding:14px">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-3);border-radius:8px;padding:3px 7px">Fl</span>
+                    <span style="background:var(--ws-muted);color:var(--ws-ink-2);font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px">Proposed</span>
+                  </div>
+                  <div style="font-size:14.5px;font-weight:680;letter-spacing:-0.01em;margin-top:9px;color:var(--ws-ink-2)">Flight · MAN → JFK</div>
+                  <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:6px;line-height:1.6">Inferred from your dates and origin. Inactive until you accept it.</div>
+                  <div style="display:flex;gap:8px;margin-top:11px">
+                    <button style="flex:1;background:var(--ws-ink);border:0;border-radius:11px;color:#fff;font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;cursor:pointer;min-height:44px">Add to plan</button>
+                    <button style="flex:1;background:transparent;border:1px solid var(--ws-border);border-radius:11px;color:var(--ws-ink-2);font:600 13px 'Schibsted Grotesk',sans-serif;padding:11px;cursor:pointer;min-height:44px">Not needed</button>
+                  </div>
+                </div>
+
+                <sc-if value="{{ showIsolation }}" hint-placeholder-val="{{ true }}">
+                  <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-top:10px">
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:10px">WHAT EACH SUPPLIER CAN SEE</div>
+                    <div style="display:flex;flex-direction:column;gap:11px">
+                      <sc-for list="{{ isolationRows }}" as="r" hint-placeholder-count="3">
+                        <div>
+                          <div style="font-size:12.5px;font-weight:650">{{ r.who }}</div>
+                          <div style="font-size:12px;color:var(--ws-ink-2);margin-top:3px;line-height:1.6">{{ r.sees }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pane.chat }}">
+              <div style="display:flex;flex-direction:column;gap:13px">
+                <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:var(--ws-ink-3)">29 AUG</div>
+                <div style="display:flex;justify-content:flex-end">
+                  <div style="max-width:86%;background:var(--ws-accent-soft);border-radius:16px 16px 4px 16px;padding:11px 14px;font-size:13.5px;line-height:1.6">14–19 October, flying from Manchester. Yes to a car.</div>
+                </div>
+                <div style="display:flex;gap:9px">
+                  <span style="flex:0 0 26px;width:26px;height:26px;border-radius:8px;background:var(--grad-coral)"></span>
+                  <div style="min-width:0">
+                    <div style="background:var(--ws-muted);border-radius:16px 16px 16px 4px;padding:11px 14px;font-size:13.5px;line-height:1.65">Four tasks now. Parking and the flight can proceed on what I have. The rental car waits on your arrival time, and the hotel needs two details.</div>
+                    <button onClick="{{ showPlan }}" style="margin-top:7px;background:transparent;border:0;padding:0;font:600 11.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-accent);cursor:pointer">↳ Plan updated · 4 tasks</button>
+                  </div>
+                </div>
+                <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:var(--ws-ink-3)">TODAY</div>
+                <div style="display:flex;justify-content:flex-end">
+                  <div style="max-width:86%;background:var(--ws-accent-soft);border-radius:16px 16px 4px 16px;padding:11px 14px;font-size:13.5px;line-height:1.6">Back. Where did parking get to?</div>
+                </div>
+                <div style="display:flex;gap:9px">
+                  <span style="flex:0 0 26px;width:26px;height:26px;border-radius:8px;background:var(--grad-coral)"></span>
+                  <div style="min-width:0">
+                    <div style="background:var(--ws-muted);border-radius:16px 16px 16px 4px;padding:11px 14px;font-size:13.5px;line-height:1.65">You approved disclosure for parking on 29 August. Four suppliers replied and three offers are eligible. One expires this afternoon.</div>
+                    <button onClick="{{ openParkingOffers }}" style="margin-top:8px;background:#FFFFFF;border:1px solid var(--ws-border);border-radius:11px;padding:10px 13px;font:600 12.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:42px">Open parking offers →</button>
+                  </div>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:11px 13px;font-size:12px;color:var(--ws-ink-3);line-height:1.6">Answers here update the plan. Approvals and authorizations always happen on the plan, never in the transcript.</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.disclosure }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <span style="display:inline-block;background:{{ T.tierBg }};color:{{ T.tierFg }};font-size:10.5px;font-weight:650;padding:4px 10px;border-radius:999px">{{ T.tier }}</span>
+            <h2 style="margin:11px 0 7px;font-size:20px;font-weight:700;letter-spacing:-0.022em;line-height:1.25">{{ T.discTitle }}</h2>
+            <p style="margin:0 0 14px;font-size:13px;color:var(--ws-ink-2);line-height:1.65">{{ T.discBody }}</p>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-bottom:10px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--green);margin-bottom:12px">{{ T.sentLabel }}</div>
+              <div style="display:flex;flex-direction:column;gap:11px">
+                <sc-for list="{{ T.sent }}" as="f" hint-placeholder-count="5">
+                  <div style="display:flex;gap:10px;align-items:flex-start;padding-bottom:11px;border-bottom:1px solid var(--ws-border-2)">
+                    <span style="flex:0 0 auto;width:16px;height:16px;border-radius:5px;background:var(--green-soft);color:var(--green);font-size:10px;display:grid;place-items:center;margin-top:2px">✓</span>
+                    <div style="min-width:0">
+                      <div style="font-size:12.5px;font-weight:650">{{ f.name }}</div>
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;margin-top:3px;word-break:break-word">{{ f.value }}</div>
+                      <div style="font-size:11px;color:var(--ws-ink-3);margin-top:4px;line-height:1.55">{{ f.purpose }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-bottom:10px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:12px">{{ T.heldLabel }}</div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <sc-for list="{{ T.held }}" as="f" hint-placeholder-count="7">
+                  <div style="display:flex;gap:10px;align-items:center">
+                    <span style="flex:0 0 auto;width:16px;height:16px;border-radius:5px;background:var(--ws-muted);color:var(--ws-ink-3);font-size:10px;display:grid;place-items:center">✕</span>
+                    <span style="font-size:12.5px;color:var(--ws-ink-2)">{{ f }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:13px;padding-top:12px;border-top:1px solid var(--ws-border-2);font-size:11.5px;color:var(--ws-ink-3);line-height:1.6">{{ T.heldNote }}</div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:13px">
+              <sc-for list="{{ T.meta }}" as="m" hint-placeholder-count="4">
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.13em;color:var(--ws-ink-3)">{{ m.k }}</div>
+                  <div style="font-size:12.5px;font-weight:600;margin-top:4px;line-height:1.45">{{ m.v }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ T.hasReask }}">
+              <div style="background:#FFFFFF;border:1px solid var(--amber);border-radius:16px;padding:14px;margin-bottom:10px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--amber)">ONE SUPPLIER NEEDS ONE MORE FIELD</div>
+                <div style="font-size:13.5px;font-weight:650;margin-top:9px">CityDrive · payment method type</div>
+                <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:6px;line-height:1.65">Required to quote a deposit hold. The card number is not included and the tier does not change. One field, one supplier.</div>
+                <div style="display:flex;gap:8px;margin-top:12px">
+                  <button style="flex:1;background:var(--ws-ink);border:0;border-radius:11px;color:#fff;font:600 12.5px 'Schibsted Grotesk',sans-serif;padding:11px;cursor:pointer;min-height:44px">Send this field</button>
+                  <button style="flex:1;background:transparent;border:1px solid var(--ws-border);border-radius:11px;color:var(--ws-ink-2);font:600 12.5px 'Schibsted Grotesk',sans-serif;padding:11px;cursor:pointer;min-height:44px">Decline</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="background:var(--amber-soft);border-radius:14px;padding:12px 14px;font-size:12.5px;color:var(--amber);line-height:1.65">Changing a field after dispatch invalidates this approval and the offers it produced. Your other tasks are unaffected.</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.offers }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <p style="margin:0 0 14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">{{ T.offersIntro }}</p>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <sc-for list="{{ offerCards }}" as="o" hint-placeholder-count="3">
+                <div style="background:#FFFFFF;border:{{ o.border }};border-radius:18px;padding:15px">
+                  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+                    <span style="font-size:16px;font-weight:700;letter-spacing:-0.015em">{{ o.supplier }}</span>
+                    <span style="margin-left:auto;font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace">{{ o.total }}</span>
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">
+                    <span style="background:{{ o.srcBg }};color:{{ o.srcFg }};font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px">{{ o.source }}</span>
+                    <sc-if value="{{ o.curated }}">
+                      <span style="border:1px solid var(--ws-border);color:var(--ws-ink-2);font-size:10.5px;font-weight:650;padding:2px 8px;border-radius:999px">Curated quote</span>
+                    </sc-if>
+                    <span style="background:{{ o.fitBg }};color:{{ o.fitFg }};font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px">{{ o.fit }} fit</span>
+                  </div>
+                  <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:10px;line-height:1.6">{{ o.summary }}</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+                    <sc-for list="{{ o.reasons }}" as="r" hint-placeholder-count="2">
+                      <div style="display:flex;gap:8px;font-size:12.5px;line-height:1.55"><span style="color:var(--green)">+</span>{{ r }}</div>
+                    </sc-for>
+                    <div style="display:flex;gap:8px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.55"><span style="color:var(--amber)">–</span>{{ o.downside }}</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px;margin-top:12px;padding-top:11px;border-top:1px solid var(--ws-border-2);flex-wrap:wrap">
+                    <div>
+                      <div style="font-size:12px;font-weight:650;color:{{ o.validFg }}">{{ o.validAbs }}</div>
+                      <div style="font-size:11px;color:var(--ws-ink-3);margin-top:2px">{{ o.validRel }}</div>
+                    </div>
+                    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:7px;padding:4px 7px">{{ o.completeness }}</span>
+                  </div>
+                  <button onClick="{{ o.select }}" style="width:100%;margin-top:12px;background:{{ o.btnBg }};border:{{ o.btnBorder }};border-radius:11px;color:{{ o.btnFg }};font:600 13px 'Schibsted Grotesk',sans-serif;padding:12px;cursor:pointer;min-height:46px">Select and review</button>
+                </div>
+              </sc-for>
+              <div style="background:var(--ws-muted);border:1px solid var(--ws-border-2);border-radius:16px;padding:14px">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span style="font-size:14px;font-weight:650;color:var(--ws-ink-2)">{{ T.noReply }}</span>
+                  <span style="background:#FFFFFF;border:1px solid var(--ws-border);color:var(--ws-ink-3);font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px">No reply in window</span>
+                </div>
+                <div style="font-size:12.5px;color:var(--ws-ink-3);margin-top:7px;line-height:1.6">{{ T.noReplyNote }}</div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.7">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:8px">HOW THESE WERE ORDERED</div>
+                {{ T.ordering }}
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.review }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <p style="margin:0 0 14px;font-size:13px;color:var(--ws-ink-2);line-height:1.65">Selecting does not reserve anything and does not charge you. Nothing new has been shared with {{ C.supplier }} yet.</p>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:15px">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+                <span style="font-size:17px;font-weight:700;letter-spacing:-0.018em">{{ C.supplier }}</span>
+                <span style="margin-left:auto;font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace">{{ C.total }}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">
+                <span style="background:{{ C.srcBg }};color:{{ C.srcFg }};font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px">{{ C.source }}</span>
+                <span style="background:{{ C.fitBg }};color:{{ C.fitFg }};font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px">{{ C.fit }} fit</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:7px;padding:4px 7px">{{ C.id }} · {{ C.version }}</span>
+              </div>
+              <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:10px;line-height:1.65">{{ C.summary }}</div>
+
+              <div style="margin-top:15px;padding-top:13px;border-top:1px solid var(--ws-border-2)">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:9px">PRICE BREAKDOWN</div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <sc-for list="{{ C.breakdown }}" as="b" hint-placeholder-count="3">
+                    <div style="display:flex;gap:10px;font-size:12.5px"><span style="color:var(--ws-ink-2)">{{ b.k }}</span><span style="margin-left:auto;font-family:'JetBrains Mono',monospace">{{ b.v }}</span></div>
+                  </sc-for>
+                  <div style="display:flex;gap:10px;font-size:13.5px;font-weight:700;padding-top:8px;border-top:1px solid var(--ws-border-2)"><span>Total</span><span style="margin-left:auto;font-family:'JetBrains Mono',monospace">{{ C.total }}</span></div>
+                </div>
+              </div>
+
+              <div style="margin-top:14px;padding-top:13px;border-top:1px solid var(--ws-border-2)">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:9px">TERMS AS QUOTED</div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <sc-for list="{{ C.terms }}" as="t" hint-placeholder-count="4">
+                    <div style="display:flex;gap:10px;font-size:12.5px"><span style="color:var(--ws-ink-2)">{{ t.k }}</span><span style="margin-left:auto;text-align:right">{{ t.v }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="margin-top:14px;padding-top:13px;border-top:1px solid var(--ws-border-2)">
+                <div style="font-size:12.5px;font-weight:650;color:{{ C.validFg }}">{{ C.validAbs }}</div>
+                <div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:2px">{{ C.validRel }} · {{ C.provenance }}</div>
+              </div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-top:10px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:10px">WHAT CHANGES IF YOU CONTINUE</div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <sc-for list="{{ T.willShare }}" as="w" hint-placeholder-count="3">
+                  <div style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.6"><span style="color:var(--ws-accent);font-weight:700">→</span><span>{{ w }}</span></div>
+                </sc-for>
+              </div>
+              <div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:11px;line-height:1.6">The other suppliers on this task are told nothing. Your other three tasks are unchanged.</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.authorize }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <div style="background:var(--ws-rail);color:#EDE9E1;border-radius:14px;padding:12px 14px;font-size:12px;line-height:1.6;margin-bottom:14px"><b style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:#8A8479">SEPARATE FROM DISCLOSURE</b><br>You approved what suppliers could see earlier. This authorizes one exact purchase.</div>
+            <p style="margin:0 0 14px;font-size:13px;color:var(--ws-ink-2);line-height:1.6">{{ T.authIntro }}</p>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:15px">
+              <div style="display:flex;flex-direction:column;gap:11px">
+                <sc-for list="{{ authRows }}" as="a" hint-placeholder-count="5">
+                  <div>
+                    <div style="font-size:11.5px;color:var(--ws-ink-2)">{{ a.k }}</div>
+                    <div style="font-size:13.5px;font-weight:600;margin-top:3px;line-height:1.5;word-break:break-word">{{ a.v }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background:var(--ws-muted);border-radius:14px;padding:13px;margin-top:14px;font-size:12.5px;line-height:1.7">
+                <b style="font-weight:650">This authorizes:</b> {{ T.authDoes }}<br>
+                <b style="font-weight:650">It does not authorize:</b> recurring bookings, price changes, or contact with the other suppliers.
+              </div>
+              <div style="margin-top:13px;padding-top:12px;border-top:1px solid var(--ws-border-2)">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:9px">SHARED FOR THE FIRST TIME</div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px">
+                  <sc-for list="{{ T.newlyShared }}" as="n" hint-placeholder-count="2">
+                    <span style="background:var(--ws-accent-soft);color:var(--ws-accent-d);border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:600">{{ n }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:center;font-size:11.5px;color:var(--ws-ink-3);line-height:1.6;margin-top:12px">A press-and-hold alternative is available in preferences. Either path records the same authorization.</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.receipt }}">
+          <div style="animation:rvFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+              <span style="width:40px;height:40px;flex:0 0 40px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:18px;animation:rvPop .4s cubic-bezier(.2,.8,.3,1.2)">✓</span>
+              <div>
+                <h2 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-0.02em">Authorization recorded</h2>
+                <p style="margin:2px 0 0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.5">Simulated. No money moved.</p>
+              </div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px;position:relative;overflow:hidden">
+              <div style="position:absolute;top:14px;right:-36px;transform:rotate(28deg);background:var(--ws-rail);color:#F6F3EE;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;padding:5px 40px">SIMULATED</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">REFERENCE</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:15px;margin-top:4px">{{ T.receiptRef }}</div>
+              <div style="height:1px;background:var(--ws-border-2);margin:13px 0"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;font-size:13px">
+                <div><div style="color:var(--ws-ink-2);font-size:11.5px">Supplier</div><b style="font-weight:600">{{ C.supplier }}</b></div>
+                <div><div style="color:var(--ws-ink-2);font-size:11.5px">Amount</div><b style="font-family:'JetBrains Mono',monospace">{{ C.total }}</b></div>
+                <div><div style="color:var(--ws-ink-2);font-size:11.5px">Authorized</div><span style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ T.receiptTime }}</span></div>
+                <div><div style="color:var(--ws-ink-2);font-size:11.5px">Newly shared</div><b style="font-weight:600">{{ T.receiptShared }}</b></div>
+              </div>
+              <div style="height:1px;background:var(--ws-border-2);margin:13px 0"></div>
+              <div style="font-size:12.5px;color:var(--ws-ink-2);line-height:1.65">{{ T.receiptNote }}</div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:14px;margin-top:10px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:var(--ws-ink-3);margin-bottom:4px">ACTIVITY · THIS TASK</div>
+              <sc-for list="{{ T.audit }}" as="a" hint-placeholder-count="5">
+                <div style="padding:11px 0;border-top:1px solid var(--ws-border-2)">
+                  <div style="display:flex;gap:9px;align-items:baseline">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3);flex:0 0 auto">{{ a.t }}</span>
+                    <span style="font-size:12.5px;font-weight:600;line-height:1.5">{{ a.what }}</span>
+                  </div>
+                  <div style="font-size:11.5px;color:var(--ws-ink-2);margin-top:4px;line-height:1.5;padding-left:44px">{{ a.why }}</div>
+                  <div style="font-size:11px;color:var(--ws-ink-3);margin-top:3px;padding-left:44px">{{ a.shared }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-top:10px">
+              <div style="font-size:13.5px;font-weight:650">What's left in this booking</div>
+              <p style="margin:6px 0 12px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.65">{{ T.whatsLeft }}</p>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button onClick="{{ go.workspace }}" style="background:var(--ws-accent);border:0;border-radius:11px;color:#fff;font:600 13px 'Schibsted Grotesk',sans-serif;padding:12px;cursor:pointer;min-height:46px">Back to the plan</button>
+                <button onClick="{{ T.nextTask }}" style="background:transparent;border:1px solid var(--ws-border);border-radius:11px;color:var(--ws-ink);font:600 13px 'Schibsted Grotesk',sans-serif;padding:12px;cursor:pointer;min-height:46px">{{ T.nextLabel }}</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <sc-if value="{{ hasAction }}">
+        <div style="flex:0 0 auto;border-top:1px solid var(--ws-border);background:rgba(255,255,255,.94);backdrop-filter:blur(8px);padding:11px 16px 14px">
+          <sc-if value="{{ actionSecondary }}">
+            <button onClick="{{ actionAlt }}" style="width:100%;margin-bottom:8px;background:transparent;border:1px solid var(--ws-border);border-radius:12px;color:var(--ws-ink);font:600 13px 'Schibsted Grotesk',sans-serif;padding:12px;cursor:pointer;min-height:46px">{{ actionAltLabel }}</button>
+          </sc-if>
+          <button onClick="{{ action }}" style="width:100%;background:var(--ws-accent);border:0;border-radius:12px;color:#fff;font:600 14.5px 'Schibsted Grotesk',sans-serif;padding:14px;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">{{ actionLabel }}</button>
+          <div style="text-align:center;font-size:11px;color:var(--ws-ink-3);margin-top:8px;line-height:1.5">{{ actionNote }}</div>
+        </div>
+      </sc-if>
+
+      <nav style="flex:0 0 auto;border-top:1px solid var(--ws-border);background:#FFFFFF;display:flex;padding:7px 10px 16px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <button onClick="{{ t.pick }}" style="flex:1;background:transparent;border:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer;min-height:46px">
+            <span style="width:18px;height:3px;border-radius:2px;background:{{ t.dot }}"></span>
+            <span style="font:600 11px 'Schibsted Grotesk',sans-serif;color:{{ t.fg }}">{{ t.label }}</span>
+          </button>
+        </sc-for>
+      </nav>
+
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:760px;margin-top:26px">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3);text-align:center;margin-bottom:10px">JUMP TO A STEP</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="8">
+        <button onClick="{{ s.go }}" style="background:{{ s.bg }};border:1px solid {{ s.bc }};color:{{ s.fg }};border-radius:999px;padding:8px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:36px"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;opacity:.6;margin-right:6px">{{ s.n }}</span>{{ s.label }}</button>
+      </sc-for>
+    </div>
+    <p style="margin:14px auto 0;max-width:560px;text-align:center;font-size:12px;color:var(--ws-ink-3);line-height:1.65">On mobile the conversation and the plan become two tabs inside the booking workspace. The plan opens first, so the thing that needs a decision is never buried in a transcript. Approvals use a fixed bottom action bar rather than a button that scrolls away.</p>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;bookingTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Five days in New York&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showIsolationNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { screen: "compose", task: "parking", pane: "plan", chosen: { parking: 0, rental: 0 } };
+
+  go(s) { return () => this.setState({ screen: s }); }
+  choose(i) { return () => this.setState(s => ({ screen: "review", chosen: { ...s.chosen, [s.task]: i } })); }
+
+  data() {
+    return {
+      parking: {
+        label: "Airport parking", short: "Parking", code: "Pk", pi: "pi_8f2c",
+        tier: "Tier 1 · anonymous until you book", tierBg: "var(--green-soft)", tierFg: "var(--green)",
+        discTitle: "Approve what parking suppliers receive",
+        discBody: "This covers the airport parking task only. It does not authorize a booking or a payment, and it does not touch your other three tasks.",
+        sentLabel: "SENT · 5 FIELDS", heldLabel: "WITHHELD · 7 FIELDS",
+        sent: [
+          { name: "Airport", value: "MAN", purpose: "Locate available car parks" },
+          { name: "Entry", value: "2026-10-14T05:40Z", purpose: "Price the duration" },
+          { name: "Exit", value: "2026-10-19T22:15Z", purpose: "Price the duration" },
+          { name: "Vehicle size", value: "Standard car", purpose: "Confirm the bay fits" },
+          { name: "Covered space", value: "Preferred, not required", purpose: "Filter to matching products" },
+        ],
+        held: ["Name", "Email address", "Phone number", "Home address", "Vehicle registration", "Payment method", "Destination and itinerary"],
+        heldNote: "Your hotel, your rental car and the rest of the itinerary are part of this booking but are not part of this payload.",
+        meta: [
+          { k: "RECIPIENTS", v: "4 suppliers, isolated" },
+          { k: "PAYLOAD VERSION", v: "v2 · sha 4c1e…9b0" },
+          { k: "APPROVAL EXPIRES", v: "30 Aug, 09:12 BST" },
+          { k: "PURPOSE", v: "Quote for this stay only" },
+        ],
+        hasReask: false,
+        partialCta: "Send without vehicle size",
+        offersIntro: "Four suppliers were contacted. One did not reply in time and is shown rather than dropped. Selecting does not reserve or charge.",
+        noReply: "TerminalFlex",
+        noReplyNote: "Contacted 29 Aug 09:12. Not ranked and not eligible for selection.",
+        ordering: "Total cost, transfer time, cancellation terms and reply completeness. Your preference for a covered space moved SkyShield above ParkDirect; that preference was used here and was not sent to any supplier.",
+        willShareT: [
+          "Your name is shared with {S}, and with no one else.",
+          "Your vehicle registration is shared so the barrier can read the plate.",
+          "Payment is taken by {S} at entry, not by Reservedge.",
+        ],
+        authIntro: "One parking booking at Manchester, priced exactly as quoted below.",
+        authNoun: "booking", sharedPhrase: "your name and vehicle registration",
+        newlyShared: ["Name", "Vehicle registration"],
+        receiptRef: "SIM-8F2C-MAN-1014", receiptTime: "31 Aug · 14:12",
+        receiptShared: "Name, plate NA71 KXV",
+        auditT: [
+          { t: "14:12", what: "You authorized {A} · simulated", why: "Why · you selected {S} after reviewing the terms", shared: "Shared: name, plate" },
+          { t: "14:06", what: "You selected {S}", why: "Why · {W}", shared: "Nothing shared" },
+          { t: "09:41", what: "3 eligible offers received", why: "Why · three of four suppliers replied within the window", shared: "Received only" },
+          { t: "09:12", what: "You approved disclosure v2", why: "Why · 5 fields, 4 recipients, quote purpose only", shared: "Sent: 5 fields to 4 suppliers" },
+          { t: "09:04", what: "Public research completed", why: "Why · 11 public listings read to set a price reference", shared: "Nothing shared" },
+        ],
+        whatsLeft: "Rental car is mid-research and needs its own disclosure approval. Hotel is waiting on two details. The flight is still only proposed.",
+        nextLabel: "Continue with the rental car", next: "rental",
+        offers: [
+          {
+            id: "of_a71", supplier: "SkyShield Parking", source: "Supplier private quote", curated: true,
+            srcBg: "var(--ws-accent-soft)", srcFg: "var(--ws-accent-d)",
+            summary: "Covered multi-storey, 4 minutes from Terminal 2 by shuttle every 10 minutes.",
+            reasons: ["Covered space, which you said you preferred", "Free cancellation up to 24 hours before entry"],
+            downside: "Shuttle only; no walk-in route from the terminal.",
+            completeness: "COMPLETE", provenance: "DIRECT SUPPLIER", version: "v1",
+            total: "£68.40", priceNote: "5 days inc. VAT and booking fee",
+            fit: "Strong", fitBg: "var(--green-soft)", fitFg: "var(--green)",
+            validAbs: "Valid until 14:30 BST", validRel: "26 minutes remaining", validFg: "var(--amber)",
+            primary: true,
+            breakdown: [{ k: "5 days at £11.80", v: "£59.00" }, { k: "Covered bay supplement", v: "£5.00" }, { k: "VAT", v: "£3.20" }, { k: "Booking fee", v: "£1.20" }],
+            terms: [{ k: "Cancellation", v: "Free until 24h before" }, { k: "Amendments", v: "Free, unlimited" }, { k: "Transfer", v: "Shuttle, every 10 min" }, { k: "Access", v: "Plate recognition" }],
+          },
+          {
+            id: "of_b03", supplier: "ParkDirect", source: "Aggregator rate", curated: false,
+            srcBg: "var(--info-soft)", srcFg: "#1F4FB0",
+            summary: "Open-air compound, 9 minutes by shuttle, gate barrier with plate recognition.",
+            reasons: ["Cheapest complete offer of the three", "Amendable up to entry at no fee"],
+            downside: "Uncovered. No refund inside 48 hours.",
+            completeness: "COMPLETE", provenance: "AGGREGATOR · SIM", version: "v3",
+            total: "£61.00", priceNote: "5 days inc. VAT",
+            fit: "Good", fitBg: "var(--info-soft)", fitFg: "#1F4FB0",
+            validAbs: "Valid until 19 Sep, 23:59 BST", validRel: "19 days remaining", validFg: "var(--ws-ink)",
+            breakdown: [{ k: "5 days at £11.00", v: "£55.00" }, { k: "VAT", v: "£4.60" }, { k: "Booking fee", v: "£1.40" }],
+            terms: [{ k: "Cancellation", v: "Free until 48h before" }, { k: "Amendments", v: "Free until entry" }, { k: "Transfer", v: "Shuttle, every 20 min" }, { k: "Access", v: "Plate recognition" }],
+          },
+          {
+            id: "of_c58", supplier: "Ringway Meet & Greet", source: "Public market reference", curated: false,
+            srcBg: "var(--ws-muted)", srcFg: "var(--ws-ink-2)",
+            summary: "Driver meets you at departures and returns the car to arrivals.",
+            reasons: ["No shuttle; shortest time from car to desk"],
+            downside: "Cancellation terms were not published, so this offer is incomplete and ranks lower.",
+            completeness: "PARTIAL · TERMS MISSING", provenance: "PUBLIC LISTING", version: "v1",
+            total: "£79.00", priceNote: "5 days, fees not itemised",
+            fit: "Fair", fitBg: "var(--ws-muted)", fitFg: "var(--ws-ink-2)",
+            validAbs: "Valid until 12 Sep, 18:00 BST", validRel: "12 days remaining", validFg: "var(--ws-ink)",
+            breakdown: [{ k: "Quoted total", v: "£79.00" }, { k: "Fees", v: "Not itemised" }],
+            terms: [{ k: "Cancellation", v: "Not published" }, { k: "Amendments", v: "Not published" }, { k: "Transfer", v: "Driver at terminal" }, { k: "Access", v: "Key handover" }],
+          },
+        ],
+      },
+      rental: {
+        label: "Rental car", short: "Rental", code: "Rc", pi: "pi_3a90",
+        tier: "Tier 2 · age band and licence class required", tierBg: "var(--amber-soft)", tierFg: "var(--amber)",
+        discTitle: "Approve what rental suppliers receive",
+        discBody: "Rental suppliers cannot price at all without a driver age band and licence class. Parking needed neither. Your identity is still withheld until authorization, and this covers the rental task only.",
+        sentLabel: "SENT · 6 FIELDS", heldLabel: "WITHHELD · 8 FIELDS",
+        sent: [
+          { name: "Pickup", value: "JFK Terminal 4", purpose: "Locate desks and shuttle points" },
+          { name: "Pickup time", value: "2026-10-14T14:20-04:00", purpose: "Check fleet availability" },
+          { name: "Return time", value: "2026-10-19T09:00-04:00", purpose: "Price the rental period" },
+          { name: "Vehicle class", value: "Mid-size SUV", purpose: "Match the fleet category" },
+          { name: "Driver age band", value: "30–65", purpose: "Required. Sent as a band, never a date of birth" },
+          { name: "Licence class", value: "Full UK category B · held 9 years", purpose: "Required. Class and years only, no licence number" },
+        ],
+        held: ["Name", "Licence number", "Exact date of birth", "Email address", "Phone number", "Payment card details", "Flight number and itinerary", "That you also booked parking at Manchester"],
+        heldNote: "The rental suppliers cannot tell that this booking also contains parking, a hotel or a flight.",
+        meta: [
+          { k: "RECIPIENTS", v: "4 suppliers, isolated" },
+          { k: "PAYLOAD VERSION", v: "v1 · sha 7b30…e41" },
+          { k: "APPROVAL EXPIRES", v: "1 Sep, 11:40 BST" },
+          { k: "PURPOSE", v: "Quote for this rental only" },
+        ],
+        hasReask: true,
+        partialCta: "Send without vehicle class",
+        offersIntro: "Four suppliers were contacted. One quoted without publishing deposit terms, so it is incomplete and ranks lower. Selecting does not reserve or charge.",
+        noReply: "Harbor Rentals",
+        noReplyNote: "Contacted 31 Aug 11:40. Did not answer within the 90-second window.",
+        ordering: "Total cost, deposit terms, mileage, fuel policy, cancellation and reply completeness. Your must-have of no debit-card deposit removed one supplier entirely. That preference shaped the ranking and was not disclosed.",
+        willShareT: [
+          "Your name is shared with {S}, and with no one else.",
+          "Your licence number is shared so the desk can verify it on arrival.",
+          "A deposit hold is placed by {S} on the card you present at the desk.",
+        ],
+        authIntro: "One rental at JFK Terminal 4, priced exactly as quoted below.",
+        authNoun: "rental", sharedPhrase: "your name and licence number",
+        newlyShared: ["Name", "Licence number"],
+        receiptRef: "SIM-3A90-JFK-1014", receiptTime: "31 Aug · 14:26",
+        receiptShared: "Name, licence number",
+        auditT: [
+          { t: "14:26", what: "You authorized {A} · simulated", why: "Why · you selected {S} after reviewing the deposit terms", shared: "Shared: name, licence number" },
+          { t: "14:19", what: "You selected {S}", why: "Why · {W}", shared: "Nothing shared" },
+          { t: "13:58", what: "You approved one added field", why: "Why · CityDrive could not quote a deposit hold without the payment method type", shared: "Sent: 1 field to 1 supplier" },
+          { t: "13:44", what: "3 eligible offers received", why: "Why · three of four suppliers replied within the window", shared: "Received only" },
+          { t: "11:40", what: "You approved disclosure v1", why: "Why · 6 fields, 4 recipients, quote purpose only", shared: "Sent: 6 fields to 4 suppliers" },
+        ],
+        whatsLeft: "Parking is authorized. Hotel is waiting on two details, and the flight is still only proposed. Nothing about this rental was shared with either.",
+        nextLabel: "Back to the parking task", next: "parking",
+        offers: [
+          {
+            id: "of_d12", supplier: "CityDrive", source: "Supplier private quote", curated: true,
+            srcBg: "var(--ws-accent-soft)", srcFg: "var(--ws-accent-d)",
+            summary: "Mid-size SUV, unlimited mileage, desk inside Terminal 4 arrivals.",
+            reasons: ["No debit-card deposit, which you marked a must-have", "Unlimited mileage and full-to-full fuel"],
+            downside: "Deposit hold of $250 on a credit card at the desk.",
+            completeness: "COMPLETE", provenance: "DIRECT SUPPLIER", version: "v2",
+            total: "$214.60", priceNote: "5 days inc. taxes and airport fee",
+            fit: "Strong", fitBg: "var(--green-soft)", fitFg: "var(--green)",
+            validAbs: "Valid until 18:00 EDT today", validRel: "3 hours 14 minutes remaining", validFg: "var(--amber)",
+            primary: true,
+            breakdown: [{ k: "5 days at $34.90", v: "$174.50" }, { k: "Airport concession fee", v: "$19.20" }, { k: "Taxes", v: "$16.40" }, { k: "Second driver", v: "$4.50" }],
+            terms: [{ k: "Cancellation", v: "Free until 12 Oct" }, { k: "Mileage", v: "Unlimited" }, { k: "Fuel", v: "Full to full" }, { k: "Deposit", v: "$250 credit card" }],
+          },
+          {
+            id: "of_e44", supplier: "Northgate Rentals", source: "Aggregator rate", curated: false,
+            srcBg: "var(--info-soft)", srcFg: "#1F4FB0",
+            summary: "Mid-size SUV, off-airport lot, shuttle every 15 minutes from arrivals.",
+            reasons: ["Cheapest complete offer of the three", "Free cancellation up to pickup"],
+            downside: "Off-airport shuttle adds roughly 20 minutes each way, and mileage is capped at 150 per day.",
+            completeness: "COMPLETE", provenance: "AGGREGATOR · SIM", version: "v4",
+            total: "$188.00", priceNote: "5 days inc. taxes",
+            fit: "Good", fitBg: "var(--info-soft)", fitFg: "#1F4FB0",
+            validAbs: "Valid until 21 Sep, 23:59 EDT", validRel: "21 days remaining", validFg: "var(--ws-ink)",
+            breakdown: [{ k: "5 days at $30.20", v: "$151.00" }, { k: "Shuttle levy", v: "$18.00" }, { k: "Taxes", v: "$19.00" }],
+            terms: [{ k: "Cancellation", v: "Free until pickup" }, { k: "Mileage", v: "150 per day" }, { k: "Fuel", v: "Full to full" }, { k: "Deposit", v: "$200 credit or debit" }],
+          },
+          {
+            id: "of_f07", supplier: "Empire Auto", source: "Public market reference", curated: false,
+            srcBg: "var(--ws-muted)", srcFg: "var(--ws-ink-2)",
+            summary: "Mid-size SUV from a published rate card, on-airport desk.",
+            reasons: ["On-airport desk, no shuttle"],
+            downside: "Deposit terms were not published, so this offer is incomplete and ranks lower.",
+            completeness: "PARTIAL · DEPOSIT UNKNOWN", provenance: "PUBLIC LISTING", version: "v1",
+            total: "$236.00", priceNote: "5 days, taxes estimated",
+            fit: "Fair", fitBg: "var(--ws-muted)", fitFg: "var(--ws-ink-2)",
+            validAbs: "Valid until 14 Sep, 18:00 EDT", validRel: "14 days remaining", validFg: "var(--ws-ink)",
+            breakdown: [{ k: "Published rate", v: "$212.00" }, { k: "Estimated taxes", v: "$24.00" }],
+            terms: [{ k: "Cancellation", v: "Free until 24h before" }, { k: "Mileage", v: "Unlimited" }, { k: "Fuel", v: "Not published" }, { k: "Deposit", v: "Not published" }],
+          },
+        ],
+      },
+    };
+  }
+
+  renderVals() {
+    const sc = this.state.screen, tk = this.state.task, pane = this.state.pane;
+    const D = this.data(), T0 = D[tk];
+    const C = T0.offers[this.state.chosen[tk] ?? 0];
+
+    const copy = {
+      of_a71: { why: "covered space and free cancellation at 24 hours", hold: "SkyShield holds the covered bay for 14 Oct 05:40 to 19 Oct 22:15. Free cancellation until 13 Oct 05:40; cancelling here also revokes the disclosure." },
+      of_b03: { why: "the lowest complete price, with amendments free until entry", hold: "ParkDirect holds an open-air bay for 14 Oct 05:40 to 19 Oct 22:15. Free cancellation until 12 Oct 05:40; cancelling here also revokes the disclosure." },
+      of_c58: { why: "the shortest time from car to desk, despite unpublished terms", hold: "Ringway meets you at departures on 14 Oct 05:40 and returns the car on 19 Oct 22:15. Cancellation terms were not published, so none are recorded here." },
+      of_d12: { why: "the only complete offer with no debit-card deposit", hold: "CityDrive holds a mid-size SUV for 14 Oct 14:20 to 19 Oct 09:00. Free cancellation until 12 Oct; the deposit hold is taken at the desk, not now." },
+      of_e44: { why: "the lowest complete price, with free cancellation up to pickup", hold: "Northgate holds a mid-size SUV for 14 Oct 14:20 to 19 Oct 09:00, collected from the off-airport lot. Free cancellation until pickup; mileage is capped at 150 per day." },
+      of_f07: { why: "an on-airport desk with no shuttle transfer", hold: "Empire Auto holds a mid-size SUV for 14 Oct 14:20 to 19 Oct 09:00 at the on-airport desk. Deposit terms were not published, so none are recorded here." },
+    }[C.id] || { why: "", hold: "" };
+    const sub = s => s.replace(/\{S\}/g, () => C.supplier).replace(/\{A\}/g, () => C.total).replace(/\{W\}/g, () => copy.why);
+
+    const T = {
+      ...T0,
+      willShare: (T0.willShareT || []).map(sub),
+      authDoes: "one " + T0.authNoun + " with " + C.supplier + " at " + C.total + ", and sharing " + T0.sharedPhrase + " with that supplier only.",
+      receiptNote: copy.hold,
+      audit: (T0.auditT || []).map(a => ({ ...a, what: sub(a.what), why: sub(a.why) })),
+      nextTask: () => this.setState(s => ({ task: T0.next, screen: "workspace", pane: "plan", chosen: s.chosen })),
+    };
+
+    const defs = [
+      ["compose", "1", "New intent"],
+      ["list", "2", "Bookings"],
+      ["clarify", "3", "Clarify"],
+      ["workspace", "4", "Workspace"],
+      ["disclosure", "5", "Disclosure"],
+      ["offers", "6", "Offers"],
+      ["review", "7", "Review"],
+      ["authorize", "8", "Authorize"],
+      ["receipt", "9", "Receipt"],
+    ];
+    const heads = {
+      list: ["Bookings", "1 decision ready · 2 in progress"],
+      compose: ["New intent", "Nothing disclosed yet"],
+      clarify: ["Five days in New York", "Plan forming · 2 confirmed, 2 proposed"],
+      workspace: ["Five days in New York", "BK_4K21 · 4 tasks"],
+      disclosure: [T0.label, "A2 · disclosure · " + T0.pi],
+      offers: [T0.label, "A3 · 3 eligible offers"],
+      review: [T0.label, "A3 · " + C.id + " · " + C.version],
+      authorize: [T0.label, "A4 · exact supplier and amount"],
+      receipt: [T0.label, T0.receiptRef],
+    };
+
+    const actions = {
+      compose: { label: "Start booking", go: this.go("clarify"), note: "Nothing is sent to any supplier from this step." },
+      clarify: { label: "Answer and update plan", go: this.go("workspace"), note: "Skipping is fine — unanswered fields become missing details." },
+      disclosure: { label: "Approve and send", go: this.go("offers"), alt: T0.partialCta, altGo: this.go("offers"), note: "Declining costs nothing and leaves the task open." },
+      review: { label: "Continue to authorization", go: this.go("authorize"), alt: "Choose a different offer", altGo: this.go("offers"), note: "Nothing is reserved and nothing is charged yet." },
+      authorize: { label: "Authorize " + C.total + " · simulated", go: this.go("receipt"), alt: "Not yet", altGo: this.go("review"), note: "Binds this exact supplier, amount, terms and version." },
+    };
+    const A = actions[sc];
+
+    const bookings = [
+      { g: "NEEDS YOU", items: [{ code: "BK_4K21", status: "Decision ready", pillBg: "var(--ws-accent-soft)", pillFg: "var(--ws-accent-d)", title: "Five days in New York", sub: "4 tasks · parking has 3 offers, one expiring", active: true }] },
+      { g: "IN PROGRESS", items: [
+        { code: "BK_3B08", status: "Researching", pillBg: "var(--info-soft)", pillFg: "#1F4FB0", title: "Edinburgh conference, 2 nights", sub: "2 tasks · reading public rates" },
+        { code: "BK_2V44", status: "Paused by you", pillBg: "var(--ws-muted)", pillFg: "var(--ws-ink-2)", title: "Christmas drive to Cornwall", sub: "1 task · paused 22 Aug" },
+      ] },
+      { g: "HISTORY", items: [
+        { code: "BK_1Z55", status: "Authorized", pillBg: "var(--green-soft)", pillFg: "var(--green)", title: "Brooklyn evening out", sub: "$118.00 · ref SIM-9C05 · 12 Aug" },
+        { code: "BK_1H07", status: "Cancelled by you", pillBg: "var(--ws-muted)", pillFg: "var(--ws-ink-3)", title: "Gatwick work trip", sub: "Disclosure revoked · 04 Aug" },
+      ] },
+    ];
+
+    const backTo = { list: "compose", clarify: "compose", workspace: "list", disclosure: "workspace", offers: "workspace", review: "offers", authorize: "review", receipt: "workspace" };
+
+    return {
+      bookingTitle: this.props.bookingTitle ?? "Five days in New York",
+      showIsolation: this.props.showIsolationNotes ?? true,
+      headerTitle: heads[sc][0], headerMeta: heads[sc][1],
+      showBack: sc !== "compose", showMark: sc === "compose",
+      back: this.go(backTo[sc] || "compose"),
+      showTaskBar: ["disclosure", "offers", "review", "authorize", "receipt"].includes(sc),
+      show: Object.fromEntries(defs.map(([k]) => [k, sc === k])),
+      go: Object.fromEntries(defs.map(([k]) => [k, this.go(k)])),
+      T, C,
+      hasAction: !!A,
+      action: A ? A.go : null, actionLabel: A ? A.label : "", actionNote: A ? A.note : "",
+      actionSecondary: !!(A && A.alt), actionAlt: A ? A.altGo : null, actionAltLabel: A ? A.alt : "",
+      pane: { plan: pane === "plan", chat: pane === "chat" },
+      showPlan: () => this.setState({ pane: "plan" }),
+      paneTabs: [
+        { label: "Plan · 4 tasks", pick: () => this.setState({ pane: "plan" }), bg: pane === "plan" ? "#FFFFFF" : "transparent", fg: pane === "plan" ? "var(--ws-ink)" : "var(--ws-ink-2)", shadow: pane === "plan" ? "0 1px 3px rgba(40,30,15,.12)" : "none" },
+        { label: "Conversation", pick: () => this.setState({ pane: "chat" }), bg: pane === "chat" ? "#FFFFFF" : "transparent", fg: pane === "chat" ? "var(--ws-ink)" : "var(--ws-ink-2)", shadow: pane === "chat" ? "0 1px 3px rgba(40,30,15,.12)" : "none" },
+      ],
+      taskTabs: [
+        { label: "Airport parking", pick: () => this.setState({ task: "parking" }), bg: tk === "parking" ? "var(--ws-ink)" : "transparent", border: tk === "parking" ? "0" : "1px solid var(--ws-border)", fg: tk === "parking" ? "#fff" : "var(--ws-ink-2)" },
+        { label: "Rental car", pick: () => this.setState({ task: "rental" }), bg: tk === "rental" ? "var(--ws-ink)" : "transparent", border: tk === "rental" ? "0" : "1px solid var(--ws-border)", fg: tk === "rental" ? "#fff" : "var(--ws-ink-2)" },
+      ],
+      offerCards: T0.offers.map((o, i) => ({
+        ...o, select: this.choose(i),
+        border: o.primary ? "1px solid var(--ws-accent)" : "1px solid var(--ws-border)",
+        btnBg: o.primary ? "var(--ws-accent)" : "transparent",
+        btnBorder: o.primary ? "0" : "1px solid var(--ws-border)",
+        btnFg: o.primary ? "#fff" : "var(--ws-ink)",
+      })),
+      authRows: [
+        { k: "Supplier", v: C.supplier },
+        { k: "What", v: C.summary },
+        { k: "Amount", v: C.total },
+        { k: "Offer version", v: C.id + " · " + C.version + " · terms hash 9d2f…c10" },
+        { k: "Valid until", v: C.validAbs + " · " + C.validRel },
+      ],
+      openParkingOffers: () => this.setState({ task: "parking", screen: "offers" }),
+      openParkingDisclosure: () => this.setState({ task: "parking", screen: "disclosure" }),
+      openRentalDisclosure: () => this.setState({ task: "rental", screen: "disclosure" }),
+      steps: defs.map(([k, n, label]) => ({
+        n, label, go: this.go(k),
+        bg: sc === k ? "var(--ws-ink)" : "#FFFFFF",
+        bc: sc === k ? "var(--ws-ink)" : "var(--ws-border)",
+        fg: sc === k ? "#FFFFFF" : "var(--ws-ink-2)",
+      })),
+      tabs: [
+        { label: "Intent", pick: this.go("compose"), dot: sc === "compose" ? "var(--ws-accent)" : "transparent", fg: sc === "compose" ? "var(--ws-accent)" : "var(--ws-ink-3)" },
+        { label: "Bookings", pick: this.go("list"), dot: sc === "list" ? "var(--ws-accent)" : "transparent", fg: sc === "list" ? "var(--ws-accent)" : "var(--ws-ink-3)" },
+        { label: "Activity", pick: this.go("receipt"), dot: sc === "receipt" ? "var(--ws-accent)" : "transparent", fg: sc === "receipt" ? "var(--ws-accent)" : "var(--ws-ink-3)" },
+      ],
+      filters: [
+        { label: "All", bg: "var(--ws-ink)", fg: "#fff" },
+        { label: "Needs you", bg: "#FFFFFF", fg: "var(--ws-ink-2)" },
+        { label: "In progress", bg: "#FFFFFF", fg: "var(--ws-ink-2)" },
+        { label: "History", bg: "#FFFFFF", fg: "var(--ws-ink-2)" },
+      ],
+      groups: bookings.map(g => ({
+        label: g.g,
+        items: g.items.map(it => ({
+          ...it, open: this.go("workspace"),
+          bg: it.active ? "var(--ws-accent-soft)" : "#FFFFFF",
+          border: it.active ? "1px solid var(--ws-accent)" : "1px solid var(--ws-border)",
+        })),
+      })),
+      examples: [
+        "Two nights in Edinburgh for a conference",
+        "Weekend away, driving, dog with us",
+        "Airport parking for a work trip on Thursday",
+      ],
+      directDomains: [
+        { code: "Pk", label: "Airport parking" },
+        { code: "Rc", label: "Rental car" },
+        { code: "En", label: "Entertainment" },
+      ],
+      isolationRows: [
+        { who: "Parking suppliers", sees: "Airport code, entry and exit datetimes, vehicle size, covered-space preference. Not the destination, not the hotel, not your name." },
+        { who: "Rental suppliers", sees: "Pickup location, pickup and return datetimes, driver age band, licence country. Not the parking booking." },
+        { who: "Hotel suppliers", sees: "Nights, occupancy, neighbourhood. Not the flight, not the car." },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

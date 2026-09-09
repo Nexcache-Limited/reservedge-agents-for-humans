@@ -1,0 +1,14 @@
+COMP-G1-05 Phase 1 prohibited-copy scan
+Surfaces: apps/web/src/components/AppShell.tsx, screens/InboxScreen.tsx, reservedge/*, index.html
+
+Gate 1: absent
+A1/A2/A3/A4 labels: absent
+WP numbers: absent
+process-memory: absent
+giant SIMULATED - NO REAL banner: absent
+eight-step workflow pills: absent (.itaa-stage-track hidden)
+
+Still present outside Phase 1 inbox (do not UAT these yet):
+- screens/IntentWorkspace.tsx (ITAA, Return to Intent Inbox)
+- screens/NewIntentScreen.tsx (ITAA intake copy)
+- view-models/workspace.ts recoveryLabel

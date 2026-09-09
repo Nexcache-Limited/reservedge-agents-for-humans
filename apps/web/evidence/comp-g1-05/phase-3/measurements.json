@@ -1,0 +1,24 @@
+{
+  "afterSend": {
+    "fail": null,
+    "confirm": false,
+    "text": "Skip to main content\nReservedge\nSIM\nIntents\n3\nActivity\nPreferences\nPrivacy & data\nAccount & plan\nDOMAINS LIVE\nPk\nAirport parking\nRc\nRental car\nEn\nEntertainment booking\n\nOne spine, three schemas. Each domain supplies its fields, disclosure tier and offer dimensions — never its own screens.\n\nIntents\nNew intent\n\n3 need you · 1 pending\n\nAll\nNeeds you\nRunning\nPending\nHistory\nTODAY · 29 AUG\nPk\nDecision ready\n29 Aug · 14:09\nJFK airport parking · Sep 4–8\n3 private offers · recommended $71.40 all-in\n✕\nRc"
+  },
+  "minted": {
+    "ok": true,
+    "intentIdPrefix": "pi_",
+    "state": "AWAITING_REQUIREMENT_CONFIRMATION"
+  },
+  "url": "/intents/pi_gzd550ssqwmfnakx2m12rbsbzd",
+  "measured": {
+    "path": "/intents/pi_gzd550ssqwmfnakx2m12rbsbzd",
+    "hasKeepPending": true,
+    "hasModify": true,
+    "itaaReview": false,
+    "jetPark": false,
+    "overflowX": 0,
+    "actionsHeight": 36,
+    "tabsWidth": 329.5625,
+    "reduced": true
+  }
+}

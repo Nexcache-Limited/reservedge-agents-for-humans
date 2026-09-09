@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/orchestration-intent.schema.json",
+  "title": "OrchestrationIntent",
+  "description": "Buyer-owned parent Intent aggregate. Not supplier-facing. Public product term is Intent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "intentId",
+    "state",
+    "objective",
+    "createdAt",
+    "updatedAt",
+    "simulation",
+    "durability"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OrchestrationIntentId"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "clarifying",
+        "planning",
+        "deleted",
+        "attention",
+        "in_progress",
+        "offers_ready",
+        "partially_authorized_simulated",
+        "partially_authorized_live",
+        "partially_booked",
+        "completed_simulated",
+        "completed",
+        "paused",
+        "cancelled",
+        "failed"
+      ]
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "createdAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "updatedAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "simulation": {
+      "const": true,
+      "description": "MVP profile requires simulation exactly true."
+    },
+    "durability": {
+      "const": "unsupported",
+      "description": "Backend durability is unsupported in this MVP profile."
+    },
+    "conversationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "planId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/PlanId"
+    },
+    "ledgerId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/LedgerId"
+    }
+  }
+}

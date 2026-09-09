@@ -1,0 +1,78 @@
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: "0.0.0.0",
+    port: 5180,
+    strictPort: true,
+    watch: {
+      ignored: ["**/coverage/**"],
+    },
+    proxy: {
+      "/v1": "http://127.0.0.1:8011",
+      "/healthz": "http://127.0.0.1:8011",
+      "/readyz": "http://127.0.0.1:8011",
+    },
+  },
+  preview: {
+    host: "0.0.0.0",
+    port: 5180,
+  },
+  test: {
+    environment: "jsdom",
+    testTimeout: 15_000,
+    fileParallelism: false,
+    setupFiles: ["./src/test/setup.ts"],
+    include: [
+      "src/**/*.ui01.test.ts",
+      "src/**/*.ui01.test.tsx",
+      "src/**/*.ui07.test.ts",
+      "src/**/*.ui07.test.tsx",
+      "src/**/*.compg102.test.ts",
+      "src/**/*.compg102.test.tsx",
+      "src/**/*.compg104.test.ts",
+      "src/**/*.compg104.test.tsx",
+      "src/**/*.compg105.test.ts",
+      "src/**/*.compg105.test.tsx",
+      "src/**/*.compg106.test.ts",
+      "src/**/*.compg106.test.tsx",
+      "src/**/*.compaws03.test.ts",
+      "src/**/*.compaws03.test.tsx",
+    ],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.ui01.test.ts",
+        "src/**/*.ui01.test.tsx",
+        "src/**/*.ui07.test.ts",
+        "src/**/*.ui07.test.tsx",
+        "src/**/*.compg102.test.ts",
+        "src/**/*.compg102.test.tsx",
+        "src/**/*.compg104.test.ts",
+        "src/**/*.compg104.test.tsx",
+        "src/**/*.compg105.test.ts",
+        "src/**/*.compg105.test.tsx",
+        "src/**/*.compg106.test.ts",
+        "src/**/*.compg106.test.tsx",
+        "src/**/*.compaws03.test.ts",
+        "src/**/*.compaws03.test.tsx",
+        "src/test/**",
+        "src/main.tsx",
+        "src/**/*.d.ts",
+        "src/screens/IntentWorkspace.tsx",
+        "src/screens/NewIntentScreen.tsx",
+        "src/screens/DomainPicker.tsx",
+      ],
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        statements: 90,
+        branches: 80,
+      },
+    },
+  },
+});

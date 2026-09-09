@@ -1,0 +1,46 @@
+# Documented Cloud Run service shape. Not applied. Do not run gcloud.
+# Region: us-central1 (ITAA_GCP_REGION). Official sources accessed 2026-08-26.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: itaa-google-adapter
+  annotations:
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/cpu: "1"
+        run.googleapis.com/memory: 512Mi
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      containerConcurrency: 40
+      timeoutSeconds: 60
+      containers:
+        - image: itaa-google-adapter:local
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: ITAA_GOOGLE_MODEL_MODE
+              value: live
+            - name: ITAA_GCP_REGION
+              value: us-central1
+            - name: GOOGLE_CLOUD_LOCATION
+              value: us-central1
+            - name: ITAA_GEMINI_MODEL
+              value: gemini-2.5-flash
+            - name: GOOGLE_GENAI_USE_VERTEXAI
+              value: "true"
+            - name: ITAA_GOOGLE_TIMEOUT_MS
+              value: "30000"
+            - name: ITAA_CORS_ORIGINS
+              value: http://localhost:5173,https://app.example.invalid
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi

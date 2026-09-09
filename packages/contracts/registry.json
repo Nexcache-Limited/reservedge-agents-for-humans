@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1.0",
+  "namespace": "https://contracts.itaa.invalid/v1",
+  "schemas": [
+    {
+      "id": "https://contracts.itaa.invalid/v1/common.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/common.schema.json",
+      "kind": "defs",
+      "pythonModule": "itaa_contracts_generated.common",
+      "typescriptExport": "common"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/purchase-intent.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/purchase-intent.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.purchase_intent",
+      "typescriptExport": "PurchaseIntent"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/offer.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/offer.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.offer",
+      "typescriptExport": "Offer"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/counter-offer.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/counter-offer.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.counter_offer",
+      "typescriptExport": "CounterOffer"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/acceptance.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/acceptance.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.acceptance",
+      "typescriptExport": "Acceptance"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/transaction-authorization.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/transaction-authorization.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.transaction_authorization",
+      "typescriptExport": "TransactionAuthorization"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/orchestration-intent.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/orchestration-intent.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.orchestration_intent",
+      "typescriptExport": "OrchestrationIntent"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/conversation.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/conversation.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.conversation",
+      "typescriptExport": "Conversation"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/intent-plan.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/intent-plan.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.intent_plan",
+      "typescriptExport": "IntentPlan"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/booking-task.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/booking-task.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.booking_task",
+      "typescriptExport": "BookingTask"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/cost-ledger.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/cost-ledger.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.cost_ledger",
+      "typescriptExport": "CostLedger"
+    },
+    {
+      "id": "https://contracts.itaa.invalid/v1/buyer-offer.schema.json",
+      "semanticVersion": "1.0",
+      "path": "schemas/v1/buyer-offer.schema.json",
+      "kind": "document",
+      "pythonModule": "itaa_contracts_generated.buyer_offer",
+      "typescriptExport": "BuyerOffer"
+    }
+  ]
+}

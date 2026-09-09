@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/buyer-offer.schema.json",
+  "title": "BuyerOffer",
+  "description": "Buyer-facing offer projection. Ranking micros are forbidden. Not the supplier Offer contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "offerId",
+    "supplierToken",
+    "version",
+    "sourceType",
+    "offerClass",
+    "issuedAt",
+    "validFrom",
+    "validUntil",
+    "termsHash",
+    "price",
+    "fit",
+    "simulation",
+    "validity",
+    "inventory",
+    "transactionResult",
+    "completeness",
+    "evidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "offerId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OfferId"
+    },
+    "supplierToken": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SupplierToken"
+    },
+    "version": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/PositiveVersion"
+    },
+    "sourceType": {
+      "type": "string",
+      "enum": ["aggregator_rate", "public_market_reference", "supplier_private_quote"]
+    },
+    "offerClass": {
+      "type": "string",
+      "enum": ["standard", "curated"]
+    },
+    "issuedAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "validFrom": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "validUntil": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "termsHash": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/TermsHash"
+    },
+    "price": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["totalMinor", "taxMinor", "feesMinor", "currency"],
+      "properties": {
+        "totalMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "taxMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "feesMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "currency": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/CurrencyCode"
+        },
+        "depositMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "payLaterMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        }
+      }
+    },
+    "fit": {
+      "type": "string",
+      "enum": ["strong", "good", "fair"]
+    },
+    "simulation": {
+      "const": true,
+      "description": "MVP profile requires simulation exactly true."
+    },
+    "validity": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OfferValidity"
+    },
+    "inventory": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/InventoryState"
+    },
+    "transactionResult": {
+      "type": "string",
+      "enum": [
+        "simulated",
+        "authorized_simulated",
+        "authorized_live",
+        "booking_pending",
+        "confirmed_booking",
+        "booking_failed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "completeness": {
+      "type": "string",
+      "enum": ["complete", "incomplete"]
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "ref"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["supplier_policy", "rate_card", "lot_rules", "availability_snapshot"]
+          },
+          "ref": {
+            "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/EvidenceRef"
+          }
+        }
+      }
+    },
+    "supersededBy": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OfferId"
+    },
+    "withdrawn": {
+      "type": "boolean"
+    },
+    "rank": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/PositiveVersion"
+    },
+    "recommended": {
+      "type": "boolean",
+      "description": "Curated or private source does not require true."
+    },
+    "inventoryHeldUntil": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "simulation": {
+            "const": true
+          }
+        },
+        "required": ["simulation"]
+      },
+      "then": {
+        "properties": {
+          "inventory": {
+            "const": "not_held"
+          },
+          "transactionResult": {
+            "type": "string",
+            "enum": ["simulated", "authorized_simulated"]
+          }
+        },
+        "not": {
+          "required": ["inventoryHeldUntil"]
+        }
+      }
+    }
+  ]
+}

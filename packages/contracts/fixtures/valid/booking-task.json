@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "taskId": "bt_01k2m3n4p5q6r7s8t9v0w1x2p4",
+  "intentId": "oi_01k2m3n4p5q6r7s8t9v0w1x2p1",
+  "domain": "parking",
+  "state": "proposed",
+  "simulation": true,
+  "requirementVersion": 1,
+  "purchaseIntentId": "pi_01k2m3n4p5q6r7s8t9v0w1x2y3",
+  "validity": "valid",
+  "inventory": "not_held",
+  "transactionResult": "simulated"
+}

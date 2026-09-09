@@ -1,0 +1,24 @@
+{
+  "name": "@itaa/ui-kit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared ITAA design-system tokens, CSS custom properties, and framework-agnostic primitives.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./itaa-ui-kit.css": "./src/itaa-ui-kit.css"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/index.test.ts src/tokens.test.ts src/button.test.ts src/status-indicator.test.ts src/simulation-banner.test.ts src/accessibility.test.ts src/boundaries.test.ts src/contrast.test.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.33.0",
+    "@types/node": "22.17.2",
+    "eslint": "9.33.0",
+    "tsx": "4.20.3",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.39.1"
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/purchase-intent.schema.json",
+  "title": "PurchaseIntent",
+  "description": "Supplier-visible minimized parking envelope, not Requirement or Disclosure Preview.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "intentId",
+    "buyerToken",
+    "category",
+    "location",
+    "serviceWindow",
+    "requirements",
+    "constraints",
+    "disclosure",
+    "solicitation",
+    "createdAt",
+    "expiresAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/IntentId"
+    },
+    "buyerToken": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/BuyerToken"
+    },
+    "category": {
+      "const": "airport_parking"
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["airportCode"],
+      "properties": {
+        "airportCode": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/IataAirportCode"
+        }
+      }
+    },
+    "serviceWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+        },
+        "end": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vehicleClass", "covered", "shuttleMaxMinutes"],
+      "properties": {
+        "vehicleClass": {
+          "type": "string",
+          "enum": ["standard", "compact", "suv", "oversized"]
+        },
+        "covered": {
+          "type": "string",
+          "enum": ["none", "preferred", "required"]
+        },
+        "shuttleMaxMinutes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 180
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "accessibility"],
+      "properties": {
+        "currency": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/CurrencyCode"
+        },
+        "accessibility": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["step_free", "wheelchair", "ev_charging"]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "approvedPayloadHash"],
+      "properties": {
+        "profile": {
+          "const": "parking_v1"
+        },
+        "approvedPayloadHash": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/Sha256Hash"
+        }
+      }
+    },
+    "solicitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["responseDeadline", "counteroffersAllowed"],
+      "properties": {
+        "responseDeadline": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+        },
+        "counteroffersAllowed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "createdAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "expiresAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    }
+  }
+}

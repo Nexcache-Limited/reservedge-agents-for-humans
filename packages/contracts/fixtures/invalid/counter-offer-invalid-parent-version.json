@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "counterOfferId": "co_01k2m3n4p5q6r7s8t9v0w1x2c1",
+  "intentId": "pi_01k2m3n4p5q6r7s8t9v0w1x2y3",
+  "parentOfferId": "of_01k2m3n4p5q6r7s8t9v0w1x2a2",
+  "parentOfferVersion": 0,
+  "proposedChanges": [
+    {
+      "path": "price.subtotalMinor",
+      "value": 11000
+    }
+  ],
+  "initiatedBy": "buyer",
+  "rationaleCode": "price",
+  "createdAt": "2026-08-20T17:00:00Z",
+  "expiresAt": "2026-08-21T12:00:00Z",
+  "status": "proposed",
+  "simulation": true,
+  "signature": "sg_01k2m3n4p5q6r7s8t9v0w1x2h4"
+}

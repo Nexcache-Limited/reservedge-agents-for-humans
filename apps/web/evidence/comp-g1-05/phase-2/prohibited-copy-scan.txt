@@ -1,0 +1,19 @@
+COMP-G1-05 Phase 2 prohibited-copy scan
+Surfaces: DomainPicker.tsx, Composer.tsx, registry.ts, composer-engine.ts, AppShell.tsx (rail domains)
+
+Gate 1: absent
+A1/A2/A3/A4 labels: absent
+WP numbers: absent
+process-memory: absent
+giant SIMULATED banner: absent
+Spa is next: absent
+
+Present by design:
+- Live competition path (parking)
+- Simulated demonstration (rental, entertainment)
+- SIM chip / Simulation mode toggle (shell)
+
+Still present outside Phase 2 (Phase 3/4):
+- screens/IntentWorkspace.tsx (ITAA, Return to Intent Inbox, A1–A4)
+- screens/NewIntentScreen.tsx (kept for G1-02 tests; not on /intents/new)
+- SeedWorkspace prototype ranking (JetPark $71.40) — locked JFK vector is not in the registry/composer

@@ -1,0 +1,117 @@
+html {
+    font-size: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--itaa-color-surface-canvas);
+    color: var(--itaa-color-text-primary);
+    font-family: var(--itaa-font-interface);
+    line-height: 1.5;
+}
+
+.harness {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: var(--itaa-space-xl);
+    display: grid;
+    gap: var(--itaa-space-2xl);
+}
+
+.harness h1,
+.harness h2,
+.harness h3 {
+    font-family: var(--itaa-font-editorial);
+    font-weight: 500;
+    margin: 0 0 var(--itaa-space-md);
+}
+
+.harness p,
+.harness li {
+    font-size: 1rem;
+}
+
+.harness-note {
+    color: var(--itaa-color-text-secondary);
+    max-width: 42rem;
+}
+
+.swatch-grid,
+.space-grid,
+.primitive-grid {
+    display: grid;
+    gap: var(--itaa-space-md);
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.swatch {
+    border: 1px solid var(--itaa-color-border-strong);
+    border-radius: var(--itaa-radius-card);
+    overflow: hidden;
+    background: var(--itaa-color-surface-raised);
+}
+
+.swatch__chip {
+    min-height: 4.5rem;
+}
+
+.swatch__meta,
+.space-sample,
+.radius-sample {
+    padding: var(--itaa-space-md);
+}
+
+.space-sample__bar {
+    background: var(--itaa-color-text-primary);
+    height: 0.5rem;
+}
+
+.radius-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--itaa-space-md);
+}
+
+.radius-sample {
+    background: var(--itaa-color-surface-raised);
+    border: 1px solid var(--itaa-color-border-strong);
+    min-width: 8rem;
+    min-height: 5rem;
+}
+
+.button-row,
+.status-row,
+.focus-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--itaa-space-md);
+    align-items: center;
+}
+
+.harness-frame {
+    border: 1px dashed var(--itaa-color-border-strong);
+    padding: var(--itaa-space-md);
+    background: var(--itaa-color-surface-raised);
+}
+
+.harness-frame--compact {
+    max-width: 20rem;
+}
+
+.harness-frame--wide {
+    max-width: var(--itaa-breakpoint-wide);
+}
+
+.harness-zoom {
+    zoom: 2;
+    transform-origin: top left;
+}
+
+.harness-reduced-motion {
+    --itaa-motion-duration: 0ms;
+}
+
+code {
+    font-family: var(--itaa-font-facts);
+    font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/intent-plan.schema.json",
+  "title": "IntentPlan",
+  "description": "Plan of Booking Tasks for an OrchestrationIntent. Combined-recommendation eligibility is a flag only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "planId", "intentId", "taskIds"],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "planId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/PlanId"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OrchestrationIntentId"
+    },
+    "taskIds": {
+      "type": "array",
+      "minItems": 0,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/BookingTaskId"
+      }
+    },
+    "combinedRecommendationsEligible": {
+      "type": "boolean",
+      "description": "True only when two or more tasks could be offer-ready. Schema allows the flag; no service."
+    }
+  }
+}

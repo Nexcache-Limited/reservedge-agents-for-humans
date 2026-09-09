@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/offer.schema.json",
+  "title": "Offer",
+  "description": "Multidimensional simulated supplier offer. Availability confirmation is named simulated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "offerId",
+    "intentId",
+    "supplierToken",
+    "version",
+    "status",
+    "price",
+    "service",
+    "terms",
+    "validFrom",
+    "validUntil",
+    "evidence",
+    "simulation",
+    "signature"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "offerId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OfferId"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/IntentId"
+    },
+    "supplierToken": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SupplierToken"
+    },
+    "version": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/PositiveVersion"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["submitted", "superseded", "expired", "withdrawn", "declined", "accepted"]
+    },
+    "price": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subtotalMinor", "feesMinor", "taxMinor", "totalMinor", "currency"],
+      "properties": {
+        "subtotalMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "feesMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "taxMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "totalMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "currency": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/CurrencyCode"
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lotType", "shuttleMinutes", "distanceMeters", "availability", "addOns"],
+      "properties": {
+        "lotType": {
+          "type": "string",
+          "enum": ["covered", "uncovered", "garage", "surface"]
+        },
+        "shuttleMinutes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 180
+        },
+        "distanceMeters": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000,
+          "description": "Integer metres; avoids the spec example's float mile value."
+        },
+        "availability": {
+          "type": "string",
+          "enum": ["confirmed_simulated", "limited_simulated", "unavailable_simulated"]
+        },
+        "addOns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ev_charging", "indoor_walkway", "oversized_bay"]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "terms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cancellation", "refund"],
+      "properties": {
+        "cancellation": {
+          "type": "string",
+          "enum": ["free_until_24h", "free_until_48h", "non_refundable"]
+        },
+        "refund": {
+          "type": "string",
+          "enum": ["original_method", "none"]
+        }
+      }
+    },
+    "validFrom": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "validUntil": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "ref"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["supplier_policy", "rate_card", "lot_rules", "availability_snapshot"]
+          },
+          "ref": {
+            "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/EvidenceRef"
+          }
+        }
+      }
+    },
+    "simulation": {
+      "const": true,
+      "description": "MVP profile requires simulation exactly true."
+    },
+    "signature": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OpaqueSignature"
+    }
+  }
+}

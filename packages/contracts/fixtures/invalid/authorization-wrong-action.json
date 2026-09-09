@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0",
+  "authorizationId": "ta_01k2m3n4p5q6r7s8t9v0w1x2e1",
+  "acceptanceId": "ac_01k2m3n4p5q6r7s8t9v0w1x2d1",
+  "action": "charge_card",
+  "amountMinor": 14800,
+  "currency": "USD",
+  "supplierToken": "sp_01k2m3n4p5q6r7s8t9v0w1x2b2",
+  "mode": "SIMULATED",
+  "idempotencyKey": "ik_01k2m3n4p5q6r7s8t9v0w1x2g1",
+  "userApprovalId": "ap_01k2m3n4p5q6r7s8t9v0w1x2f2",
+  "authorizedAt": "2026-08-20T18:05:00Z",
+  "expiresAt": "2026-08-20T19:05:00Z",
+  "receiptSignature": "sg_01k2m3n4p5q6r7s8t9v0w1x2h5"
+}

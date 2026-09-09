@@ -1,0 +1,366 @@
+[
+  {
+    "file": "purchase-intent-email.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/email",
+    "expectedKeyword": "additionalProperties",
+    "note": "direct identifier"
+  },
+  {
+    "file": "purchase-intent-name.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/name",
+    "expectedKeyword": "additionalProperties",
+    "note": "direct identifier"
+  },
+  {
+    "file": "purchase-intent-phone.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/phone",
+    "expectedKeyword": "additionalProperties",
+    "note": "direct identifier"
+  },
+  {
+    "file": "purchase-intent-raw-context.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/rawContext",
+    "expectedKeyword": "additionalProperties",
+    "note": "raw source"
+  },
+  {
+    "file": "purchase-intent-itinerary.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/itinerary",
+    "expectedKeyword": "additionalProperties",
+    "note": "full itinerary"
+  },
+  {
+    "file": "purchase-intent-payment.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/payment",
+    "expectedKeyword": "additionalProperties",
+    "note": "payment data"
+  },
+  {
+    "file": "purchase-intent-preferences.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/preferenceHistory",
+    "expectedKeyword": "additionalProperties",
+    "note": "preference history"
+  },
+  {
+    "file": "purchase-intent-prompt.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/prompt",
+    "expectedKeyword": "additionalProperties",
+    "note": "prompt data"
+  },
+  {
+    "file": "purchase-intent-competitor.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/competitorOffers",
+    "expectedKeyword": "additionalProperties",
+    "note": "competitor metadata"
+  },
+  {
+    "file": "purchase-intent-nested-unknown.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/location/terminal",
+    "expectedKeyword": "additionalProperties",
+    "note": "undeclared nested field"
+  },
+  {
+    "file": "purchase-intent-non-utc-offset.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/createdAt",
+    "expectedKeyword": "pattern",
+    "note": "non-Z timestamp"
+  },
+  {
+    "file": "purchase-intent-malformed-time.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/createdAt",
+    "expectedKeyword": "pattern",
+    "note": "malformed time"
+  },
+  {
+    "file": "purchase-intent-reversed-service.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/serviceWindow",
+    "expectedKeyword": "invariant",
+    "note": "end before start"
+  },
+  {
+    "file": "purchase-intent-reversed-expiry.json",
+    "schema": "purchase-intent",
+    "expectedPath": "/expiresAt",
+    "expectedKeyword": "invariant",
+    "note": "created after expiry"
+  },
+  {
+    "file": "offer-incorrect-total.json",
+    "schema": "offer",
+    "expectedPath": "/price/totalMinor",
+    "expectedKeyword": "invariant",
+    "note": "total != components"
+  },
+  {
+    "file": "offer-float-money.json",
+    "schema": "offer",
+    "expectedPath": "/price/subtotalMinor",
+    "expectedKeyword": "type",
+    "note": "floating-point money"
+  },
+  {
+    "file": "offer-negative-money.json",
+    "schema": "offer",
+    "expectedPath": "/price/feesMinor",
+    "expectedKeyword": "minimum",
+    "note": "negative money"
+  },
+  {
+    "file": "offer-overflow-money.json",
+    "schema": "offer",
+    "expectedPath": "/price/taxMinor",
+    "expectedKeyword": "maximum",
+    "note": "unsafe integer"
+  },
+  {
+    "file": "offer-malformed-currency.json",
+    "schema": "offer",
+    "expectedPath": "/price/currency",
+    "expectedKeyword": "pattern",
+    "note": "currency not ISO uppercase"
+  },
+  {
+    "file": "offer-reversed-validity.json",
+    "schema": "offer",
+    "expectedPath": "/validUntil",
+    "expectedKeyword": "invariant",
+    "note": "validUntil before validFrom"
+  },
+  {
+    "file": "offer-missing-terms.json",
+    "schema": "offer",
+    "expectedPath": "/terms",
+    "expectedKeyword": "required",
+    "note": "missing dimensions"
+  },
+  {
+    "file": "offer-missing-evidence.json",
+    "schema": "offer",
+    "expectedPath": "/evidence",
+    "expectedKeyword": "required",
+    "note": "missing evidence"
+  },
+  {
+    "file": "offer-false-simulation.json",
+    "schema": "offer",
+    "expectedPath": "/simulation",
+    "expectedKeyword": "const",
+    "note": "simulation false"
+  },
+  {
+    "file": "offer-forbidden-buyer-field.json",
+    "schema": "offer",
+    "expectedPath": "/buyerEmail",
+    "expectedKeyword": "additionalProperties",
+    "note": "buyer field"
+  },
+  {
+    "file": "offer-competitor-field.json",
+    "schema": "offer",
+    "expectedPath": "/competitorRate",
+    "expectedKeyword": "additionalProperties",
+    "note": "competitor field"
+  },
+  {
+    "file": "offer-bad-id.json",
+    "schema": "offer",
+    "expectedPath": "/offerId",
+    "expectedKeyword": "pattern",
+    "note": "malformed id"
+  },
+  {
+    "file": "offer-bad-hash-as-signature.json",
+    "schema": "offer",
+    "expectedPath": "/signature",
+    "expectedKeyword": "pattern",
+    "note": "malformed signature/id"
+  },
+  {
+    "file": "counter-offer-invalid-parent-version.json",
+    "schema": "counter-offer",
+    "expectedPath": "/parentOfferVersion",
+    "expectedKeyword": "minimum",
+    "note": "parent version not positive"
+  },
+  {
+    "file": "counter-offer-unapproved-path.json",
+    "schema": "counter-offer",
+    "expectedPath": "/proposedChanges/0",
+    "expectedKeyword": "oneOf",
+    "note": "arbitrary change path"
+  },
+  {
+    "file": "counter-offer-impossible-valid-until.json",
+    "schema": "counter-offer",
+    "expectedPath": "/proposedChanges/0/value",
+    "expectedKeyword": "format",
+    "note": "impossible RFC 3339 calendar/clock in proposed validUntil"
+  },
+  {
+    "file": "counter-offer-false-simulation.json",
+    "schema": "counter-offer",
+    "expectedPath": "/simulation",
+    "expectedKeyword": "const",
+    "note": "simulation false"
+  },
+  {
+    "file": "counter-offer-reversed-window.json",
+    "schema": "counter-offer",
+    "expectedPath": "/expiresAt",
+    "expectedKeyword": "invariant",
+    "note": "expiry before creation"
+  },
+  {
+    "file": "acceptance-invalid-version.json",
+    "schema": "acceptance",
+    "expectedPath": "/offerVersion",
+    "expectedKeyword": "minimum",
+    "note": "offer version"
+  },
+  {
+    "file": "acceptance-bad-hash.json",
+    "schema": "acceptance",
+    "expectedPath": "/acceptedTermsHash",
+    "expectedKeyword": "pattern",
+    "note": "hash format"
+  },
+  {
+    "file": "acceptance-missing-approval.json",
+    "schema": "acceptance",
+    "expectedPath": "/buyerApprovalId",
+    "expectedKeyword": "required",
+    "note": "missing approval"
+  },
+  {
+    "file": "acceptance-reversed-window.json",
+    "schema": "acceptance",
+    "expectedPath": "/expiresAt",
+    "expectedKeyword": "invariant",
+    "note": "expiry before creation"
+  },
+  {
+    "file": "authorization-live-mode.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/mode",
+    "expectedKeyword": "const",
+    "note": "non-SIMULATED"
+  },
+  {
+    "file": "authorization-real-mode.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/mode",
+    "expectedKeyword": "const",
+    "note": "non-SIMULATED"
+  },
+  {
+    "file": "authorization-wrong-action.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/action",
+    "expectedKeyword": "const",
+    "note": "wrong action"
+  },
+  {
+    "file": "authorization-missing-approval.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/userApprovalId",
+    "expectedKeyword": "required",
+    "note": "missing approval"
+  },
+  {
+    "file": "authorization-missing-idempotency.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/idempotencyKey",
+    "expectedKeyword": "required",
+    "note": "missing idempotency"
+  },
+  {
+    "file": "authorization-missing-signature.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/receiptSignature",
+    "expectedKeyword": "required",
+    "note": "missing signature"
+  },
+  {
+    "file": "authorization-reversed-window.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/expiresAt",
+    "expectedKeyword": "invariant",
+    "note": "expiry before authorizedAt"
+  },
+  {
+    "file": "authorization-negative-amount.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/amountMinor",
+    "expectedKeyword": "minimum",
+    "note": "negative amount"
+  },
+  {
+    "file": "authorization-unknown-field.json",
+    "schema": "transaction-authorization",
+    "expectedPath": "/unknown",
+    "expectedKeyword": "additionalProperties",
+    "note": "unknown field"
+  },
+  {
+    "file": "buyer-offer-score-micros.json",
+    "schema": "buyer-offer",
+    "expectedPath": "/scoreMicros",
+    "expectedKeyword": "additionalProperties",
+    "note": "buyer projection forbids scoreMicros"
+  },
+  {
+    "file": "buyer-offer-held-until-simulation.json",
+    "schema": "buyer-offer",
+    "expectedPath": "/inventoryHeldUntil",
+    "expectedKeyword": "invariant",
+    "note": "simulation must omit inventoryHeldUntil"
+  },
+  {
+    "file": "cost-ledger-silent-sum.json",
+    "schema": "cost-ledger",
+    "expectedPath": "/totalMinor",
+    "expectedKeyword": "additionalProperties",
+    "note": "silent mixed-currency total without fx"
+  },
+  {
+    "file": "cost-ledger-confirmed-booking-simulation.json",
+    "schema": "cost-ledger",
+    "expectedPath": "/rows/0/confirmedBookingMinor",
+    "expectedKeyword": "const",
+    "note": "simulation confirmedBookingMinor must be 0"
+  },
+  {
+    "file": "orchestration-intent-preferences.json",
+    "schema": "orchestration-intent",
+    "expectedPath": "/preferences",
+    "expectedKeyword": "additionalProperties",
+    "note": "preferences must not enter parent Intent"
+  },
+  {
+    "file": "booking-task-sibling-tasks.json",
+    "schema": "booking-task",
+    "expectedPath": "/siblingTasks",
+    "expectedKeyword": "additionalProperties",
+    "note": "sibling tasks must not embed on a Booking Task"
+  },
+  {
+    "file": "conversation-preference-history.json",
+    "schema": "conversation",
+    "expectedPath": "/preferenceHistory",
+    "expectedKeyword": "additionalProperties",
+    "note": "preference history must not enter conversation"
+  }
+]

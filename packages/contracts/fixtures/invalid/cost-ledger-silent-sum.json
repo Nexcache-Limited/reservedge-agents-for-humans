@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "ledgerId": "ld_01k2m3n4p5q6r7s8t9v0w1x2p3",
+  "intentId": "oi_01k2m3n4p5q6r7s8t9v0w1x2p1",
+  "simulation": true,
+  "rows": [
+    {
+      "taskId": "bt_01k2m3n4p5q6r7s8t9v0w1x2p4",
+      "currency": "USD",
+      "confirmedBookingMinor": 0,
+      "authorizedSimulatedMinor": 16900,
+      "authorizedLiveMinor": 0,
+      "bookingPendingMinor": 0,
+      "selectedNotAuthorizedMinor": 0,
+      "estimatedMinor": 18000,
+      "expiredExcludedMinor": 2100,
+      "taxesFeesMinor": 3400,
+      "depositsHoldsMinor": 0,
+      "payableNowMinor": 0,
+      "payableLaterMinor": 5000
+    },
+    {
+      "taskId": "bt_01k2m3n4p5q6r7s8t9v0w1x2p5",
+      "currency": "GBP",
+      "confirmedBookingMinor": 0,
+      "authorizedSimulatedMinor": 8900,
+      "authorizedLiveMinor": 0,
+      "bookingPendingMinor": 0,
+      "selectedNotAuthorizedMinor": 1200,
+      "estimatedMinor": 9500,
+      "expiredExcludedMinor": 0,
+      "taxesFeesMinor": 800,
+      "depositsHoldsMinor": 0,
+      "payableNowMinor": 0,
+      "payableLaterMinor": 2000
+    }
+  ],
+  "currencies": ["USD", "GBP"],
+  "totalMinor": 25800
+}

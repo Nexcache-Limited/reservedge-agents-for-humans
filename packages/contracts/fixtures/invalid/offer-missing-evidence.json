@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "offerId": "of_01k2m3n4p5q6r7s8t9v0w1x2a2",
+  "intentId": "pi_01k2m3n4p5q6r7s8t9v0w1x2y3",
+  "supplierToken": "sp_01k2m3n4p5q6r7s8t9v0w1x2b2",
+  "version": 1,
+  "status": "submitted",
+  "price": {
+    "subtotalMinor": 11900,
+    "feesMinor": 1800,
+    "taxMinor": 1100,
+    "totalMinor": 14800,
+    "currency": "USD"
+  },
+  "service": {
+    "lotType": "covered",
+    "shuttleMinutes": 8,
+    "distanceMeters": 2900,
+    "availability": "confirmed_simulated",
+    "addOns": ["ev_charging"]
+  },
+  "terms": {
+    "cancellation": "free_until_24h",
+    "refund": "original_method"
+  },
+  "validFrom": "2026-08-20T16:00:00Z",
+  "validUntil": "2026-08-21T16:00:00Z",
+  "simulation": true,
+  "signature": "sg_01k2m3n4p5q6r7s8t9v0w1x2h2"
+}

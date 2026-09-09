@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "intentId": "oi_01k2m3n4p5q6r7s8t9v0w1x2p1",
+  "events": [
+    {
+      "eventId": "ce_01k2m3n4p5q6r7s8t9v0w1x2p6",
+      "occurredAt": "2026-08-20T15:00:00Z",
+      "actor": "buyer",
+      "kind": "objective",
+      "text": "Need covered parking at JFK from 3 September."
+    },
+    {
+      "eventId": "ce_01k2m3n4p5q6r7s8t9v0w1x2p7",
+      "occurredAt": "2026-08-20T15:02:00Z",
+      "actor": "reservedge",
+      "kind": "clarification",
+      "text": "Confirm vehicle class and shuttle limit."
+    }
+  ],
+  "facts": [
+    {
+      "factId": "cf_01k2m3n4p5q6r7s8t9v0w1x2p8",
+      "path": "location.airportCode",
+      "value": "JFK",
+      "provenance": "buyer.objective",
+      "confidence": "high",
+      "source": "buyer",
+      "correctionState": "none"
+    },
+    {
+      "factId": "cf_01k2m3n4p5q6r7s8t9v0w1x2q3",
+      "path": "requirements.vehicleClass",
+      "value": {
+        "class": "standard",
+        "covered": true
+      },
+      "provenance": "buyer.answer",
+      "confidence": "medium",
+      "source": "extract",
+      "correctionState": "none"
+    }
+  ],
+  "preferenceHistory": [
+    {
+      "key": "covered"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+name: itaa
+
+services:
+  postgres:
+    image: postgres:16.10-alpine
+    container_name: itaa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: itaa
+      POSTGRES_PASSWORD: itaa_dev_only
+      POSTGRES_DB: itaa_dev
+    # Host 5433 avoids colliding with a developer PostgreSQL already bound to 5432.
+    ports:
+      - "5433:5432"
+    volumes:
+      - itaa_pg_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itaa -d itaa_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+volumes:
+  itaa_pg_dev:
+    name: itaa_pg_dev

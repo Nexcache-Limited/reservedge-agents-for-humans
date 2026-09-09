@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="52" viewBox="0 0 260 52">
+  <defs>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(-10 .5 .5)">
+      <stop offset="0" stop-color="#E85D2C"></stop>
+      <stop offset="1" stop-color="#F2974E"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="9" width="34" height="34" rx="11" fill="url(#coral)"></rect>
+  <g transform="translate(4.25 13.25) scale(1.594)"><path d="M11 3.2H5.6v9.6H11" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round"></path><circle cx="12.7" cy="8" r="1.5" fill="#FFFFFF"></circle></g>
+  <text x="45" y="34" font-family="Schibsted Grotesk, system-ui, sans-serif" font-size="24" font-weight="700" letter-spacing="-0.72" fill="#221F1A">Reservedge</text>
+</svg>

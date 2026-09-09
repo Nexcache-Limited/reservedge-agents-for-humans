@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "offerId": "of_01k2m3n4p5q6r7s8t9v0w1x2a1",
+  "intentId": "pi_01k2m3n4p5q6r7s8t9v0w1x2y3",
+  "supplierToken": "sp_01k2m3n4p5q6r7s8t9v0w1x2b1",
+  "version": 1,
+  "status": "submitted",
+  "price": {
+    "subtotalMinor": 9800,
+    "feesMinor": 1200,
+    "taxMinor": 900,
+    "totalMinor": 11900,
+    "currency": "USD"
+  },
+  "service": {
+    "lotType": "uncovered",
+    "shuttleMinutes": 15,
+    "distanceMeters": 2400,
+    "availability": "confirmed_simulated",
+    "addOns": []
+  },
+  "terms": {
+    "cancellation": "free_until_24h",
+    "refund": "original_method"
+  },
+  "validFrom": "2026-08-20T16:00:00Z",
+  "validUntil": "2026-08-21T16:00:00Z",
+  "evidence": [
+    {
+      "type": "supplier_policy",
+      "ref": "policy.parkdirect.v1"
+    }
+  ],
+  "simulation": true,
+  "signature": "sg_01k2m3n4p5q6r7s8t9v0w1x2h1"
+}

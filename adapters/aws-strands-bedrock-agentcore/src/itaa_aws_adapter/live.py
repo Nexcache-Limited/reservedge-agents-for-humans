@@ -1,0 +1,317 @@
+"""Live Bedrock path. strands is imported only inside this module. Never falls back to fake.
+
+Default live mode stays fail-closed (`model: unavailable`) until
+``ITAA_AWS_LIVE_INVOKE=1`` is set for authorized local UAT.
+Timeout/schema failures use the labelled deterministic projector, not FakeOrchestrator.
+"""
+
+from __future__ import annotations
+
+import concurrent.futures
+import json
+import sys
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
+from typing import Any
+
+from pydantic import ValidationError
+
+from itaa_application.errors import ApplicationError
+from itaa_application.golden_path import GoldenPathFacade
+from itaa_aws_adapter.events import activity_event
+from itaa_aws_adapter.mode import (
+    LIVE_SOURCE_REGION,
+    live_invoke_authorized,
+    resolve_live_model_id,
+    resolve_timeout_ms,
+)
+from itaa_aws_adapter.projector import extract_facts, project_plan, select_clarifications
+from itaa_aws_adapter.schemas import PlanAnswers, PlanProjection, PlanTurn, PlanTurnContext
+from itaa_aws_adapter.tools import ClosedTools
+
+_SDK_MODULE = "strands"
+PlanInvoker = Callable[[str, PlanAnswers, str, int], PlanTurn]
+
+PLAN_SYSTEM = (
+    "You are the Reservedge buyer orchestrator. Interpret a free-form travel objective. "
+    "Return only the structured PlanTurn schema. Do not approve A1-A4, rank offers, "
+    "mint identifiers, or invent airport codes that the human did not state. "
+    "blockingQuestions.id must be one of dates, departureAirport, carNeed. "
+    "Leave blockingQuestions empty when parking or rental is an active booking domain; "
+    "code asks every remaining catalog-missing parking fact in one buyer message. "
+    "If the buyer answers only some of them, the rest are asked together next turn. "
+    "Emit requirementPatches for closed catalog fields evidenced in the latest buyer turn. "
+    "requirementPatches.kind must be parking or rental. fieldId must be a catalog field. "
+    "suggestedTasks.kind must be parking, rental, ents, flight, or hotel. "
+    "suggestedTasks.provenance must be explicit, inferred, or proposed. "
+    "Evidence spans must be character offsets in the objective or answers. "
+    "Copy calendar years from the objective or answers; do not assume 2024. "
+    "Set fallback to false when returning a valid PlanTurn. "
+    "Buyer-safe copy only. Temperature is low; do not speculate. "
+    "Trip departure, trip destination, and parking airport are distinct. "
+    "Do not copy Mumbai or New York into parking. Do not invent JFK. "
+    "Do not infer a parking airport from London or another city name. "
+    "Heathrow normalizes to LHR only as an approved named airport. "
+    "Do not re-ask facts already present in trusted domain state. "
+    "Do not ask parking vehicle class; that is a rental-car fact. "
+    "Parking vehicleClass defaults in code unless the buyer named a class. "
+    "'I don't need covered parking' is covered=none, not preferred. "
+    "Parking start and end require buyer clock times. Do not invent noon, midnight, or 12:00Z. "
+    "Do not treat a rental-car or entertainment request as airport parking. "
+    "Ask every remaining material missing parking fact in one buyer-safe message. "
+    "Do not claim offers "
+    "are ready, ranked, selected, or refreshed before authorized supplier solicitation."
+)
+_INVOKE_STATS: list[dict[str, object]] = []
+
+
+def consume_invoke_stats() -> list[dict[str, object]]:
+    """Operator UAT metrics. Never attached to buyer PlanTurn or projection JSON."""
+
+    out = list(_INVOKE_STATS)
+    _INVOKE_STATS.clear()
+    return out
+
+
+def _record_invoke_stats(result: Any) -> None:
+    metrics = getattr(result, "metrics", None)
+    usage = getattr(metrics, "accumulated_usage", None) if metrics is not None else None
+    latency = getattr(metrics, "accumulated_metrics", None) if metrics is not None else None
+    stats: dict[str, object] = {
+        "stopReason": getattr(result, "stop_reason", None),
+        "modelId": resolve_live_model_id(),
+        "region": LIVE_SOURCE_REGION,
+        "provider": "amazon-bedrock",
+        "sdk": _SDK_MODULE,
+    }
+    if isinstance(usage, dict):
+        stats["inputTokens"] = usage.get("inputTokens")
+        stats["outputTokens"] = usage.get("outputTokens")
+        stats["totalTokens"] = usage.get("totalTokens")
+    if isinstance(latency, dict):
+        stats["latencyMs"] = latency.get("latencyMs")
+    cycle_count = getattr(metrics, "cycle_count", None) if metrics is not None else None
+    if isinstance(cycle_count, int):
+        stats["cycleCount"] = cycle_count
+    _INVOKE_STATS.append(stats)
+    sys.stderr.write(
+        "itaa_live_plan "
+        f"fallback=false cycles={stats.get('cycleCount')} "
+        f"latencyMs={stats.get('latencyMs')} "
+        f"tokens={stats.get('inputTokens')}/{stats.get('outputTokens')}/"
+        f"{stats.get('totalTokens')}\n"
+    )
+
+
+def _first_cycle_structured_output_context() -> type:
+    """Strands context that requires PlanTurn on the first model cycle."""
+
+    from strands.tools.structured_output._structured_output_context import (
+        StructuredOutputContext,
+    )
+
+    class FirstCycleStructuredOutputContext(StructuredOutputContext):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self.set_forced_mode()
+
+    return FirstCycleStructuredOutputContext
+
+
+@contextmanager
+def _force_first_cycle_structured_output() -> Iterator[None]:
+    """Patch only the Agent constructor lookup used by this live plan invoke."""
+
+    from strands.agent import agent as strands_agent
+
+    forced = _first_cycle_structured_output_context()
+    original = strands_agent.StructuredOutputContext  # type: ignore[attr-defined]
+    strands_agent.StructuredOutputContext = forced  # type: ignore[attr-defined, assignment]
+    try:
+        yield
+    finally:
+        strands_agent.StructuredOutputContext = original  # type: ignore[attr-defined]
+
+
+def live_runtime_ready() -> bool:
+    try:
+        resolve_live_model_id()
+        resolve_timeout_ms()
+    except ApplicationError:
+        return False
+    try:
+        __import__(_SDK_MODULE)
+    except ImportError:
+        return False
+    return True
+
+
+def _fallback_turn(objective: str, answers: PlanAnswers) -> PlanTurn:
+    facts = extract_facts(objective, answers)
+    questions = select_clarifications(facts)
+    return PlanTurn(
+        understanding="Using the local planner (labelled).",
+        facts=facts,
+        evidence=[],
+        blockingQuestions=questions,
+        suggestedTasks=[],
+        buyerSafeMessage="Using the local planner (labelled).",
+        fallback=True,
+    )
+
+
+def _events_for(projection: PlanProjection, *, fallback: bool) -> list[dict[str, str]]:
+    events = [
+        activity_event("OBJECTIVE_RECEIVED"),
+        activity_event("CHECKING_MISSING"),
+    ]
+    if fallback:
+        events.append(activity_event("FALLBACK_DETERMINISTIC"))
+    if projection.phase == "clarify":
+        events.append(activity_event("CLARIFICATION_READY"))
+    else:
+        events.append(activity_event("PLAN_READY", task_count=len(projection.tasks)))
+    return events
+
+
+def _invoke_strands_plan(
+    objective: str,
+    answers: PlanAnswers,
+    model_id: str,
+    timeout_ms: int,
+    context: PlanTurnContext | None = None,
+) -> PlanTurn:
+    from botocore.config import Config as BotocoreConfig  # type: ignore[import-untyped]
+    from strands import Agent
+    from strands.models.bedrock import BedrockModel
+    from strands.types.exceptions import StructuredOutputException
+
+    from itaa_api.agent_requirements import catalog_prompt
+
+    timeout_s = max(1, int(timeout_ms / 1000))
+    model = BedrockModel(
+        model_id=model_id,
+        region_name=LIVE_SOURCE_REGION,
+        temperature=0.3,
+        streaming=False,
+        boto_client_config=BotocoreConfig(
+            read_timeout=timeout_s,
+            connect_timeout=min(10, timeout_s),
+            retries={"max_attempts": 1, "mode": "standard"},
+            user_agent_extra="itaa-aws-adapter",
+        ),
+    )
+    resolved_context = context or PlanTurnContext()
+    latest = resolved_context.lastUserMessage.strip() or "(session start)"
+    trusted = json.dumps(resolved_context.trustedDomains, default=str)
+    prompt = (
+        f"Objective / conversation:\n{objective.strip()}\n\n"
+        f"Latest buyer message:\n{latest}\n\n"
+        f"Trusted domain state JSON:\n{trusted}\n\n"
+        f"Structured answers JSON:\n{answers.model_dump_json()}\n\n"
+        f"{catalog_prompt()}\n"
+        "Propose closed RequirementPatch values. Code validates before trusted state changes. "
+        "Never invent JFK from New York. Never copy London into parking.airportCode.\n"
+    )
+
+    def _call() -> Any:
+        with _force_first_cycle_structured_output():
+            agent = Agent(
+                model=model,
+                tools=[],
+                system_prompt=PLAN_SYSTEM,
+                structured_output_model=PlanTurn,
+                callback_handler=None,
+                load_tools_from_directory=False,
+            )
+            return agent(prompt, structured_output_model=PlanTurn)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(_call)
+        try:
+            result = future.result(timeout=timeout_s)
+        except concurrent.futures.TimeoutError as exc:
+            future.cancel()
+            raise TimeoutError("live plan deadline exceeded") from exc
+        except StructuredOutputException as exc:
+            raise ApplicationError("model", "schema_invalid") from exc
+        except Exception as exc:
+            from botocore.exceptions import ClientError  # type: ignore[import-untyped]
+
+            if isinstance(exc, ClientError):
+                raise ApplicationError("model", "unavailable") from exc
+            raise
+    _record_invoke_stats(result)
+    parsed = getattr(result, "structured_output", None)
+    if isinstance(parsed, PlanTurn):
+        return parsed
+    if isinstance(parsed, Mapping):
+        return PlanTurn.model_validate(parsed)
+    raise ApplicationError("model", "schema_invalid")
+
+
+class LiveOrchestrator:
+    """Fail-closed unless invoke is authorized for local UAT."""
+
+    def __init__(
+        self,
+        facade: GoldenPathFacade | None = None,
+        *,
+        plan_invoker: PlanInvoker | None = None,
+    ) -> None:
+        resolve_live_model_id()
+        resolve_timeout_ms()
+        self._tools = ClosedTools(facade)
+        self._plan_invoker = plan_invoker
+        self.last_plan_turn: PlanTurn | None = None
+        self._context = PlanTurnContext()
+
+    def plan_turn(
+        self,
+        objective: str,
+        answers: PlanAnswers | None = None,
+        context: PlanTurnContext | None = None,
+    ) -> tuple[PlanTurn, PlanProjection, list[dict[str, str]]]:
+        if not objective.strip():
+            raise ApplicationError("objective", "required")
+        if not live_invoke_authorized():
+            raise ApplicationError("model", "unavailable")
+        resolved = answers or PlanAnswers()
+        self._context = context or PlanTurnContext()
+        self._tools.call("get_supported_capabilities", {}, turn="plan")
+        self._tools.call(
+            "project_plan_from_facts",
+            {"objective": objective, "answers": resolved.model_dump(mode="json")},
+            turn="plan",
+        )
+        model_id = resolve_live_model_id()
+        timeout_ms = resolve_timeout_ms()
+        fallback = False
+        try:
+            if self._plan_invoker is None:
+                model = _invoke_strands_plan(
+                    objective, resolved, model_id, timeout_ms, self._context
+                )
+            else:
+                model = self._plan_invoker(objective, resolved, model_id, timeout_ms)
+            model = PlanTurn.model_validate(model.model_dump(mode="json"))
+        except (TimeoutError, ValidationError):
+            model = _fallback_turn(objective, resolved)
+            fallback = True
+        except ApplicationError as exc:
+            if exc.code != "schema_invalid":
+                raise
+            model = _fallback_turn(objective, resolved)
+            fallback = True
+        if model.fallback:
+            fallback = True
+        if fallback:
+            sys.stderr.write("itaa_live_plan fallback=true\n")
+        projection = project_plan(objective, resolved, model)
+        self.last_plan_turn = model
+        return model, projection, _events_for(projection, fallback=fallback)
+
+    def execute_turn(self, name: str, payload: Mapping[str, object]) -> dict[str, object]:
+        if not live_invoke_authorized():
+            raise ApplicationError("model", "unavailable")
+        return self._tools.call(name, payload, turn="execute")

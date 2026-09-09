@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0",
+  "acceptanceId": "ac_01k2m3n4p5q6r7s8t9v0w1x2d1",
+  "intentId": "pi_01k2m3n4p5q6r7s8t9v0w1x2y3",
+  "offerId": "of_01k2m3n4p5q6r7s8t9v0w1x2a2",
+  "offerVersion": 1,
+  "acceptedTermsHash": "sha256:ZZ",
+  "buyerApprovalId": "ap_01k2m3n4p5q6r7s8t9v0w1x2f1",
+  "createdAt": "2026-08-20T18:00:00Z",
+  "expiresAt": "2026-08-21T18:00:00Z",
+  "status": "recorded"
+}

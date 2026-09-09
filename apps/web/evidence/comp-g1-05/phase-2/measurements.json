@@ -1,0 +1,125 @@
+{
+  "measures": {
+    "320": {
+      "body": "rgb(233, 230, 223)",
+      "app": "rgb(246, 243, 238)",
+      "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+      "gridOverflow": 0,
+      "overflowX": 0,
+      "cardCount": 3,
+      "cardRadius": "18px",
+      "spa": false,
+      "flags": [
+        {
+          "name": "Airport parking",
+          "flag": "Live competition path"
+        },
+        {
+          "name": "Rental car",
+          "flag": "Simulated demonstration"
+        },
+        {
+          "name": "Entertainment booking",
+          "flag": "Simulated demonstration"
+        }
+      ]
+    },
+    "1440x940": {
+      "body": "rgb(233, 230, 223)",
+      "app": "rgb(246, 243, 238)",
+      "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+      "gridOverflow": 0,
+      "overflowX": 0,
+      "cardCount": 3,
+      "cardRadius": "18px",
+      "spa": false,
+      "flags": [
+        {
+          "name": "Airport parking",
+          "flag": "Live competition path"
+        },
+        {
+          "name": "Rental car",
+          "flag": "Simulated demonstration"
+        },
+        {
+          "name": "Entertainment booking",
+          "flag": "Simulated demonstration"
+        }
+      ]
+    },
+    "1280x800": {
+      "body": "rgb(233, 230, 223)",
+      "app": "rgb(246, 243, 238)",
+      "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+      "gridOverflow": 0,
+      "overflowX": 0,
+      "cardCount": 3,
+      "cardRadius": "18px",
+      "spa": false,
+      "flags": [
+        {
+          "name": "Airport parking",
+          "flag": "Live competition path"
+        },
+        {
+          "name": "Rental car",
+          "flag": "Simulated demonstration"
+        },
+        {
+          "name": "Entertainment booking",
+          "flag": "Simulated demonstration"
+        }
+      ]
+    },
+    "410x874": {
+      "body": "rgb(233, 230, 223)",
+      "app": "rgb(246, 243, 238)",
+      "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+      "gridOverflow": 0,
+      "overflowX": 0,
+      "cardCount": 3,
+      "cardRadius": "18px",
+      "spa": false,
+      "flags": [
+        {
+          "name": "Airport parking",
+          "flag": "Live competition path"
+        },
+        {
+          "name": "Rental car",
+          "flag": "Simulated demonstration"
+        },
+        {
+          "name": "Entertainment booking",
+          "flag": "Simulated demonstration"
+        }
+      ]
+    },
+    "390x844": {
+      "body": "rgb(233, 230, 223)",
+      "app": "rgb(246, 243, 238)",
+      "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+      "gridOverflow": 0,
+      "overflowX": 0,
+      "cardCount": 3,
+      "cardRadius": "18px",
+      "spa": false,
+      "flags": [
+        {
+          "name": "Airport parking",
+          "flag": "Live competition path"
+        },
+        {
+          "name": "Rental car",
+          "flag": "Simulated demonstration"
+        },
+        {
+          "name": "Entertainment booking",
+          "flag": "Simulated demonstration"
+        }
+      ]
+    }
+  },
+  "rentalQ1": "Match flight AA118 · 8 Sep 09:15 → 11 Sep 17:00"
+}

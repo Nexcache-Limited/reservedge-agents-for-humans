@@ -1,0 +1,697 @@
+{
+  "320": {
+    "body": "rgb(233, 230, 223)",
+    "app": "rgb(246, 243, 238)",
+    "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+    "railDisplay": "none",
+    "railW": 0,
+    "listW": 288,
+    "detailW": 0,
+    "btnBg": "rgb(232, 93, 44)",
+    "cardRadius": "16px",
+    "tabsBottom": 844,
+    "overflowX": 0,
+    "viewport": {
+      "w": 320,
+      "h": 844
+    },
+    "hits": [
+      {
+        "label": "Intents3",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Activity",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Preferences",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Privacy & data",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Account & plan",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "New intent",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "All",
+        "w": 41,
+        "h": 36
+      },
+      {
+        "label": "Needs you",
+        "w": 87,
+        "h": 36
+      },
+      {
+        "label": "Running",
+        "w": 73,
+        "h": 36
+      },
+      {
+        "label": "Pending",
+        "w": 73,
+        "h": 36
+      },
+      {
+        "label": "History",
+        "w": 68,
+        "h": 36
+      },
+      {
+        "label": "PkDecision ready29 Aug · 14:09JFK airpor",
+        "w": 216,
+        "h": 104
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "RcDecision ready29 Aug · 13:40Rental car",
+        "w": 216,
+        "h": 104
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "EnDecision ready29 Aug · 12:15Two ticket",
+        "w": 216,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "PkResearching29 Aug · 11:02LGA parking ·",
+        "w": 216,
+        "h": 104
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "RcPending · paused by you28 Aug · 19:02R",
+        "w": 216,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "New intent",
+        "w": 288,
+        "h": 50
+      },
+      {
+        "label": "Keep pending",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Modify intent",
+        "w": 0,
+        "h": 0
+      }
+    ]
+  },
+  "1440x940": {
+    "body": "rgb(233, 230, 223)",
+    "app": "rgb(246, 243, 238)",
+    "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+    "railDisplay": "flex",
+    "railW": 236,
+    "listW": 320,
+    "detailW": 884,
+    "btnBg": "rgb(232, 93, 44)",
+    "cardRadius": "14px",
+    "tabsBottom": 0,
+    "overflowX": 0,
+    "viewport": {
+      "w": 1440,
+      "h": 940
+    },
+    "hits": [
+      {
+        "label": "Intents3",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Activity",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Preferences",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Privacy & data",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Account & plan",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "New intent",
+        "w": 84,
+        "h": 34
+      },
+      {
+        "label": "All",
+        "w": 34,
+        "h": 30
+      },
+      {
+        "label": "Needs you",
+        "w": 76,
+        "h": 30
+      },
+      {
+        "label": "Running",
+        "w": 63,
+        "h": 30
+      },
+      {
+        "label": "Pending",
+        "w": 63,
+        "h": 30
+      },
+      {
+        "label": "History",
+        "w": 59,
+        "h": 30
+      },
+      {
+        "label": "PkDecision ready29 Aug · 14:09JFK airpor",
+        "w": 233,
+        "h": 83
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "RcDecision ready29 Aug · 13:40Rental car",
+        "w": 233,
+        "h": 83
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "EnDecision ready29 Aug · 12:15Two ticket",
+        "w": 233,
+        "h": 65
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "PkResearching29 Aug · 11:02LGA parking ·",
+        "w": 233,
+        "h": 65
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "RcPending · paused by you28 Aug · 19:02R",
+        "w": 233,
+        "h": 85
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "New intent",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Keep pending",
+        "w": 105,
+        "h": 36
+      },
+      {
+        "label": "Modify intent",
+        "w": 102,
+        "h": 36
+      }
+    ]
+  },
+  "1280x800": {
+    "body": "rgb(233, 230, 223)",
+    "app": "rgb(246, 243, 238)",
+    "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+    "railDisplay": "flex",
+    "railW": 236,
+    "listW": 320,
+    "detailW": 724,
+    "btnBg": "rgb(232, 93, 44)",
+    "cardRadius": "14px",
+    "tabsBottom": 0,
+    "overflowX": 0,
+    "viewport": {
+      "w": 1280,
+      "h": 800
+    },
+    "hits": [
+      {
+        "label": "Intents3",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Activity",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Preferences",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Privacy & data",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "Account & plan",
+        "w": 212,
+        "h": 34
+      },
+      {
+        "label": "New intent",
+        "w": 84,
+        "h": 34
+      },
+      {
+        "label": "All",
+        "w": 34,
+        "h": 30
+      },
+      {
+        "label": "Needs you",
+        "w": 76,
+        "h": 30
+      },
+      {
+        "label": "Running",
+        "w": 63,
+        "h": 30
+      },
+      {
+        "label": "Pending",
+        "w": 63,
+        "h": 30
+      },
+      {
+        "label": "History",
+        "w": 59,
+        "h": 30
+      },
+      {
+        "label": "PkDecision ready29 Aug · 14:09JFK airpor",
+        "w": 233,
+        "h": 83
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "RcDecision ready29 Aug · 13:40Rental car",
+        "w": 233,
+        "h": 83
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "EnDecision ready29 Aug · 12:15Two ticket",
+        "w": 233,
+        "h": 65
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "PkResearching29 Aug · 11:02LGA parking ·",
+        "w": 233,
+        "h": 65
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "RcPending · paused by you28 Aug · 19:02R",
+        "w": 233,
+        "h": 85
+      },
+      {
+        "label": "✕",
+        "w": 28,
+        "h": 28
+      },
+      {
+        "label": "New intent",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Keep pending",
+        "w": 105,
+        "h": 36
+      },
+      {
+        "label": "Modify intent",
+        "w": 102,
+        "h": 36
+      }
+    ]
+  },
+  "410x874": {
+    "body": "rgb(233, 230, 223)",
+    "app": "rgb(246, 243, 238)",
+    "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+    "railDisplay": "none",
+    "railW": 0,
+    "listW": 378,
+    "detailW": 0,
+    "btnBg": "rgb(232, 93, 44)",
+    "cardRadius": "16px",
+    "tabsBottom": 874,
+    "overflowX": 0,
+    "viewport": {
+      "w": 410,
+      "h": 874
+    },
+    "hits": [
+      {
+        "label": "Intents3",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Activity",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Preferences",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Privacy & data",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Account & plan",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "New intent",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "All",
+        "w": 41,
+        "h": 36
+      },
+      {
+        "label": "Needs you",
+        "w": 87,
+        "h": 36
+      },
+      {
+        "label": "Running",
+        "w": 73,
+        "h": 36
+      },
+      {
+        "label": "Pending",
+        "w": 73,
+        "h": 36
+      },
+      {
+        "label": "History",
+        "w": 68,
+        "h": 36
+      },
+      {
+        "label": "PkDecision ready29 Aug · 14:09JFK airpor",
+        "w": 306,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "RcDecision ready29 Aug · 13:40Rental car",
+        "w": 306,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "EnDecision ready29 Aug · 12:15Two ticket",
+        "w": 306,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "PkResearching29 Aug · 11:02LGA parking ·",
+        "w": 306,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "RcPending · paused by you28 Aug · 19:02R",
+        "w": 306,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "New intent",
+        "w": 378,
+        "h": 50
+      },
+      {
+        "label": "Keep pending",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Modify intent",
+        "w": 0,
+        "h": 0
+      }
+    ]
+  },
+  "390x844": {
+    "body": "rgb(233, 230, 223)",
+    "app": "rgb(246, 243, 238)",
+    "font": "\"Schibsted Grotesk\", system-ui, -apple-system, sans-serif",
+    "railDisplay": "none",
+    "railW": 0,
+    "listW": 358,
+    "detailW": 0,
+    "btnBg": "rgb(232, 93, 44)",
+    "cardRadius": "16px",
+    "tabsBottom": 844,
+    "overflowX": 0,
+    "viewport": {
+      "w": 390,
+      "h": 844
+    },
+    "hits": [
+      {
+        "label": "Intents3",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Activity",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Preferences",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Privacy & data",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Account & plan",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "New intent",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "All",
+        "w": 41,
+        "h": 36
+      },
+      {
+        "label": "Needs you",
+        "w": 87,
+        "h": 36
+      },
+      {
+        "label": "Running",
+        "w": 73,
+        "h": 36
+      },
+      {
+        "label": "Pending",
+        "w": 73,
+        "h": 36
+      },
+      {
+        "label": "History",
+        "w": 68,
+        "h": 36
+      },
+      {
+        "label": "PkDecision ready29 Aug · 14:09JFK airpor",
+        "w": 286,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "RcDecision ready29 Aug · 13:40Rental car",
+        "w": 286,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "EnDecision ready29 Aug · 12:15Two ticket",
+        "w": 286,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "PkResearching29 Aug · 11:02LGA parking ·",
+        "w": 286,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "RcPending · paused by you28 Aug · 19:02R",
+        "w": 286,
+        "h": 86
+      },
+      {
+        "label": "✕",
+        "w": 32,
+        "h": 32
+      },
+      {
+        "label": "New intent",
+        "w": 358,
+        "h": 50
+      },
+      {
+        "label": "Keep pending",
+        "w": 0,
+        "h": 0
+      },
+      {
+        "label": "Modify intent",
+        "w": 0,
+        "h": 0
+      }
+    ]
+  }
+}

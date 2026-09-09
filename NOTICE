@@ -1,0 +1,44 @@
+Reservedge — Intent to Action Agent (ITAA)
+Copyright 2026 Nexcache Limited
+
+Licensed under the Apache License, Version 2.0.
+See the LICENSE file in the project root.
+
+This NOTICE distinguishes pre-existing platform work from AWS Agents for Humans
+competition-period work. It does not imply that the entire Reservedge/ITAA
+platform was created during the hackathon.
+
+---------------------------------------------------------------------------
+Pre-existing Reservedge/ITAA platform
+---------------------------------------------------------------------------
+
+Created before or independently of the AWS Agents for Humans competition window:
+
+- Cloud-neutral domain, application, policy, ranking, and contracts packages
+- A1–A4 human authorization (requirement confirmation, disclosure authorization,
+  offer selection, simulated transaction authorization)
+- Disclosure and isolation (minimum disclosure; isolated supplier envelopes)
+- Deterministic ranking
+- Simulated suppliers (ParkDirect, SkyShield, TerminalFlex)
+- FastAPI golden path
+- React/Vite buyer UI
+- Intent-first substrate (composer, Clarify & Plan, Explicit / Inferred /
+  Proposed labels)
+
+The Google/Gemini adapter under adapters/google is pre-existing adapter work
+and is not claimed as part of this AWS Devpost submission.
+
+---------------------------------------------------------------------------
+Competition-period AWS work
+---------------------------------------------------------------------------
+
+Developed for AWS Agents for Humans (Everyday Agents track) during the
+competition period:
+
+- Strands Agents SDK integration (adapters/aws-strands-bedrock-agentcore)
+- Amazon Bedrock live Plan path (fail-closed unless explicitly invoked)
+- Provider HTTP /v1/aws/**
+- Product BFF /v1/agent/** and conversation-first agent session / domain state
+- Browser wiring of Start booking through /v1/agent/**
+- AWS competition evaluation, demo, and submission material under
+  docs/demo-aws and docs/submissions-aws

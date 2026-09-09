@@ -1,0 +1,19 @@
+{
+  "name": "itaa",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm --filter @itaa/ui-kit lint && pnpm --filter @itaa/web lint",
+    "typecheck": "pnpm --filter @itaa/ui-kit typecheck && pnpm --filter @itaa/contracts typecheck && pnpm --filter @itaa/web typecheck",
+    "test": "pnpm --filter @itaa/ui-kit test && pnpm --filter @itaa/contracts test && pnpm --filter @itaa/web test"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "15.0.4",
+    "prettier": "3.6.2"
+  }
+}

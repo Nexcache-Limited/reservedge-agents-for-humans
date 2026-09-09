@@ -1,0 +1,3567 @@
+{
+  "components": {
+    "schemas": {
+      "AcceptanceBody": {
+        "additionalProperties": false,
+        "properties": {
+          "actorId": {
+            "pattern": "^ar_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Actorid",
+            "type": "string"
+          },
+          "approvalId": {
+            "pattern": "^ap_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Approvalid",
+            "type": "string"
+          },
+          "correlationId": {
+            "pattern": "^cr_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Correlationid",
+            "type": "string"
+          },
+          "expiresAt": {
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "issuedAt": {
+            "title": "Issuedat",
+            "type": "string"
+          },
+          "offerId": {
+            "pattern": "^of_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Offerid",
+            "type": "string"
+          },
+          "offerVersion": {
+            "minimum": 1.0,
+            "title": "Offerversion",
+            "type": "integer"
+          },
+          "ownerId": {
+            "pattern": "^ar_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Ownerid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actorId",
+          "ownerId",
+          "approvalId",
+          "correlationId",
+          "issuedAt",
+          "expiresAt",
+          "offerId",
+          "offerVersion"
+        ],
+        "title": "AcceptanceBody",
+        "type": "object"
+      },
+      "AccessibilityEnum": {
+        "enum": [
+          "step_free",
+          "wheelchair",
+          "ev_charging"
+        ],
+        "title": "AccessibilityEnum",
+        "type": "string"
+      },
+      "AuthorizationBody": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptanceId": {
+            "pattern": "^ac_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Acceptanceid",
+            "type": "string"
+          },
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actorId": {
+            "pattern": "^ar_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Actorid",
+            "type": "string"
+          },
+          "amountMinor": {
+            "minimum": 0.0,
+            "title": "Amountminor",
+            "type": "integer"
+          },
+          "approvalId": {
+            "pattern": "^ap_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Approvalid",
+            "type": "string"
+          },
+          "correlationId": {
+            "pattern": "^cr_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Correlationid",
+            "type": "string"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "expiresAt": {
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "pattern": "^ik_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Idempotencykey",
+            "type": "string"
+          },
+          "issuedAt": {
+            "title": "Issuedat",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "ownerId": {
+            "pattern": "^ar_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "supplierToken": {
+            "pattern": "^sp_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Suppliertoken",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actorId",
+          "ownerId",
+          "approvalId",
+          "correlationId",
+          "issuedAt",
+          "expiresAt",
+          "acceptanceId",
+          "amountMinor",
+          "currency",
+          "supplierToken",
+          "action",
+          "mode",
+          "idempotencyKey"
+        ],
+        "title": "AuthorizationBody",
+        "type": "object"
+      },
+      "BookingTask": {
+        "additionalProperties": false,
+        "description": "Per-domain task. Must not embed conversation, siblings, or preferences.",
+        "properties": {
+          "domain": {
+            "enum": [
+              "parking",
+              "rental",
+              "ents"
+            ],
+            "title": "Domain",
+            "type": "string"
+          },
+          "intentId": {
+            "pattern": "^oi_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Intentid",
+            "type": "string"
+          },
+          "inventory": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_held",
+                  "subject_to_availability",
+                  "held_until"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inventory"
+          },
+          "purchaseIntentId": {
+            "anyOf": [
+              {
+                "pattern": "^pi_[0-9a-hjkmnp-tv-z]{26}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchaseintentid"
+          },
+          "requirementVersion": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirementversion"
+          },
+          "schemaVersion": {
+            "const": "1.0",
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "simulation": {
+            "const": true,
+            "title": "Simulation",
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "proposed",
+              "missing_details",
+              "a1_review",
+              "a1_blocked",
+              "public_research",
+              "a2_required",
+              "researching",
+              "supplier_timeout",
+              "no_offer",
+              "offers_ready",
+              "offers_expiring",
+              "offers_expired",
+              "superseded",
+              "a3_review",
+              "a3_ineligible",
+              "a4_required",
+              "a4_failed",
+              "authorized_simulated",
+              "authorized_live",
+              "booking_pending",
+              "confirmed_booking",
+              "booking_failed",
+              "paused",
+              "cancelled",
+              "failed",
+              "offline_readonly"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "taskId": {
+            "pattern": "^bt_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Taskid",
+            "type": "string"
+          },
+          "transactionResult": {
+            "anyOf": [
+              {
+                "enum": [
+                  "simulated",
+                  "authorized_simulated",
+                  "authorized_live",
+                  "booking_pending",
+                  "confirmed_booking",
+                  "booking_failed",
+                  "failed",
+                  "cancelled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionresult"
+          },
+          "validity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "valid",
+                  "expiring",
+                  "expired",
+                  "superseded"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validity"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "taskId",
+          "intentId",
+          "domain",
+          "state",
+          "simulation"
+        ],
+        "title": "BookingTask",
+        "type": "object"
+      },
+      "BuyerOffer": {
+        "additionalProperties": false,
+        "description": "Buyer commercial projection. Ranking micros are internal-only.",
+        "properties": {
+          "completeness": {
+            "enum": [
+              "complete",
+              "incomplete"
+            ],
+            "title": "Completeness",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/BuyerOfferEvidence"
+            },
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "fit": {
+            "enum": [
+              "strong",
+              "good",
+              "fair"
+            ],
+            "title": "Fit",
+            "type": "string"
+          },
+          "inventory": {
+            "enum": [
+              "not_held",
+              "subject_to_availability",
+              "held_until"
+            ],
+            "title": "Inventory",
+            "type": "string"
+          },
+          "inventoryHeldUntil": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inventoryhelduntil"
+          },
+          "issuedAt": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Issuedat",
+            "type": "string"
+          },
+          "offerClass": {
+            "enum": [
+              "standard",
+              "curated"
+            ],
+            "title": "Offerclass",
+            "type": "string"
+          },
+          "offerId": {
+            "pattern": "^of_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Offerid",
+            "type": "string"
+          },
+          "price": {
+            "$ref": "#/components/schemas/BuyerOfferPrice"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "recommended": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended"
+          },
+          "schemaVersion": {
+            "const": "1.0",
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "simulation": {
+            "const": true,
+            "title": "Simulation",
+            "type": "boolean"
+          },
+          "sourceType": {
+            "enum": [
+              "aggregator_rate",
+              "public_market_reference",
+              "supplier_private_quote"
+            ],
+            "title": "Sourcetype",
+            "type": "string"
+          },
+          "supersededBy": {
+            "anyOf": [
+              {
+                "pattern": "^of_[0-9a-hjkmnp-tv-z]{26}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersededby"
+          },
+          "supplierToken": {
+            "pattern": "^sp_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Suppliertoken",
+            "type": "string"
+          },
+          "termsHash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Termshash",
+            "type": "string"
+          },
+          "transactionResult": {
+            "enum": [
+              "simulated",
+              "authorized_simulated",
+              "authorized_live",
+              "booking_pending",
+              "confirmed_booking",
+              "booking_failed",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Transactionresult",
+            "type": "string"
+          },
+          "validFrom": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Validfrom",
+            "type": "string"
+          },
+          "validUntil": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Validuntil",
+            "type": "string"
+          },
+          "validity": {
+            "enum": [
+              "valid",
+              "expiring",
+              "expired",
+              "superseded"
+            ],
+            "title": "Validity",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 9007199254740991.0,
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "withdrawn": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withdrawn"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "offerId",
+          "supplierToken",
+          "version",
+          "sourceType",
+          "offerClass",
+          "issuedAt",
+          "validFrom",
+          "validUntil",
+          "termsHash",
+          "price",
+          "fit",
+          "simulation",
+          "validity",
+          "inventory",
+          "transactionResult",
+          "completeness",
+          "evidence"
+        ],
+        "title": "BuyerOffer",
+        "type": "object"
+      },
+      "BuyerOfferEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "pattern": "^[a-z][a-z0-9_.:-]{2,80}$",
+            "title": "Ref",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "supplier_policy",
+              "rate_card",
+              "lot_rules",
+              "availability_snapshot"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "ref"
+        ],
+        "title": "BuyerOfferEvidence",
+        "type": "object"
+      },
+      "BuyerOfferPrice": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "depositMinor": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depositminor"
+          },
+          "feesMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Feesminor",
+            "type": "integer"
+          },
+          "payLaterMinor": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paylaterminor"
+          },
+          "taxMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Taxminor",
+            "type": "integer"
+          },
+          "totalMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Totalminor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalMinor",
+          "taxMinor",
+          "feesMinor",
+          "currency"
+        ],
+        "title": "BuyerOfferPrice",
+        "type": "object"
+      },
+      "BuyerSessionSnapshot": {
+        "additionalProperties": true,
+        "description": "Buyer-safe snapshot. Offer items use the BuyerOffer commercial projection.",
+        "properties": {
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/BuyerOffer"
+            },
+            "title": "Offers",
+            "type": "array"
+          }
+        },
+        "title": "BuyerSessionSnapshot",
+        "type": "object"
+      },
+      "ClosedError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "correlationId": {
+            "title": "Correlationid",
+            "type": "string"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          }
+        },
+        "required": [
+          "code",
+          "field",
+          "correlationId"
+        ],
+        "title": "ClosedError",
+        "type": "object"
+      },
+      "ConfirmedIntentBody": {
+        "additionalProperties": false,
+        "properties": {
+          "accessibility": {
+            "items": {
+              "enum": [
+                "step_free",
+                "wheelchair",
+                "ev_charging"
+              ],
+              "type": "string"
+            },
+            "title": "Accessibility",
+            "type": "array"
+          },
+          "airportCode": {
+            "title": "Airportcode",
+            "type": "string"
+          },
+          "covered": {
+            "title": "Covered",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "end": {
+            "title": "End",
+            "type": "string"
+          },
+          "intakeId": {
+            "title": "Intakeid",
+            "type": "string"
+          },
+          "shuttleMaxMinutes": {
+            "title": "Shuttlemaxminutes",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "string"
+          },
+          "vehicleClass": {
+            "title": "Vehicleclass",
+            "type": "string"
+          }
+        },
+        "required": [
+          "intakeId",
+          "airportCode",
+          "start",
+          "end",
+          "vehicleClass",
+          "covered",
+          "shuttleMaxMinutes",
+          "currency"
+        ],
+        "title": "ConfirmedIntentBody",
+        "type": "object"
+      },
+      "Constraints": {
+        "additionalProperties": false,
+        "properties": {
+          "accessibility": {
+            "items": {
+              "$ref": "#/components/schemas/AccessibilityEnum"
+            },
+            "title": "Accessibility",
+            "type": "array"
+          },
+          "currency": {
+            "description": "ISO 4217 alphabetic code, uppercase.",
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "accessibility"
+        ],
+        "title": "Constraints",
+        "type": "object"
+      },
+      "CostLedger": {
+        "additionalProperties": false,
+        "description": "Deterministic per-task buckets. Restart yields unknown_resource.",
+        "properties": {
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Currencies",
+            "type": "array"
+          },
+          "intentId": {
+            "pattern": "^oi_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Intentid",
+            "type": "string"
+          },
+          "ledgerId": {
+            "pattern": "^ld_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Ledgerid",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/CostLedgerRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "schemaVersion": {
+            "const": "1.0",
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "simulation": {
+            "const": true,
+            "title": "Simulation",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ledgerId",
+          "intentId",
+          "simulation",
+          "rows",
+          "currencies"
+        ],
+        "title": "CostLedger",
+        "type": "object"
+      },
+      "CostLedgerRow": {
+        "additionalProperties": false,
+        "properties": {
+          "authorizedLiveMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Authorizedliveminor",
+            "type": "integer"
+          },
+          "authorizedSimulatedMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Authorizedsimulatedminor",
+            "type": "integer"
+          },
+          "bookingPendingMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Bookingpendingminor",
+            "type": "integer"
+          },
+          "confirmedBookingMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Confirmedbookingminor",
+            "type": "integer"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "depositsHoldsMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Depositsholdsminor",
+            "type": "integer"
+          },
+          "estimatedMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Estimatedminor",
+            "type": "integer"
+          },
+          "expiredExcludedMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Expiredexcludedminor",
+            "type": "integer"
+          },
+          "payableLaterMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Payablelaterminor",
+            "type": "integer"
+          },
+          "payableNowMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Payablenowminor",
+            "type": "integer"
+          },
+          "selectedNotAuthorizedMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Selectednotauthorizedminor",
+            "type": "integer"
+          },
+          "taskId": {
+            "pattern": "^bt_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Taskid",
+            "type": "string"
+          },
+          "taxesFeesMinor": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Taxesfeesminor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "currency",
+          "confirmedBookingMinor",
+          "authorizedSimulatedMinor",
+          "authorizedLiveMinor",
+          "bookingPendingMinor",
+          "selectedNotAuthorizedMinor",
+          "estimatedMinor",
+          "expiredExcludedMinor",
+          "taxesFeesMinor",
+          "depositsHoldsMinor",
+          "payableNowMinor",
+          "payableLaterMinor"
+        ],
+        "title": "CostLedgerRow",
+        "type": "object"
+      },
+      "Covered": {
+        "enum": [
+          "none",
+          "preferred",
+          "required"
+        ],
+        "title": "Covered",
+        "type": "string"
+      },
+      "Disclosure": {
+        "additionalProperties": false,
+        "properties": {
+          "approvedPayloadHash": {
+            "description": "SHA-256 as sha256: plus 64 lowercase hex characters. Shape only in WP-02.",
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Approvedpayloadhash",
+            "type": "string"
+          },
+          "profile": {
+            "const": "parking_v1",
+            "title": "Profile",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile",
+          "approvedPayloadHash"
+        ],
+        "title": "Disclosure",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ClosedError"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "ExtractionBody": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "const": "airport_parking",
+            "title": "Category",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "category"
+        ],
+        "title": "ExtractionBody",
+        "type": "object"
+      },
+      "GovernanceBody": {
+        "additionalProperties": false,
+        "properties": {
+          "actorId": {
+            "pattern": "^ar_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Actorid",
+            "type": "string"
+          },
+          "approvalId": {
+            "pattern": "^ap_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Approvalid",
+            "type": "string"
+          },
+          "correlationId": {
+            "pattern": "^cr_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Correlationid",
+            "type": "string"
+          },
+          "expiresAt": {
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "issuedAt": {
+            "title": "Issuedat",
+            "type": "string"
+          },
+          "ownerId": {
+            "pattern": "^ar_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Ownerid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actorId",
+          "ownerId",
+          "approvalId",
+          "correlationId",
+          "issuedAt",
+          "expiresAt"
+        ],
+        "title": "GovernanceBody",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "IntakeAcceptanceBody": {
+        "additionalProperties": false,
+        "properties": {
+          "offerId": {
+            "title": "Offerid",
+            "type": "string"
+          },
+          "offerVersion": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offerversion"
+          }
+        },
+        "required": [
+          "offerId"
+        ],
+        "title": "IntakeAcceptanceBody",
+        "type": "object"
+      },
+      "IntakeAuthorizationBody": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptanceId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptanceid"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "const": "reserve_parking",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "amountMinor": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amountminor"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "const": "SIMULATED",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "supplierToken": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suppliertoken"
+          }
+        },
+        "title": "IntakeAuthorizationBody",
+        "type": "object"
+      },
+      "IntakeGateBody": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "anyOf": [
+              {
+                "const": true,
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm"
+          }
+        },
+        "title": "IntakeGateBody",
+        "type": "object"
+      },
+      "IntentPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "combinedRecommendationsEligible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Combinedrecommendationseligible"
+          },
+          "intentId": {
+            "pattern": "^oi_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Intentid",
+            "type": "string"
+          },
+          "planId": {
+            "pattern": "^pl_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Planid",
+            "type": "string"
+          },
+          "schemaVersion": {
+            "const": "1.0",
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "taskIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Taskids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "planId",
+          "intentId"
+        ],
+        "title": "IntentPlan",
+        "type": "object"
+      },
+      "LivenessResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "environment": {
+            "const": "local_simulation",
+            "title": "Environment",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "environment"
+        ],
+        "title": "LivenessResponse",
+        "type": "object"
+      },
+      "Location": {
+        "additionalProperties": false,
+        "properties": {
+          "airportCode": {
+            "description": "IATA airport code. JFK is the v1 golden-path fixture.",
+            "pattern": "^[A-Z]{3}$",
+            "title": "Airportcode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "airportCode"
+        ],
+        "title": "Location",
+        "type": "object"
+      },
+      "OrchestrationIntent": {
+        "additionalProperties": false,
+        "description": "Buyer-owned parent Intent. Restart yields unknown_resource.",
+        "properties": {
+          "conversationId": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversationid"
+          },
+          "createdAt": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "durability": {
+            "const": "unsupported",
+            "title": "Durability",
+            "type": "string"
+          },
+          "intentId": {
+            "pattern": "^oi_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Intentid",
+            "type": "string"
+          },
+          "ledgerId": {
+            "anyOf": [
+              {
+                "pattern": "^ld_[0-9a-hjkmnp-tv-z]{26}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledgerid"
+          },
+          "objective": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          },
+          "planId": {
+            "anyOf": [
+              {
+                "pattern": "^pl_[0-9a-hjkmnp-tv-z]{26}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planid"
+          },
+          "schemaVersion": {
+            "const": "1.0",
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "simulation": {
+            "const": true,
+            "title": "Simulation",
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "clarifying",
+              "planning",
+              "deleted",
+              "attention",
+              "in_progress",
+              "offers_ready",
+              "partially_authorized_simulated",
+              "partially_authorized_live",
+              "partially_booked",
+              "completed_simulated",
+              "completed",
+              "paused",
+              "cancelled",
+              "failed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "updatedAt": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "intentId",
+          "state",
+          "objective",
+          "createdAt",
+          "updatedAt",
+          "simulation",
+          "durability"
+        ],
+        "title": "OrchestrationIntent",
+        "type": "object"
+      },
+      "PurchaseIntent": {
+        "additionalProperties": false,
+        "description": "Supplier-visible minimized parking envelope, not Requirement or Disclosure Preview.",
+        "properties": {
+          "buyerToken": {
+            "pattern": "^bs_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Buyertoken",
+            "type": "string"
+          },
+          "category": {
+            "const": "airport_parking",
+            "title": "Category",
+            "type": "string"
+          },
+          "constraints": {
+            "$ref": "#/components/schemas/Constraints"
+          },
+          "createdAt": {
+            "description": "RFC 3339 UTC timestamp ending in Z. Calendar and clock values are validated, not only digit shape.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "disclosure": {
+            "$ref": "#/components/schemas/Disclosure"
+          },
+          "expiresAt": {
+            "description": "RFC 3339 UTC timestamp ending in Z. Calendar and clock values are validated, not only digit shape.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "intentId": {
+            "pattern": "^pi_[0-9a-hjkmnp-tv-z]{26}$",
+            "title": "Intentid",
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "requirements": {
+            "$ref": "#/components/schemas/Requirements"
+          },
+          "schemaVersion": {
+            "const": "1.0",
+            "description": "Initial canonical contract profile.",
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "serviceWindow": {
+            "$ref": "#/components/schemas/ServiceWindow"
+          },
+          "solicitation": {
+            "$ref": "#/components/schemas/Solicitation"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "intentId",
+          "buyerToken",
+          "category",
+          "location",
+          "serviceWindow",
+          "requirements",
+          "constraints",
+          "disclosure",
+          "solicitation",
+          "createdAt",
+          "expiresAt"
+        ],
+        "title": "PurchaseIntent",
+        "type": "object"
+      },
+      "ReadinessResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "durability": {
+            "const": "unsupported",
+            "title": "Durability",
+            "type": "string"
+          },
+          "environment": {
+            "const": "local_simulation",
+            "title": "Environment",
+            "type": "string"
+          },
+          "status": {
+            "const": "ready",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "environment",
+          "durability"
+        ],
+        "title": "ReadinessResponse",
+        "type": "object"
+      },
+      "Requirements": {
+        "additionalProperties": false,
+        "properties": {
+          "covered": {
+            "$ref": "#/components/schemas/Covered"
+          },
+          "shuttleMaxMinutes": {
+            "maximum": 180.0,
+            "minimum": 0.0,
+            "title": "Shuttlemaxminutes",
+            "type": "integer"
+          },
+          "vehicleClass": {
+            "$ref": "#/components/schemas/VehicleClass"
+          }
+        },
+        "required": [
+          "vehicleClass",
+          "covered",
+          "shuttleMaxMinutes"
+        ],
+        "title": "Requirements",
+        "type": "object"
+      },
+      "ServiceWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "description": "RFC 3339 UTC timestamp ending in Z. Calendar and clock values are validated, not only digit shape.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "description": "RFC 3339 UTC timestamp ending in Z. Calendar and clock values are validated, not only digit shape.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "ServiceWindow",
+        "type": "object"
+      },
+      "SessionConfirmBody": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "anyOf": [
+              {
+                "const": true,
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm"
+          }
+        },
+        "title": "SessionConfirmBody",
+        "type": "object"
+      },
+      "SessionCreateBody": {
+        "additionalProperties": false,
+        "properties": {
+          "correlationId": {
+            "anyOf": [
+              {
+                "pattern": "^cr_[0-9a-hjkmnp-tv-z]{26}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlationid"
+          },
+          "objective": {
+            "title": "Objective",
+            "type": "string"
+          }
+        },
+        "required": [
+          "objective"
+        ],
+        "title": "SessionCreateBody",
+        "type": "object"
+      },
+      "SessionGrantBody": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "anyOf": [
+              {
+                "const": true,
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm"
+          },
+          "domain": {
+            "const": "parking",
+            "default": "parking",
+            "title": "Domain",
+            "type": "string"
+          },
+          "gate": {
+            "enum": [
+              "A1",
+              "A2",
+              "A3",
+              "A4"
+            ],
+            "title": "Gate",
+            "type": "string"
+          },
+          "offerId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offerid"
+          },
+          "offerVersion": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offerversion"
+          }
+        },
+        "required": [
+          "gate"
+        ],
+        "title": "SessionGrantBody",
+        "type": "object"
+      },
+      "SessionTurnBody": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answers"
+          },
+          "correlationId": {
+            "anyOf": [
+              {
+                "pattern": "^cr_[0-9a-hjkmnp-tv-z]{26}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlationid"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "patches": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patches"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool"
+          }
+        },
+        "title": "SessionTurnBody",
+        "type": "object"
+      },
+      "Solicitation": {
+        "additionalProperties": false,
+        "properties": {
+          "counteroffersAllowed": {
+            "title": "Counteroffersallowed",
+            "type": "boolean"
+          },
+          "responseDeadline": {
+            "description": "RFC 3339 UTC timestamp ending in Z. Calendar and clock values are validated, not only digit shape.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+            "title": "Responsedeadline",
+            "type": "string"
+          }
+        },
+        "required": [
+          "responseDeadline",
+          "counteroffersAllowed"
+        ],
+        "title": "Solicitation",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VehicleClass": {
+        "enum": [
+          "standard",
+          "compact",
+          "suv",
+          "oversized"
+        ],
+        "title": "VehicleClass",
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "description": "ITAA local simulation API v1. This surface is a process-local airport-parking golden path. It does not implement production authentication. It never places a real reservation or payment. All offers and availability are simulated. In-memory state is lost on restart. Restart yields unknown_resource. Durability is unsupported. Durable persistence is WP-11. GET .../events is a process-local SSE progress stream with a bounded buffer; it is not a second domain state machine and is discarded on restart.",
+    "title": "ITAA Local Simulation API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/healthz": {
+      "get": {
+        "description": "Local simulation liveness only. No configuration, credentials, or session state.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivenessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Process liveness",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "description": "Confirms the in-memory local composition is ready. Makes no external calls. Durability is unsupported.",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Local composition readiness",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/v1/agent/sessions": {
+      "post": {
+        "operationId": "create_session_v1_agent_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Session V1 Agent Sessions Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Session"
+      }
+    },
+    "/v1/agent/sessions/{session_id}": {
+      "get": {
+        "operationId": "get_session_v1_agent_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Session V1 Agent Sessions  Session Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Session"
+      }
+    },
+    "/v1/agent/sessions/{session_id}/confirm": {
+      "post": {
+        "operationId": "confirm_session_v1_agent_sessions__session_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionConfirmBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Confirm Session V1 Agent Sessions  Session Id  Confirm Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Session"
+      }
+    },
+    "/v1/agent/sessions/{session_id}/events": {
+      "get": {
+        "operationId": "session_events_v1_agent_sessions__session_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Session Events"
+      }
+    },
+    "/v1/agent/sessions/{session_id}/grants": {
+      "post": {
+        "operationId": "grant_session_v1_agent_sessions__session_id__grants_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionGrantBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Grant Session V1 Agent Sessions  Session Id  Grants Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Grant Session"
+      }
+    },
+    "/v1/agent/sessions/{session_id}/turns": {
+      "post": {
+        "operationId": "create_turn_v1_agent_sessions__session_id__turns_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionTurnBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Turn V1 Agent Sessions  Session Id  Turns Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Turn"
+      }
+    },
+    "/v1/orchestration/intents/{id}": {
+      "get": {
+        "description": "Returns the buyer-owned parent Intent. Accepts canonical oi_* or the pi_* purchase-intent alias. In-memory only. Durability is unsupported. Restart discards process state and yields unknown_resource.",
+        "operationId": "get_orchestration_intent_v1_orchestration_intents__id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrchestrationIntent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read an orchestration Intent",
+        "tags": [
+          "orchestration"
+        ]
+      }
+    },
+    "/v1/orchestration/intents/{id}/ledger": {
+      "get": {
+        "description": "Returns the CostLedger for the parent Intent. In-memory only. Durability is unsupported. Restart discards process state and yields unknown_resource.",
+        "operationId": "get_orchestration_ledger_v1_orchestration_intents__id__ledger_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostLedger"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read the cost ledger",
+        "tags": [
+          "orchestration"
+        ]
+      }
+    },
+    "/v1/orchestration/intents/{id}/plan": {
+      "get": {
+        "description": "Returns the IntentPlan for the parent Intent. In-memory only. Durability is unsupported. Restart discards process state and yields unknown_resource.",
+        "operationId": "get_orchestration_plan_v1_orchestration_intents__id__plan_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntentPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read the Intent plan",
+        "tags": [
+          "orchestration"
+        ]
+      }
+    },
+    "/v1/orchestration/intents/{id}/tasks/{task_id}": {
+      "get": {
+        "description": "Returns one Booking Task. The task must belong to the parent Intent. In-memory only. Durability is unsupported. Restart discards process state and yields unknown_resource.",
+        "operationId": "get_orchestration_task_v1_orchestration_intents__id__tasks__task_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingTask"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read a Booking Task",
+        "tags": [
+          "orchestration"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/extractions": {
+      "post": {
+        "operationId": "create_extraction_v1_simulations_airport_parking_intake_extractions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Extraction V1 Simulations Airport Parking Intake Extractions Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Extract a parking requirement without persisting raw text",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents": {
+      "get": {
+        "operationId": "list_intake_intents_v1_simulations_airport_parking_intake_intents_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Intake Intents V1 Simulations Airport Parking Intake Intents Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List this browser's simulated parking requests",
+        "tags": [
+          "competition-intake"
+        ]
+      },
+      "post": {
+        "operationId": "create_confirmed_intent_v1_simulations_airport_parking_intake_intents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmedIntentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Confirmed Intent V1 Simulations Airport Parking Intake Intents Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a competition PurchaseIntent from confirmed fields only",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}": {
+      "delete": {
+        "operationId": "delete_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Delete Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete an undisclosed draft owned by this browser",
+        "tags": [
+          "competition-intake"
+        ]
+      },
+      "get": {
+        "operationId": "get_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read one owned simulated parking request",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/acceptances": {
+      "post": {
+        "operationId": "accept_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__acceptances_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeAcceptanceBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Accept Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Acceptances Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "A3 acceptance with server-minted governance",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/activity": {
+      "get": {
+        "operationId": "intake_intent_activity_v1_simulations_airport_parking_intake_intents__intent_id__activity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Intake Intent Activity V1 Simulations Airport Parking Intake Intents  Intent Id  Activity Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Human-language activity for an owned request",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/cancel": {
+      "post": {
+        "operationId": "cancel_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeGateBody",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Cancel Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Cancel Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel an owned request before simulated authorization",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/confirm": {
+      "post": {
+        "operationId": "confirm_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeGateBody",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Confirm Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Confirm Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "A1 requirement confirmation with server-minted governance",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/dispatch": {
+      "post": {
+        "operationId": "dispatch_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__dispatch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeGateBody",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Dispatch Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Dispatch Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "A2 dispatch with server-minted governance",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/replace": {
+      "post": {
+        "operationId": "replace_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__replace_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeGateBody",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Replace Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Replace Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start a revised request from an owned original",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/save": {
+      "delete": {
+        "operationId": "unsave_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__save_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Unsave Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Save Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove save-for-later from an owned request",
+        "tags": [
+          "competition-intake"
+        ]
+      },
+      "post": {
+        "operationId": "save_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__save_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeGateBody",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Save Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Save Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save an owned request for later without changing domain state",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intake/intents/{intent_id}/transaction-authorizations": {
+      "post": {
+        "operationId": "authorize_intake_intent_v1_simulations_airport_parking_intake_intents__intent_id__transaction_authorizations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeAuthorizationBody",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Authorize Intake Intent V1 Simulations Airport Parking Intake Intents  Intent Id  Transaction Authorizations Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "A4 simulated authorization with server-minted governance",
+        "tags": [
+          "competition-intake"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intents": {
+      "post": {
+        "description": "Accepts the canonical PurchaseIntent v1 representation. Local simulation only. HTTP is not production authorization.",
+        "operationId": "create_intent_v1_simulations_airport_parking_intents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseIntent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Intent V1 Simulations Airport Parking Intents Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a local simulated purchase-intent session",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intents/{intent_id}": {
+      "get": {
+        "description": "Returns a minimized local-simulation snapshot. No raw context, prompts, audit payloads, or supplier policy internals.",
+        "operationId": "get_intent_v1_simulations_airport_parking_intents__intent_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyerSessionSnapshot",
+                  "additionalProperties": true,
+                  "title": "Response Get Intent V1 Simulations Airport Parking Intents  Intent Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Buyer-safe session snapshot",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intents/{intent_id}/acceptances": {
+      "post": {
+        "description": "Accepts the recommendation or another eligible simulated offer after exact A3 approval. No real reservation.",
+        "operationId": "accept_intent_v1_simulations_airport_parking_intents__intent_id__acceptances_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptanceBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Accept Intent V1 Simulations Airport Parking Intents  Intent Id  Acceptances Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "A3 offer acceptance",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intents/{intent_id}/confirm": {
+      "post": {
+        "description": "Records explicit A1 confirmation. Opaque identifiers are governance inputs, not authenticated identity.",
+        "operationId": "confirm_intent_v1_simulations_airport_parking_intents__intent_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GovernanceBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Confirm Intent V1 Simulations Airport Parking Intents  Intent Id  Confirm Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "A1 requirement confirmation",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intents/{intent_id}/dispatch": {
+      "post": {
+        "description": "Requires exact A2 approval, then runs three isolated simulated suppliers. Offers and availability are simulated.",
+        "operationId": "dispatch_intent_v1_simulations_airport_parking_intents__intent_id__dispatch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GovernanceBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Dispatch Intent V1 Simulations Airport Parking Intents  Intent Id  Dispatch Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "A2 dispatch and isolated simulated solicitation",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intents/{intent_id}/events": {
+      "get": {
+        "description": "Server-sent events for one local simulated intent and one progress generation. text/event-stream with monotonic id sequence numbers within a generation. Reconnect with Last-Event-ID and generationId for the same attempt only. A later dispatch retry opens a new generation and does not replay a previous STREAM_COMPLETED/unavailable event. Bounded in-memory buffer; process restart discards events. Progress is operational only; the dispatch POST snapshot remains authoritative. STREAM_COMPLETED closes the stream. No durable brokers or WebSockets.",
+        "operationId": "intent_events_v1_simulations_airport_parking_intents__intent_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lastEventId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lasteventid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generationId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generationid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Unknown intent or generation"
+          },
+          "422": {
+            "description": "Expired or gapped buffer"
+          }
+        },
+        "summary": "Buyer-safe solicitation progress stream",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    },
+    "/v1/simulations/airport-parking/intents/{intent_id}/transaction-authorizations": {
+      "post": {
+        "description": "Produces only a SIMULATED reserve_parking authorization. Never performs payment or a live reservation. Requires the Idempotency-Key header and body idempotencyKey to be present and equal. Missing or mismatched values are rejected with a closed error. Exact replay of the same header, body key, and request returns the same result reference.",
+        "operationId": "authorize_intent_v1_simulations_airport_parking_intents__intent_id__transaction_authorizations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intent_id",
+            "required": true,
+            "schema": {
+              "title": "Intent Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Required. Must equal the JSON body field idempotencyKey. Missing or mismatched values are rejected with a closed error that does not echo either value.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "description": "Required. Must equal the JSON body field idempotencyKey. Missing or mismatched values are rejected with a closed error that does not echo either value.",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorizationBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Authorize Intent V1 Simulations Airport Parking Intents  Intent Id  Transaction Authorizations Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "A4 SIMULATED transaction authorization",
+        "tags": [
+          "local-simulation"
+        ]
+      }
+    }
+  }
+}

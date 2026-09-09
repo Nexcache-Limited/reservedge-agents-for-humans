@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/cost-ledger.schema.json",
+  "title": "CostLedger",
+  "description": "Deterministic per-task cost buckets. No LLM totals. Ranking micros are forbidden. Mixed currencies stay separate unless fx is present.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "ledgerId", "intentId", "simulation", "rows", "currencies"],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "ledgerId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/LedgerId"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OrchestrationIntentId"
+    },
+    "simulation": {
+      "const": true,
+      "description": "MVP profile requires simulation exactly true."
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CostLedgerRow"
+      }
+    },
+    "currencies": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/CurrencyCode"
+      }
+    },
+    "fx": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rate", "source", "timestamp"],
+      "properties": {
+        "rate": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "timestamp": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "simulation": {
+            "const": true
+          }
+        },
+        "required": ["simulation"]
+      },
+      "then": {
+        "properties": {
+          "rows": {
+            "items": {
+              "properties": {
+                "confirmedBookingMinor": {
+                  "const": 0
+                },
+                "authorizedLiveMinor": {
+                  "const": 0
+                },
+                "bookingPendingMinor": {
+                  "const": 0
+                },
+                "depositsHoldsMinor": {
+                  "const": 0
+                },
+                "payableNowMinor": {
+                  "const": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "CostLedgerRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "currency",
+        "confirmedBookingMinor",
+        "authorizedSimulatedMinor",
+        "authorizedLiveMinor",
+        "bookingPendingMinor",
+        "selectedNotAuthorizedMinor",
+        "estimatedMinor",
+        "expiredExcludedMinor",
+        "taxesFeesMinor",
+        "depositsHoldsMinor",
+        "payableNowMinor",
+        "payableLaterMinor"
+      ],
+      "properties": {
+        "taskId": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/BookingTaskId"
+        },
+        "currency": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/CurrencyCode"
+        },
+        "confirmedBookingMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "authorizedSimulatedMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "authorizedLiveMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "bookingPendingMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "selectedNotAuthorizedMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "estimatedMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "expiredExcludedMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "taxesFeesMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "depositsHoldsMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "payableNowMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        },
+        "payableLaterMinor": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+        }
+      }
+    }
+  }
+}

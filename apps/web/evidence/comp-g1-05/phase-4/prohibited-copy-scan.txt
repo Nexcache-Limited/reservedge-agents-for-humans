@@ -1,0 +1,24 @@
+COMP-G1-05 Phase 4 prohibited-copy scan
+Surfaces: LiveParkingWorkspace.tsx, competition-offers.tsx, App.tsx
+
+JetPark: absent
+$71.40: absent
+671000 / 660000 / 535000 literals: absent (scores come from the owned snapshot via formatScore)
+USD 29.00 literal: absent (downside comes from downsideCopy)
+Gate 1 / \bGate\b in customer copy: absent (source function name DisclosureGate is not rendered)
+A1/A2/A3/A4 labels in customer copy: absent (element ids a2-dispatch / a3-accept / a4-authorize only)
+WP numbers: absent
+process-memory: absent
+Return to Intent Inbox: absent
+Purchase Intent review: absent
+ITAA recommends: absent
+
+Present by design:
+- Live competition path
+- SIM / Simulation mode (shell)
+- SIMULATED RECEIPT + SIMULATED stamp (authorized state only)
+- ParkDirect / SkyShield / TerminalFlex (catalog display names)
+
+Still present outside the competition workspace:
+- SeedWorkspace / prototype-fixtures JetPark $71.40 (seed inbox and default seed JFK at /)
+- screens/IntentWorkspace.tsx (ITAA A1–A4; G1-02 tests; not the live pi_* path)

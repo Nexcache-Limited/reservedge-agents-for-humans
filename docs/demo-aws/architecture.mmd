@@ -1,0 +1,40 @@
+%% Reservedge / ITAA — AWS Agents for Humans architecture (fake-mode demo).
+%% Rendered asset: architecture.svg
+%% Fake-mode recording default. Local live Plan UAT is documented separately. AgentCore not deployed.
+
+flowchart TB
+  human["Human buyer"]
+  ui["React / Vite UI :5180<br/>composer · Clarify and Plan · A1–A4"]
+  bff["Product BFF apps/api<br/>/v1/agent/**"]
+  adapter["AWS adapter<br/>/v1/aws/plan-turns<br/>/v1/aws/execute-turns"]
+  strands["Strands buyer orchestrator<br/>fake Plan / Execute in this demo"]
+  projector["Code projector<br/>Explicit / Inferred / Proposed"]
+  facade["GoldenPathFacade<br/>closed tools · A1–A4"]
+  rank["Deterministic ranking<br/>JFK vector unchanged"]
+  sims["Isolated simulated suppliers<br/>ParkDirect · SkyShield · TerminalFlex"]
+
+  human -->|"free-form objective, answers, grants"| ui
+  ui -->|"browser never calls /v1/aws"| bff
+  bff -->|"ITAA_AWS_ADAPTER_URL or in-process"| adapter
+  adapter --> strands
+  strands --> projector
+  projector -->|"PlanProjection"| bff
+  bff --> ui
+  strands -->|"execute after confirm only"| facade
+  human -->|"A1 A2 A3 A4"| facade
+  facade --> sims
+  sims --> rank
+  rank --> facade
+  facade -->|"buyer-safe snapshot · simulated receipt"| ui
+
+  classDef human fill:#f4f0e6,stroke:#3d3a34,color:#1c1916
+  classDef ui fill:#e7f0ea,stroke:#2f5d50,color:#1c1916
+  classDef aws fill:#e8eef7,stroke:#314a73,color:#1c1916
+  classDef gov fill:#f7ead8,stroke:#8a5a12,color:#1c1916
+  classDef sim fill:#eee9e2,stroke:#6b645b,color:#1c1916
+
+  class human human
+  class ui ui
+  class bff,adapter,strands aws
+  class projector,facade,rank gov
+  class sims sim

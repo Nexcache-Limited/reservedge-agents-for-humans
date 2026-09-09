@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/acceptance.schema.json",
+  "title": "Acceptance",
+  "description": "Bound offer selection. Ownership and current-version checks are deferred to WP-03/WP-04.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "acceptanceId",
+    "intentId",
+    "offerId",
+    "offerVersion",
+    "acceptedTermsHash",
+    "buyerApprovalId",
+    "createdAt",
+    "expiresAt",
+    "status"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "acceptanceId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/AcceptanceId"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/IntentId"
+    },
+    "offerId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OfferId"
+    },
+    "offerVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/PositiveVersion"
+    },
+    "acceptedTermsHash": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/Sha256Hash"
+    },
+    "buyerApprovalId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/ApprovalId"
+    },
+    "createdAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "expiresAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["recorded", "expired", "superseded"]
+    }
+  }
+}

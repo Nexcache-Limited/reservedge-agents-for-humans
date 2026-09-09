@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0",
+  "intentId": "oi_01k2m3n4p5q6r7s8t9v0w1x2p1",
+  "state": "draft",
+  "objective": "Find airport parking at JFK for a five-night stay.",
+  "createdAt": "2026-08-20T15:00:00Z",
+  "updatedAt": "2026-08-20T15:05:00Z",
+  "simulation": true,
+  "durability": "unsupported",
+  "planId": "pl_01k2m3n4p5q6r7s8t9v0w1x2p2",
+  "ledgerId": "ld_01k2m3n4p5q6r7s8t9v0w1x2p3"
+}

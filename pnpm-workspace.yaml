@@ -1,0 +1,9 @@
+packages:
+  - "packages/ui-kit"
+  - "packages/contracts"
+  - "apps/web"
+
+# tsx (the TypeScript test runner) depends on esbuild. pnpm 11 blocks
+# dependency build scripts unless they are explicitly allowed.
+allowBuilds:
+  esbuild: true

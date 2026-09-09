@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>COMP-G1-06 recovered intent-first review map</title>
+        <style>
+            body {
+                font:
+                    16px/1.5 system-ui,
+                    sans-serif;
+                max-width: 42rem;
+                margin: 2rem auto;
+                padding: 0 1rem;
+                color: #1a1714;
+            }
+            code {
+                font-family: ui-monospace, monospace;
+                font-size: 0.9em;
+            }
+            li {
+                margin: 0.6rem 0;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Review map — recovered intent-first prototype</h1>
+        <p>
+            This page is a coordinator review aid. It is not product UI. The recovered design lives
+            in the
+            <code>.dc.html</code> files listed below.
+        </p>
+        <ul>
+            <li>
+                <strong>Review target (desktop web prototype):</strong>
+                <a href="/intent-first/web.dc.html"><code>/intent-first/web.dc.html</code></a>
+                — also served from <code>/</code> and <code>/intents/new</code>. Opens on the
+                objective composer. The Bookings column is demonstration fixture data from the 31
+                Aug 2026 handoff (codes such as BK_4K21). Those rows are not live Phase 2 API
+                intents.
+            </li>
+            <li>
+                <strong>Review target (mobile prototype):</strong>
+                <a href="/intent-first/mobile.dc.html"><code>/intent-first/mobile.dc.html</code></a>
+                — recovered 410×874 device-frame artifact. Home is New intent, not a domain picker.
+            </li>
+            <li>
+                <strong>Live simulated Phase 2 SPA (not the review target):</strong>
+                <a href="/live"><code>/live</code></a>
+                — existing category-first Reservedge inbox. Seed/design-fixture intents appear here.
+                Live parking sessions use <code>pi_*</code> ids after the existing composer at
+                <code>/intents/new/parking</code>.
+            </li>
+        </ul>
+        <p>
+            The recovered prototypes do not call the Phase 2 orchestration or parking HTTP APIs.
+            Walking “Start booking” stays inside the design artifact.
+        </p>
+    </body>
+</html>

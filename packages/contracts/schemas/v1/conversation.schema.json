@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/conversation.schema.json",
+  "title": "Conversation",
+  "description": "Intent intake events and inspectable facts. Must not include preference keys or supplier envelopes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "intentId", "events", "facts"],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OrchestrationIntentId"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ConversationEvent"
+      }
+    },
+    "facts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ConversationFact"
+      }
+    }
+  },
+  "$defs": {
+    "ClosedJson": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["string", "number", "boolean", "null"]
+          }
+        }
+      ]
+    },
+    "ConversationEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eventId", "occurredAt", "actor", "kind"],
+      "properties": {
+        "eventId": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/ConversationEventId"
+        },
+        "occurredAt": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+        },
+        "actor": {
+          "type": "string",
+          "enum": ["buyer", "reservedge"]
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["objective", "clarification", "answer", "correction", "system"]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000
+        }
+      }
+    },
+    "ConversationFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "factId",
+        "path",
+        "value",
+        "provenance",
+        "confidence",
+        "source",
+        "correctionState"
+      ],
+      "properties": {
+        "factId": {
+          "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/ConversationFactId"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "String field path for the inspectable fact."
+        },
+        "value": {
+          "$ref": "#/$defs/ClosedJson"
+        },
+        "provenance": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "contested"]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["buyer", "extract", "correction"]
+        },
+        "correctionState": {
+          "type": "string",
+          "enum": ["none", "corrected", "overridden"]
+        }
+      }
+    }
+  }
+}

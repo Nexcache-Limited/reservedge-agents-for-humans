@@ -1,0 +1,17 @@
+{
+  "name": "@itaa/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generated TypeScript representations of canonical ITAA JSON Schema contracts.",
+  "exports": {
+    ".": "./generated/typescript/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2"
+  }
+}

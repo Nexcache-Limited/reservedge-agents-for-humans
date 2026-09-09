@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/adehq-design-system-e7369172-d959-4682-9ed3-9320bc3582a7/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/adehq-design-system-e7369172-d959-4682-9ed3-9320bc3582a7/tokens/colors.css">
+<link rel="stylesheet" href="_ds/adehq-design-system-e7369172-d959-4682-9ed3-9320bc3582a7/tokens/typography.css">
+<link rel="stylesheet" href="_ds/adehq-design-system-e7369172-d959-4682-9ed3-9320bc3582a7/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/adehq-design-system-e7369172-d959-4682-9ed3-9320bc3582a7/styles.css">
+<script src="_ds/adehq-design-system-e7369172-d959-4682-9ed3-9320bc3582a7/_ds_bundle.js"></script>
+<style>
+  body { margin:0; background:var(--ws-cream); }
+  a { color:var(--ws-accent); text-decoration:none; }
+  a:hover { color:var(--ws-accent-d); }
+  @keyframes itaaPulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  @keyframes itaaFadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--ws-cream);display:flex;justify-content:center;align-items:flex-start;padding:40px 20px 60px;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:var(--ws-ink)">
+  <div style="width:410px;flex:0 0 410px;height:874px;background:#1A1714;border-radius:44px;padding:10px;box-shadow:0 40px 90px -24px rgba(40,30,15,.45)">
+    <div style="width:100%;height:100%;background:var(--ws-canvas);border-radius:34px;overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 22px 4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ws-ink);flex:0 0 auto">
+        <span>9:41</span>
+        <span style="width:17px;height:9px;border:1px solid var(--ws-ink);border-radius:2px;display:inline-block"></span>
+      </div>
+
+      <header style="flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:8px 16px 10px;border-bottom:1px solid var(--ws-border)">
+        <sc-if value="{{ showBack }}">
+          <button onClick="{{ goBack }}" style="width:34px;height:34px;flex:0 0 34px;border-radius:11px;background:#FFFFFF;border:1px solid var(--ws-border);color:var(--ws-ink);font-size:15px;cursor:pointer">‹</button>
+        </sc-if>
+        <sc-if value="{{ showMark }}" hint-placeholder-val="{{ true }}">
+          <span style="width:30px;height:30px;flex:0 0 30px;border-radius:10px;background:var(--grad-coral);display:grid;place-items:center"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11 3.2H5.6v9.6H11" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="12.7" cy="8" r="1.5" fill="#fff"/></svg></span>
+        </sc-if>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14.5px;font-weight:650;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headerTitle }}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ws-ink-3)">{{ headerMeta }}</div>
+        </div>
+        <span style="flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--ws-ink-2);border:1px solid var(--ws-border);border-radius:8px;padding:4px 6px">SIM</span>
+      </header>
+
+      <div style="flex:1;overflow:auto;padding:14px 16px 22px">
+
+        <sc-if value="{{ show.list }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <p style="margin:0 0 12px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.55">{{ needsCount }} waiting on you · {{ pendingCount }} paused</p>
+            <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px">
+              <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+                <button onClick="{{ f.pick }}" style="flex:0 0 auto;background:{{ f.bg }};color:{{ f.fg }};border:0;border-radius:999px;padding:8px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:36px">{{ f.label }}</button>
+              </sc-for>
+            </div>
+            <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+              <div style="margin-bottom:16px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3);margin-bottom:8px">{{ g.label }}</div>
+                <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+                  <div style="background:{{ it.rowBg }};border:{{ it.rowBorder }};border-radius:16px;padding:13px 14px;margin-bottom:9px;display:flex;gap:10px;align-items:flex-start">
+                    <button onClick="{{ it.open }}" style="flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;cursor:pointer;font-family:'Schibsted Grotesk',sans-serif;color:var(--ws-ink)">
+                      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap">
+                        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:8px;padding:3px 6px">{{ it.code }}</span>
+                        <span style="background:{{ it.pillBg }};color:{{ it.pillFg }};font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px">{{ it.statusLabel }}</span>
+                      </div>
+                      <div style="font-size:14.5px;font-weight:650;letter-spacing:-0.01em;line-height:1.35">{{ it.title }}</div>
+                      <div style="font-size:12px;color:var(--ws-ink-2);margin-top:4px;line-height:1.5">{{ it.sub }}</div>
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ws-ink-3);margin-top:6px">{{ it.date }}</div>
+                    </button>
+                    <sc-if value="{{ it.canDelete }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ it.del }}" style="flex:0 0 auto;width:32px;height:32px;border-radius:10px;background:transparent;border:1px solid var(--ws-border);color:var(--ws-ink-3);font-size:12px;cursor:pointer">✕</button>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+            <sc-if value="{{ hasNone }}">
+              <div style="text-align:center;padding:34px 12px">
+                <div style="font-size:13.5px;font-weight:650">Nothing here.</div>
+                <p style="margin:6px 0 12px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.55">No intents match this filter.</p>
+              </div>
+            </sc-if>
+            <button onClick="{{ newIntent }}" style="width:100%;background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">New intent</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.domains }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <h2 style="margin:0 0 5px;font-size:21px;font-weight:700;letter-spacing:-0.02em">What do you need?</h2>
+            <p style="margin:0 0 16px;font-size:13px;color:var(--ws-ink-2);line-height:1.6">Each domain tells you up front what suppliers need before they can price it.</p>
+            <button onClick="{{ pickParking }}" style="width:100%;text-align:left;background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:17px;cursor:pointer;font-family:'Schibsted Grotesk',sans-serif;color:var(--ws-ink);margin-bottom:11px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--ws-muted);border-radius:8px;padding:5px 8px">Pk</span>
+              <div style="font-size:17px;font-weight:700;letter-spacing:-0.02em;margin-top:11px">Airport parking</div>
+              <div style="display:inline-flex;margin-top:8px;background:var(--green-soft);color:var(--green);font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px">Anonymous until you book</div>
+              <p style="margin:10px 0 0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">Suppliers price without knowing who you are. Name and plate are shared only at the moment you authorize.</p>
+              <div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:9px">Needs: airport, dates, vehicle class · 4 dimensions</div>
+            </button>
+            <button onClick="{{ pickRental }}" style="width:100%;text-align:left;background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:17px;cursor:pointer;font-family:'Schibsted Grotesk',sans-serif;color:var(--ws-ink)">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--ws-muted);border-radius:8px;padding:5px 8px">Rc</span>
+              <div style="font-size:17px;font-weight:700;letter-spacing:-0.02em;margin-top:11px">Rental car</div>
+              <div style="display:inline-flex;margin-top:8px;background:var(--amber-soft);color:var(--amber);font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px">Needs licence class and driver age</div>
+              <p style="margin:10px 0 0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">Rental suppliers cannot price without driver age and licence class. Your name still stays private until you authorize.</p>
+              <div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:9px">Needs: pickup, times, class, age, licence · 6 dimensions</div>
+            </button>
+            <button onClick="{{ pickEnts }}" style="width:100%;text-align:left;background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:17px;cursor:pointer;font-family:'Schibsted Grotesk',sans-serif;color:var(--ws-ink);margin-top:11px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--ws-muted);border-radius:8px;padding:5px 8px">En</span>
+              <div style="font-size:17px;font-weight:700;letter-spacing:-0.02em;margin-top:11px">Entertainment booking</div>
+              <div style="display:inline-flex;margin-top:8px;background:var(--green-soft);color:var(--green);font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px">Anonymous · party size only</div>
+              <p style="margin:10px 0 0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">A venue can hold two seats together without knowing anything about you. Your name goes on the ticket only after you authorize.</p>
+              <div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:9px">Needs: category, evening, party size · 5 dimensions</div>
+            </button>
+            <div style="background:var(--ws-muted);border:1px dashed var(--ws-border);border-radius:16px;padding:14px;margin-top:12px;font-size:12px;color:var(--ws-ink-2);line-height:1.6">Spa is next, and it needs nothing new either. Adding a domain means declaring three things — requirement fields, disclosure tier, and up to six offer dimensions. Entertainment was added that way — no new screens.</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.composer }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--ws-muted);border-radius:8px;padding:4px 7px">{{ cDomainCode }}</span>
+              <span style="background:{{ cTierBg }};color:{{ cTierFg }};font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px">{{ cTier }}</span>
+            </div>
+            <sc-if value="{{ cStep1 }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-accent);border-radius:18px;padding:16px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-accent-d)">STEP 1 · WHAT DO YOU NEED?</div>
+                  <p style="margin:9px 0 0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">One line is enough. Reservedge will ask up to three questions after this, then stop.</p>
+                  <textarea onChange="{{ cOnDraft }}" value="{{ cDraft }}" rows="3" placeholder="Type what you need…" style="width:100%;box-sizing:border-box;margin-top:12px;background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:12px;padding:12px 13px;font:400 13.5px/1.55 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);resize:none;outline:none"></textarea>
+                  <button onClick="{{ cUseExample }}" style="margin-top:10px;background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:999px;padding:9px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink-2);cursor:pointer;min-height:38px;text-align:left">Use the example: {{ cExample }}</button>
+                  <button onClick="{{ cSubmitTyped }}" style="width:100%;margin-top:12px;opacity:{{ cSendOpacity }};background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Send to Reservedge</button>
+                </div>
+                <div style="background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-top:11px;font-size:12px;color:var(--ws-ink-2);line-height:1.6">{{ cTierNote }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ cAfterTyped }}">
+            <div>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-bottom:11px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">WHAT YOU TYPED</div>
+              <p style="margin:8px 0 0;font-size:13.5px;line-height:1.6">{{ cTyped }}</p>
+            </div>
+
+            <sc-if value="{{ cHasQuestion }}" hint-placeholder-val="{{ true }}">
+              <div style="background:#FFFFFF;border:1px solid var(--ws-accent);border-radius:18px;padding:16px;margin-bottom:11px">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-accent-d)">QUESTION {{ cQNum }} OF {{ cQTotal }}</span><span style="font-size:11px;color:var(--ws-ink-3);margin-left:auto">{{ cQWhy }}</span></div>
+                <div style="font-size:16px;font-weight:650;margin-top:9px;letter-spacing:-0.01em;line-height:1.4">{{ cQText }}</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+                  <sc-for list="{{ cChips }}" as="ch" hint-placeholder-count="3">
+                    <button onClick="{{ ch.pick }}" style="width:100%;text-align:left;background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:12px;padding:12px 13px;font:600 12.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:46px">{{ ch.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:9px;margin-top:11px;align-items:center">
+                  <div style="flex:1;background:var(--ws-muted);border-radius:11px;padding:11px 13px;font-size:12px;color:var(--ws-ink-3)">Or type your own…</div>
+                  <sc-if value="{{ cCanSkip }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ cSkip }}" style="background:none;border:0;color:var(--ws-ink-2);font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:44px">Skip</button>
+                  </sc-if>
+                </div>
+                <div style="font-size:11.5px;color:var(--info);margin-top:8px;line-height:1.5">{{ cRequiredNote }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ cReady }}">
+              <div style="background:var(--green-soft);border:1px solid rgba(27,166,114,.3);border-radius:16px;padding:15px;margin-bottom:11px">
+                <div style="font-size:14px;font-weight:650;color:var(--green)">That's enough to work with.</div>
+                <p style="margin:5px 0 0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">Anything you skipped is kept as an assumption you can correct at any time. Nothing is sent to a supplier without a separate approval.</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ cBlocked }}">
+              <div style="background:var(--info-soft);border:1px solid rgba(47,111,237,.25);border-radius:16px;padding:13px 14px;margin-bottom:11px">
+                <div style="font-size:12.5px;line-height:1.55;color:var(--info);font-weight:600">{{ cBlockedNote }}</div>
+                <button onClick="{{ cFixRequired }}" style="margin-top:10px;background:var(--ws-ink);border:0;border-radius:10px;padding:11px 14px;font:600 12.5px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:42px">Answer it</button>
+              </div>
+            </sc-if>
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;overflow:hidden;margin-bottom:12px">
+              <div style="padding:13px 15px;border-bottom:1px solid var(--ws-border-2);display:flex;align-items:center;gap:8px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">REQUIREMENT · BUILDING</div>
+                <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-2)">{{ cFilled }}/{{ cFields }}</span>
+              </div>
+              <sc-for list="{{ cRows }}" as="r" hint-placeholder-count="4">
+                <div style="padding:12px 15px;border-bottom:1px solid var(--ws-border-2)">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">{{ r.label }}</div>
+                  <div style="font-size:13.5px;font-weight:600;margin-top:3px;color:{{ r.color }}">{{ r.value }}</div>
+                  <div style="font-size:11.5px;color:var(--ws-ink-2);margin-top:2px;line-height:1.5">{{ r.note }}</div>
+                </div>
+              </sc-for>
+              <div style="padding:12px 15px;font-size:11.5px;color:var(--ws-ink-2);line-height:1.6">{{ cTierNote }}</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px;opacity:{{ cBtnOpacity }}">
+              <button onClick="{{ cConfirm }}" style="background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Confirm requirement and research</button>
+              <button onClick="{{ cUseWhatYouHave }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:50px">Use what you have</button>
+            </div>
+            <p style="margin:10px 0 0;font-size:11.5px;color:var(--ws-ink-3);line-height:1.6">{{ cQLeft }} Questions are capped — Reservedge asks permission before a fourth.</p>
+            </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.intent }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:13px 14px">
+              <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;background:var(--ws-muted);color:var(--ws-ink-2);border-radius:8px;padding:4px 7px">{{ selCode }}</span>
+                <span style="background:{{ selPillBg }};color:{{ selPillFg }};font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px">{{ selStatusLabel }}</span>
+              </div>
+              <div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:8px;line-height:1.5">{{ selStep }}</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:11px">
+                <sc-if value="{{ isPending }}">
+                  <button onClick="{{ resume }}" style="background:var(--ws-ink);border:0;border-radius:10px;padding:9px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:38px">Resume</button>
+                </sc-if>
+                <sc-if value="{{ isLive }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ keepPending }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:10px;padding:9px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:38px">Keep pending</button>
+                  <button onClick="{{ askModify }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:10px;padding:9px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:38px">Modify</button>
+                  <button onClick="{{ askCancel }}" style="background:#FFFFFF;border:1px solid rgba(217,72,59,.35);border-radius:10px;padding:9px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;color:var(--danger);cursor:pointer;min-height:38px">Cancel</button>
+                </sc-if>
+                <sc-if value="{{ isHistory }}">
+                  <span style="font-size:12px;color:var(--ws-ink-2)">Kept in history · read-only</span>
+                </sc-if>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:4px;margin:13px 0 14px;background:var(--ws-muted);border-radius:12px;padding:4px">
+              <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+                <button onClick="{{ t.pick }}" style="flex:1;background:{{ t.bg }};color:{{ t.fg }};border:0;border-radius:9px;padding:9px 4px;font:600 11.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:40px;box-shadow:{{ t.shadow }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+
+              <sc-if value="{{ show.req }}" hint-placeholder-val="{{ true }}">
+                <div>
+                  <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;overflow:hidden">
+                    <div style="padding:13px 15px;border-bottom:1px solid var(--ws-border-2);display:flex;align-items:center"><div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">REQUIREMENT · CONFIRMED BY YOU</div><span style="margin-left:auto;font-size:11px;color:var(--ws-ink-2)">Editable</span></div>
+                    <sc-for list="{{ reqRows }}" as="r" hint-placeholder-count="5">
+                      <div style="padding:14px 15px;border-bottom:{{ r.bb }};background:{{ r.rowBg }};display:flex;justify-content:space-between;gap:12px">
+                        <div style="min-width:0">
+                          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">{{ r.label }}</div>
+                          <sc-if value="{{ r.hasValue }}" hint-placeholder-val="{{ true }}">
+                            <div>
+                              <div style="font-size:14.5px;font-weight:600;margin-top:3px">{{ r.value }}</div>
+                              <div style="font-size:11.5px;margin-top:2px;line-height:1.5;color:{{ r.noteColor }}">{{ r.note }}</div>
+                            </div>
+                          </sc-if>
+                          <sc-if value="{{ r.fix }}">
+                            <div style="display:flex;gap:7px;margin-top:9px"><button style="background:var(--ws-ink);color:#fff;border:0;border-radius:9px;padding:9px 12px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:38px">Correct</button><button style="background:#fff;border:1px solid var(--ws-border);border-radius:9px;padding:9px 12px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:38px">It's right</button></div>
+                          </sc-if>
+                          <sc-if value="{{ r.hasTags }}">
+                            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:8px">
+                              <sc-for list="{{ r.tags }}" as="t" hint-placeholder-count="3">
+                                <span style="background:var(--ws-muted);border-radius:8px;padding:5px 9px;font-size:12px;font-weight:500">{{ t }}</span>
+                              </sc-for>
+                            </div>
+                          </sc-if>
+                        </div>
+                        <sc-if value="{{ r.hasPill }}" hint-placeholder-val="{{ true }}">
+                          <span style="background:{{ r.pillBg }};color:{{ r.pillFg }};font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px;height:fit-content;white-space:nowrap">{{ r.pill }}</span>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:11px;margin-top:11px">
+                    <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:15px">
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">{{ sideEyebrow }}</div>
+                      <sc-if value="{{ hasSideTier }}">
+                        <div style="display:inline-flex;margin-top:10px;background:{{ sideTierBg }};color:{{ sideTierFg }};font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px">{{ sideTier }}</div>
+                      </sc-if>
+                      <p style="margin:9px 0 0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">{{ sideBody }}</p>
+                      <sc-if value="{{ hasSideBtn }}">
+                        <button style="margin-top:10px;background:var(--ws-muted);border:0;border-radius:9px;padding:10px 12px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;color:var(--ws-ink);min-height:40px">{{ sideBtn }}</button>
+                      </sc-if>
+                    </div>
+                    <sc-if value="{{ hasSideNote }}">
+                      <div style="background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:18px;padding:15px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">{{ sideNote }}</div>
+                    </sc-if>
+                    <div style="background:var(--amber-soft);border:1px solid rgba(203,138,27,.3);border-radius:18px;padding:15px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6"><b style="color:var(--amber)">Editing after dispatch has a consequence.</b> Change a field now and the offers you have received stop applying — suppliers would need a fresh, re-approved request.</div>
+                  </div>
+                </div>
+              </sc-if>
+
+            <sc-if value="{{ show.research }}">
+              <div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">PUBLIC RESEARCH · AUTONOMOUS</div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:13px"><span style="flex:0 0 18px;width:18px;height:18px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:11px">✓</span>{{ resLine1 }}</div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:13px"><span style="flex:0 0 18px;width:18px;height:18px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:11px">✓</span>{{ resLine2 }}</div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:13px"><span style="flex:0 0 18px;width:18px;height:18px;border-radius:50%;background:var(--info-soft);color:var(--info);display:grid;place-items:center;font-size:11px;animation:itaaPulse 1.6s infinite">•</span>Normalising taxes and fees</div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:13px;color:var(--ws-ink-3)"><span style="flex:0 0 18px;width:18px;height:18px;border-radius:50%;background:var(--ws-muted);display:grid;place-items:center;font-size:11px">–</span>Cancellation terms</div>
+                  <div style="height:1px;background:var(--ws-border-2)"></div>
+                  <p style="margin:0;font-size:12px;color:var(--ws-ink-2);line-height:1.6">Nothing here involves a supplier. This is public information, gathered so private offers have something to be judged against.</p>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px;margin-top:11px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">PUBLIC MARKET</div>
+                  <div style="display:flex;align-items:baseline;gap:9px;margin-top:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600">{{ resRange }}</span><span style="font-size:12px;color:var(--ws-ink-2)">{{ resRangeNote }}</span></div>
+                  <div style="height:6px;border-radius:999px;background:var(--ws-muted);margin-top:11px;overflow:hidden"><div style="width:46%;height:100%;background:var(--ws-accent)"></div></div>
+                </div>
+                <div style="background:var(--danger-soft);border:1px solid rgba(217,72,59,.25);border-radius:16px;padding:14px;margin-top:11px"><div style="font-size:13px;font-weight:600;color:var(--danger)">One source didn't respond</div><div style="font-size:12.5px;color:var(--ws-ink-2);margin-top:3px;line-height:1.5">{{ resFail }}</div></div>
+                <button onClick="{{ goOffers }}" style="width:100%;margin-top:11px;background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Continue to the offers tab</button>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ show.gate }}">
+              <div>
+                <div style="background:var(--ws-rail);border-radius:20px;padding:18px;color:#EDE9E1;margin-bottom:11px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:#8A8479">APPROVAL 1 OF 2 · DISCLOSURE</div>
+                  <h3 style="margin:8px 0 5px;font-size:19px;font-weight:700;letter-spacing:-0.02em;color:#FFFFFF">What suppliers will see</h3>
+                  <p style="margin:0;font-size:13px;line-height:1.6;color:#B9B3A8">{{ gateIntro }}</p>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px;margin-bottom:11px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--green);margin-bottom:11px">SENT · {{ sentCount }} FIELDS</div>
+                  <div style="display:flex;flex-direction:column;gap:11px;font-size:13px">
+                    <sc-for list="{{ sentRows }}" as="r" hint-placeholder-count="5">
+                      <div style="display:flex;gap:10px"><span style="color:var(--green)">✓</span><div><b style="font-weight:600">{{ r.label }}</b><div style="font-size:11.5px;color:var(--ws-ink-2);line-height:1.5">{{ r.why }}</div></div></div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px;margin-bottom:11px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3);margin-bottom:11px">WITHHELD · {{ heldCount }} FIELDS</div>
+                  <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--ws-ink-2)">
+                    <sc-for list="{{ heldRows }}" as="h" hint-placeholder-count="5">
+                      <div style="display:flex;gap:10px"><span>✕</span>{{ h.label }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:16px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12.5px">
+                  <div><div style="color:var(--ws-ink-2);font-size:11px">Purpose</div><b style="font-weight:600">{{ gatePurpose }}</b></div>
+                  <div><div style="color:var(--ws-ink-2);font-size:11px">Expires</div><b style="font-weight:600">In 30 minutes</b></div>
+                  <div><div style="color:var(--ws-ink-2);font-size:11px">Recipients</div><b style="font-weight:600">3 suppliers, isolated</b></div>
+                  <div><div style="color:var(--ws-ink-2);font-size:11px">Tier</div><b style="font-weight:600">{{ gateTier }}</b></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px;margin-top:12px">
+                  <button onClick="{{ dispatch }}" style="background:var(--ws-accent);border:0;border-radius:13px;padding:15px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:52px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Hold to send this request</button>
+                  <button onClick="{{ keepPending }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:15px;font:600 14px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:52px">Not now — keep pending</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ show.record }}">
+              <div>
+                <div style="display:flex;gap:7px;overflow-x:auto;margin-bottom:12px">
+                  <sc-for list="{{ offerViews }}" as="v" hint-placeholder-count="3">
+                    <button onClick="{{ v.pick }}" style="flex:0 0 auto;background:{{ v.bg }};color:{{ v.fg }};border:1px solid var(--ws-border);border-radius:999px;padding:8px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:36px">{{ v.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:18px;padding:16px;margin-bottom:11px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--green)">DISCLOSURE APPROVED · {{ recordWhen }}</div>
+                  <h3 style="margin:8px 0 5px;font-size:18px;font-weight:700;letter-spacing:-0.02em">What was sent, and what was not</h3>
+                  <p style="margin:0;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">A record, not an action. This approval has already been used; asking these suppliers anything further needs a new one.</p>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px;margin-bottom:11px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--green);margin-bottom:11px">SENT · {{ sentCount }} FIELDS</div>
+                  <div style="display:flex;flex-direction:column;gap:11px;font-size:13px">
+                    <sc-for list="{{ sentRows }}" as="r" hint-placeholder-count="5">
+                      <div style="display:flex;gap:10px"><span style="color:var(--green)">✓</span><div><b style="font-weight:600">{{ r.label }}</b><div style="font-size:11.5px;color:var(--ws-ink-2);line-height:1.5">{{ r.why }}</div></div></div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3);margin-bottom:11px">WITHHELD · {{ heldCount }} FIELDS</div>
+                  <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--ws-ink-2)">
+                    <sc-for list="{{ heldRows }}" as="h" hint-placeholder-count="5">
+                      <div style="display:flex;gap:10px"><span>✕</span>{{ h.label }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+              <sc-if value="{{ show.reask }}">
+                <div>
+                  <div style="background:var(--ws-rail);border-radius:20px;padding:18px;color:#EDE9E1;margin-bottom:14px">
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:#8A8479">ADDED DISCLOSURE · 1 FIELD</div>
+                    <h3 style="margin:8px 0 5px;font-size:19px;font-weight:700;letter-spacing:-0.02em;color:#FFFFFF">One more field, one more approval</h3>
+                    <p style="margin:0;font-size:13px;line-height:1.6;color:#B9B3A8">The approval you already gave has been used. Adding a field to the request is a new disclosure, so it is asked separately — and it goes to one supplier, not all three.</p>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:11px">
+                    <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px">
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--green);margin-bottom:12px">SENT · 1 FIELD</div>
+                      <div style="display:flex;flex-direction:column;gap:11px;font-size:13.5px">
+                        <sc-for list="{{ reaskSent }}" as="r" hint-placeholder-count="1">
+                          <div style="display:flex;gap:10px"><span style="color:var(--green)">✓</span><div><b style="font-weight:600">{{ r.label }}</b><div style="font-size:12px;color:var(--ws-ink-2);line-height:1.5">{{ r.why }}</div></div></div>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px">
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3);margin-bottom:12px">STILL WITHHELD · {{ reaskHeldCount }} FIELDS</div>
+                      <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:var(--ws-ink-2)">
+                        <sc-for list="{{ reaskHeld }}" as="h" hint-placeholder-count="4">
+                          <div style="display:flex;gap:10px"><span>✕</span>{{ h.label }}</div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:16px;padding:14px 18px;margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Purpose</div><b style="font-weight:600">{{ reaskPurpose }}</b></div>
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Recipient</div><b style="font-weight:600">{{ reaskRecipient }}</b></div>
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Expires</div><b style="font-weight:600">In 15 minutes</b></div>
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Tier</div><b style="font-weight:600">Unchanged · tier 2</b></div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
+                    <button onClick="{{ sendReask }}" style="background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Hold to send this one field</button>
+                    <button onClick="{{ toCompare }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:50px">Leave it incomplete</button>
+                  </div>
+                  <p style="margin:11px 2px 0;font-size:12px;color:var(--ws-ink-3);line-height:1.6">Declining costs nothing. CityDrive's offer simply stays marked incomplete and unrecommendable.</p>
+                </div>
+              </sc-if>
+
+            <sc-if value="{{ show.progress }}">
+              <div>
+                <h3 style="margin:0 0 5px;font-size:19px;font-weight:700;letter-spacing:-0.02em">Suppliers are answering</h3>
+                <p style="margin:0 0 14px;font-size:13px;color:var(--ws-ink-2);line-height:1.6">Each one answers alone. None of them can see the others, or you.</p>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ suppliers }}" as="sp" hint-placeholder-count="3">
+                    <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center">
+                      <span style="flex:0 0 38px;width:38px;height:38px;border-radius:11px;background:{{ sp.grad }};display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px">{{ sp.code }}</span>
+                      <div><div style="font-size:14.5px;font-weight:650">{{ sp.name }}</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:2px">{{ sp.state }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <button onClick="{{ toReco }}" style="width:100%;margin-top:12px;background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">See the recommendation</button>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ show.reco }}">
+              <div>
+                <div style="display:flex;gap:7px;overflow-x:auto;margin-bottom:12px">
+                  <sc-for list="{{ offerViews }}" as="v" hint-placeholder-count="3">
+                    <button onClick="{{ v.pick }}" style="flex:0 0 auto;background:{{ v.bg }};color:{{ v.fg }};border:1px solid var(--ws-border);border-radius:999px;padding:8px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:36px">{{ v.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:20px;padding:18px;box-shadow:0 12px 30px -22px rgba(40,30,15,.5)">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="background:var(--ws-accent-soft);color:var(--ws-accent-d);font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px">Recommended</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ws-ink-3);margin-left:auto">valid {{ recoValid }}</span></div>
+                  <h3 style="margin:11px 0 5px;font-size:21px;font-weight:700;letter-spacing:-0.02em">{{ recoName }}</h3>
+                  <p style="margin:0 0 14px;font-size:13px;color:var(--ws-ink-2);line-height:1.6">{{ recoWhy }}</p>
+                  <div style="display:flex;align-items:baseline;gap:9px"><span style="font-family:'JetBrains Mono',monospace;font-size:29px;font-weight:600;letter-spacing:-0.02em">{{ recoTotal }}</span><span style="font-size:12px;color:var(--ws-ink-2)">total, all in</span></div>
+                  <div style="font-size:12px;color:var(--ws-ink-2);margin-top:4px">{{ recoBreak }}</div>
+                  <div style="height:1px;background:var(--ws-border-2);margin:14px 0"></div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+                    <sc-for list="{{ recoDims }}" as="d" hint-placeholder-count="4">
+                      <div><div style="color:var(--ws-ink-3);font-size:11px">{{ d.label }}</div><div style="font-weight:600;margin-top:2px;color:{{ d.color }}">{{ d.value }}</div></div>
+                    </sc-for>
+                  </div>
+                  <div style="height:1px;background:var(--ws-border-2);margin:14px 0"></div>
+                  <div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;line-height:1.5">
+                    <div style="display:flex;gap:9px"><span style="color:var(--green)">+</span>{{ recoPlus }}</div>
+                    <div style="display:flex;gap:9px"><span style="color:var(--amber)">–</span>{{ recoMinus }}</div>
+                    <div style="display:flex;gap:9px"><span style="color:var(--ws-ink-3)">?</span>{{ recoGap }}</div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
+                    <button onClick="{{ askAuth }}" style="background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Take this one</button>
+                    <button onClick="{{ toCompare }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:50px">Compare all three</button>
+                  </div>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px;margin-top:11px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">WHY THIS ONE</div>
+                  <div style="display:flex;flex-direction:column;gap:11px;margin-top:11px;font-size:12.5px;line-height:1.55">
+                    <sc-for list="{{ recoReasons }}" as="r" hint-placeholder-count="3">
+                      <div><b style="font-weight:600">{{ r.head }}</b> <span style="color:var(--ws-ink-2)">{{ r.body }}</span></div>
+                    </sc-for>
+                  </div>
+                  <div style="height:1px;background:var(--ws-border-2);margin:13px 0"></div>
+                  <div style="font-size:12px;color:var(--ws-ink-2);line-height:1.6">{{ recoSwitch }}</div>
+                </div>
+                <div style="background:var(--ws-muted);border:1px solid var(--ws-border);border-radius:16px;padding:14px;margin-top:11px;font-size:12px;color:var(--ws-ink-2);line-height:1.6">Reservedge's opinion on the offers received, not a rating or a financial score. Check the terms before authorizing.</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ show.compare }}">
+              <div>
+                <div style="display:flex;gap:7px;overflow-x:auto;margin-bottom:12px">
+                  <sc-for list="{{ offerViews }}" as="v" hint-placeholder-count="3">
+                    <button onClick="{{ v.pick }}" style="flex:0 0 auto;background:{{ v.bg }};color:{{ v.fg }};border:1px solid var(--ws-border);border-radius:999px;padding:8px 13px;font:600 12px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:36px">{{ v.label }}</button>
+                  </sc-for>
+                </div>
+                <p style="margin:0 0 11px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">Public market for the same window: {{ resRange }}. Suppliers cannot see this table or each other. Swipe the table sideways.</p>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:16px;overflow-x:auto;font-size:12px">
+                  <div style="display:grid;grid-template-columns:120px repeat(3,120px) 110px;min-width:590px;background:var(--ws-muted)">
+                    <div style="padding:11px 13px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.13em;color:var(--ws-ink-3)">DIMENSION</div>
+                    <div style="padding:11px 10px;font-weight:700;color:var(--ws-accent-d)">{{ colA }}</div>
+                    <div style="padding:11px 10px;font-weight:700">{{ colB }}</div>
+                    <div style="padding:11px 10px;font-weight:700">{{ colC }}</div>
+                    <div style="padding:11px 10px;font-weight:600;color:var(--ws-ink-2)">Public</div>
+                  </div>
+                  <sc-for list="{{ cmpRows }}" as="row" hint-placeholder-count="7">
+                    <div style="display:grid;grid-template-columns:120px repeat(3,120px) 110px;min-width:590px;border-top:1px solid var(--ws-border-2)">
+                      <div style="padding:11px 13px;color:var(--ws-ink-2)">{{ row.label }}</div>
+                      <div style="padding:11px 10px;color:{{ row.ca }};font-weight:{{ row.wa }}">{{ row.a }}</div>
+                      <div style="padding:11px 10px;color:{{ row.cb }}">{{ row.b }}</div>
+                      <div style="padding:11px 10px;color:{{ row.cc }}">{{ row.c }}</div>
+                      <div style="padding:11px 10px;color:var(--ws-ink-2)">{{ row.pub }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ reaskDone }}">
+                    <div style="background:var(--green-soft);border:1px solid rgba(27,166,114,.3);border-radius:16px;padding:14px 16px;margin-top:14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6"><b style="color:var(--green)">The added field was sent to CityDrive only.</b> {{ reaskResult }}</div>
+                  </sc-if>
+                  <sc-if value="{{ hasIncomplete }}">
+                  <div style="background:var(--amber-soft);border:1px solid rgba(203,138,27,.3);border-radius:16px;padding:14px;margin-top:11px">
+                    <div style="font-size:13px;font-weight:600;color:var(--amber)">{{ incompleteName }} couldn't answer one dimension</div>
+                    <div style="font-size:12px;color:var(--ws-ink-2);margin-top:4px;line-height:1.5">{{ incompleteWhy }} The offer is marked incomplete rather than guessed at, and it can't be recommended while a must-have is unanswered.</div>
+                    <button onClick="{{ askReask }}" style="margin-top:11px;background:var(--ws-ink);border:0;border-radius:10px;padding:11px 14px;font:600 12.5px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:42px">Answer and re-ask</button>
+                  </div>
+                </sc-if>
+                <p style="margin:11px 2px 0;font-size:12px;color:var(--ws-ink-2);line-height:1.6">"Evidence checked" counts how many of an offer's material claims we could verify against public sources. It is not a rating of the supplier, and an unverified claim is not necessarily false.</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ show.receipt }}">
+              <div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                  <span style="flex:0 0 44px;width:44px;height:44px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:20px;animation:itaaFadeUp .4s cubic-bezier(.2,.8,.3,1.2)">✓</span>
+                  <div><h3 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-0.02em">Authorization recorded</h3><p style="margin:3px 0 0;font-size:12.5px;color:var(--ws-ink-2)">Simulated. No card charged.</p></div>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:18px;position:relative;overflow:hidden">
+                  <div style="position:absolute;top:14px;right:-38px;transform:rotate(28deg);background:var(--ws-rail);color:#F6F3EE;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;padding:5px 40px">SIMULATED</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">REFERENCE</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:15px;margin-top:4px">{{ receiptRef }}</div>
+                  <div style="height:1px;background:var(--ws-border-2);margin:14px 0"></div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Supplier</div><b style="font-weight:600">{{ recoName }}</b></div>
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Amount</div><b style="font-family:'JetBrains Mono',monospace">{{ recoTotal }}</b></div>
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Authorized</div><span style="font-family:'JetBrains Mono',monospace;font-size:12px">29 Aug · 14:12</span></div>
+                    <div><div style="color:var(--ws-ink-2);font-size:11.5px">Newly shared</div><b style="font-weight:600">{{ receiptShared }}</b></div>
+                  </div>
+                </div>
+                <button onClick="{{ toActivity }}" style="width:100%;margin-top:11px;background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:14px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:48px">View this intent's activity</button>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ show.act }}">
+              <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:4px 15px 10px">
+                <sc-for list="{{ auditRows }}" as="e" hint-placeholder-count="5">
+                  <div style="padding:13px 0;border-bottom:1px solid var(--ws-border-2)">
+                    <div style="display:flex;gap:9px;align-items:baseline"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3)">{{ e.t }}</span><div style="font-size:13px;font-weight:600;line-height:1.4">{{ e.what }}</div></div>
+                    <div style="font-size:12px;color:var(--ws-ink-2);margin-top:3px;line-height:1.5">{{ e.why }}</div>
+                    <div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:3px">{{ e.shared }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.gActivity }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <p style="margin:0 0 14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">Across every intent and domain. Each entry names what was shared.</p>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:4px 15px 10px">
+              <div style="padding:13px 0;border-bottom:1px solid var(--ws-border-2)"><div style="display:flex;gap:8px;align-items:center;margin-bottom:5px"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3)">14:12</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);border-radius:8px;padding:3px 6px">Pk</span></div><div style="font-size:13px;font-weight:600;line-height:1.4">You authorized $71.40 · simulated</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:3px">Why · you accepted the recommended offer</div><div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:3px">Shared: name, plate</div></div>
+              <div style="padding:13px 0;border-bottom:1px solid var(--ws-border-2)"><div style="display:flex;gap:8px;align-items:center;margin-bottom:5px"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3)">13:40</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);border-radius:8px;padding:3px 6px">Rc</span></div><div style="font-size:13px;font-weight:600;line-height:1.4">3 rental offers received · 1 incomplete</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:3px">Why · CityDrive did not state its deposit hold</div><div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:3px">Received only</div></div>
+              <div style="padding:13px 0;border-bottom:1px solid var(--ws-border-2)"><div style="display:flex;gap:8px;align-items:center;margin-bottom:5px"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3)">13:31</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);border-radius:8px;padding:3px 6px">Rc</span></div><div style="font-size:13px;font-weight:600;line-height:1.4">You approved a tier 2 disclosure</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:3px">Why · rental suppliers cannot price without age band and licence class</div><div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:3px">6 sent, 6 withheld</div></div>
+              <div style="padding:13px 0;border-bottom:1px solid var(--ws-border-2)"><div style="display:flex;gap:8px;align-items:center;margin-bottom:5px"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3)">13:20</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);border-radius:8px;padding:3px 6px">Rc</span></div><div style="font-size:13px;font-weight:600;line-height:1.4">Requirement confirmed after 3 questions</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:3px">Why · you answered 3 of 3, pickup derived from flight AA118</div><div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:3px">Nothing shared</div></div>
+              <div style="padding:13px 0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:5px"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ws-ink-3)">09:12</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--ws-muted);border-radius:8px;padding:3px 6px">Pk</span></div><div style="font-size:13px;font-weight:600;line-height:1.4">Intent deleted</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:3px">Why · you cancelled "LGA parking · Oct" before any disclosure</div><div style="font-size:11.5px;color:var(--ws-ink-3);margin-top:3px">Nothing shared</div></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.prefs }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <p style="margin:0 0 14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">What Reservedge believes about you, and why. Global preferences apply everywhere; domain ones only where they make sense.</p>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px">
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">GLOBAL</span><div style="font-size:14.5px;font-weight:650;margin-top:5px;line-height:1.35">Free cancellation matters more than price</div></div><span style="background:var(--green-soft);color:var(--green);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;height:fit-content">Confident</span></div>
+                <div style="font-size:12px;color:var(--ws-ink-2);margin-top:6px;line-height:1.6">Evidence · two cancellations last year, refundable picked 4 times out of 5. Applied in parking and rental.</div>
+                <div style="display:flex;gap:7px;margin-top:11px"><button style="background:var(--ws-muted);border:0;border-radius:9px;padding:10px 13px;font:600 12.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:40px">Keep</button><button style="background:#fff;border:1px solid var(--ws-border);border-radius:9px;padding:10px 13px;font:600 12.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:40px">Change</button><button style="background:none;border:0;color:var(--danger);font:600 12.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;padding:10px;min-height:40px">Delete</button></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px">
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">PARKING</span><div style="font-size:14.5px;font-weight:650;margin-top:5px">Prefers covered parking</div></div><span style="background:var(--amber-soft);color:var(--amber);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;height:fit-content">Unsure</span></div>
+                <div style="font-size:12px;color:var(--ws-ink-2);margin-top:6px;line-height:1.6">Evidence · one covered booking in March, during a snow warning. Weak signal.</div>
+                <div style="display:flex;gap:7px;margin-top:11px"><button style="background:var(--ws-muted);border:0;border-radius:9px;padding:10px 13px;font:600 12.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:40px">Yes, prefer it</button><button style="background:#fff;border:1px solid var(--ws-border);border-radius:9px;padding:10px 13px;font:600 12.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:40px">No</button></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px">
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">RENTAL CAR</span><div style="font-size:14.5px;font-weight:650;margin-top:5px">Never a debit-card deposit hold</div></div><span style="background:var(--ws-muted);color:var(--ws-ink-2);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;height:fit-content">You set this</span></div>
+                <div style="font-size:12px;color:var(--ws-ink-2);margin-top:6px;line-height:1.6">Added by you when the rental domain was first used. Treated as a must-have, which is why one offer is unrecommendable.</div>
+              </div>
+              <div style="background:var(--ws-muted);border:1px dashed var(--ws-border);border-radius:18px;padding:16px;font-size:12px;color:var(--ws-ink-2);line-height:1.6">Preferences only rank offers you already received. They are never sent to a supplier — no supplier can learn that you are price-sensitive.</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.privacy }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <p style="margin:0 0 14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">Everything Reservedge holds, and every disclosure it has ever made, by domain.</p>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;overflow:hidden">
+              <div style="padding:15px;border-bottom:1px solid var(--ws-border-2)"><div style="font-size:13.5px;font-weight:600">Identity</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:2px;line-height:1.5">Name, email, plate, licence number · shared only after you authorize</div></div>
+              <div style="padding:15px;border-bottom:1px solid var(--ws-border-2)"><div style="font-size:13.5px;font-weight:600">Attributes</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:2px;line-height:1.5">Age band, licence class, vehicle class · sent pre-offer in tier 2 domains only</div></div>
+              <div style="padding:15px;border-bottom:1px solid var(--ws-border-2)"><div style="font-size:13.5px;font-weight:600">Preference history</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:2px">14 signals · 9 global, 5 domain-scoped</div></div>
+              <div style="padding:15px"><div style="font-size:13.5px;font-weight:600">Disclosure log</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:2px;line-height:1.5">7 minimized requests · 1 identity disclosure · 2 tier 2 attribute disclosures</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;margin-top:11px">
+              <button style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:12px;padding:13px 15px;font:600 13.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:48px;text-align:left;color:var(--ws-ink)">Export everything</button>
+              <button style="background:#FFFFFF;border:1px solid rgba(217,72,59,.35);border-radius:12px;padding:13px 15px;font:600 13.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:48px;text-align:left;color:var(--danger)">Delete preference history</button>
+              <button style="background:#FFFFFF;border:1px solid rgba(217,72,59,.35);border-radius:12px;padding:13px 15px;font:600 13.5px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:48px;text-align:left;color:var(--danger)">Delete my account and all data</button>
+            </div>
+            <p style="margin:10px 2px 0;font-size:11.5px;color:var(--ws-ink-3);line-height:1.6">Deleting a domain's preferences only affects that domain's rankings. Completed intents stay in history with their simulated receipts.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ show.paywall }}">
+          <div style="animation:itaaFadeUp .3s cubic-bezier(.2,.7,.3,1)">
+            <div style="background:var(--amber-soft);border:1px solid rgba(203,138,27,.3);border-radius:16px;padding:14px;margin-bottom:14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.55"><b style="color:var(--amber)">3 of 3 free intents used this month.</b> Existing intents keep running, in any domain.</div>
+            <h2 style="margin:0 0 5px;font-size:21px;font-weight:700;letter-spacing:-0.02em">Reservedge Plus</h2>
+            <p style="margin:0 0 14px;font-size:13px;color:var(--ws-ink-2);line-height:1.6">Unlimited intents across every domain, more suppliers per request, and offer monitoring until you decide.</p>
+            <div style="background:#FFFFFF;border:2px solid var(--ws-accent);border-radius:18px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14.5px;font-weight:650">Yearly</div><span style="background:var(--ws-accent-soft);color:var(--ws-accent-d);font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px">Save 37%</span></div><div style="font-family:'JetBrains Mono',monospace;font-size:23px;font-weight:600;margin-top:8px">$59.99</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:2px">per year · $5.00 per month</div></div>
+            <div style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:18px;padding:16px"><div style="font-size:14.5px;font-weight:650">Monthly</div><div style="font-family:'JetBrains Mono',monospace;font-size:23px;font-weight:600;margin-top:8px">$7.99</div><div style="font-size:12px;color:var(--ws-ink-2);margin-top:2px">per month</div></div>
+            <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
+              <button style="background:var(--ws-accent);border:0;border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:50px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Subscribe yearly</button>
+              <button style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:13px;padding:14px;font:600 14px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:50px">Restore purchases</button>
+              <button onClick="{{ goIntents }}" style="background:none;border:0;color:var(--ws-ink-2);font:600 13px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:44px">Stay on free</button>
+            </div>
+            <div style="background:var(--danger-soft);border:1px solid rgba(217,72,59,.25);border-radius:16px;padding:14px;margin-top:14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6"><b style="color:var(--danger)">Renewal failed on 24 Aug.</b> Plus features pause on 31 Aug. Your intents and history are untouched. <span style="color:var(--ws-ink);font-weight:600">Update payment method</span></div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <nav style="flex:0 0 auto;border-top:1px solid var(--ws-border);background:rgba(246,243,238,.94);backdrop-filter:blur(8px);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 6px 14px">
+        <button onClick="{{ goIntents }}" style="background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0;min-height:48px;font-family:'Schibsted Grotesk',sans-serif"><span style="width:16px;height:3px;border-radius:2px;background:var(--ws-accent);opacity:{{ act.intent }}"></span><span style="font-size:11px;font-weight:600;color:var(--ws-ink-2)">Intents</span></button>
+        <button onClick="{{ nav.activity }}" style="background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0;min-height:48px;font-family:'Schibsted Grotesk',sans-serif"><span style="width:16px;height:3px;border-radius:2px;background:var(--ws-accent);opacity:{{ act.activity }}"></span><span style="font-size:11px;font-weight:600;color:var(--ws-ink-2)">Activity</span></button>
+        <button onClick="{{ nav.prefs }}" style="background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0;min-height:48px;font-family:'Schibsted Grotesk',sans-serif"><span style="width:16px;height:3px;border-radius:2px;background:var(--ws-accent);opacity:{{ act.prefs }}"></span><span style="font-size:11px;font-weight:600;color:var(--ws-ink-2)">Prefs</span></button>
+        <button onClick="{{ nav.privacy }}" style="background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0;min-height:48px;font-family:'Schibsted Grotesk',sans-serif"><span style="width:16px;height:3px;border-radius:2px;background:var(--ws-accent);opacity:{{ act.privacy }}"></span><span style="font-size:11px;font-weight:600;color:var(--ws-ink-2)">Data</span></button>
+      </nav>
+
+      <sc-if value="{{ dlgAuth }}">
+        <div style="position:absolute;inset:0;background:rgba(26,23,20,.45);backdrop-filter:blur(3px);display:flex;align-items:flex-end;border-radius:34px">
+          <div style="background:#FFFFFF;border-radius:26px 26px 34px 34px;padding:20px 18px 24px;width:100%;max-height:90%;overflow:auto">
+            <div style="background:var(--ws-rail);color:#EDE9E1;border-radius:14px;padding:12px;font-size:11.5px;line-height:1.55;margin-bottom:14px"><b style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em">SIMULATION</b><br>No card is charged and no reservation is made in this build.</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ws-ink-3)">APPROVAL 2 OF 2 · TRANSACTION</div>
+            <h3 style="margin:8px 0 5px;font-size:19px;font-weight:700;letter-spacing:-0.02em">Authorize this purchase</h3>
+            <p style="margin:0 0 14px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">A separate decision from the disclosure you approved earlier.</p>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px">
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--ws-ink-2)">Supplier</span><b style="font-weight:600">{{ recoName }}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--ws-ink-2)">What</span><b style="font-weight:600;text-align:right">{{ authWhat }}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--ws-ink-2)">Amount</span><b style="font-family:'JetBrains Mono',monospace;font-size:16px">{{ recoTotal }}</b></div>
+            </div>
+            <div style="background:var(--ws-muted);border-radius:14px;padding:13px;margin-top:13px;font-size:12.5px;line-height:1.65">
+              <b style="font-weight:600">This authorizes:</b> {{ authDoes }}<br>
+              <b style="font-weight:600">It does not authorize:</b> recurring bookings, price changes, or contact with the other suppliers.
+            </div>
+            <button onClick="{{ confirmAuth }}" style="width:100%;margin-top:16px;background:var(--ws-accent);border:0;border-radius:13px;padding:15px;font:600 14px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:52px;box-shadow:0 8px 20px -8px rgba(232,93,44,.5)">Hold to authorize {{ recoTotal }}</button>
+            <div style="text-align:center;margin-top:6px"><button onClick="{{ closeDlg }}" style="background:none;border:0;color:var(--ws-ink-2);font:600 13px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:44px">Not now</button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dlgReask }}">
+        <div style="position:absolute;inset:0;background:rgba(26,23,20,.45);backdrop-filter:blur(3px);display:flex;align-items:flex-end;border-radius:34px">
+          <div style="background:#FFFFFF;border-radius:26px 26px 34px 34px;padding:20px 18px 24px;width:100%">
+            <h3 style="margin:0 0 6px;font-size:18px;font-weight:700;letter-spacing:-0.02em">Answer and re-ask?</h3>
+            <p style="margin:0 0 13px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">{{ incompleteName }} needs one more thing to complete its offer. Answering adds a field to the request, so this counts as a new disclosure and needs your approval again.</p>
+            <div style="background:var(--ws-muted);border-radius:14px;padding:13px;font-size:12.5px;line-height:1.6"><b style="font-weight:600">Would send:</b> payment method type (card or debit), so a deposit hold can be quoted.<br><b style="font-weight:600">Still withheld:</b> card number, name, licence number.</div>
+            <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
+              <button onClick="{{ goReask }}" style="background:var(--ws-accent);border:0;border-radius:12px;padding:13px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:48px">Review the new disclosure</button>
+              <button onClick="{{ closeDlg }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:12px;padding:13px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:48px">Leave it incomplete</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dlgModify }}">
+        <div style="position:absolute;inset:0;background:rgba(26,23,20,.45);backdrop-filter:blur(3px);display:flex;align-items:flex-end;border-radius:34px">
+          <div style="background:#FFFFFF;border-radius:26px 26px 34px 34px;padding:20px 18px 24px;width:100%">
+            <h3 style="margin:0 0 6px;font-size:18px;font-weight:700;letter-spacing:-0.02em">Modify this intent?</h3>
+            <p style="margin:0 0 13px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6">Small corrections are better made in the Request tab — the requirement stays editable there for the intent's whole life. Starting fresh deletes the requirement, research and offers for <b style="color:var(--ws-ink)">{{ selTitle }}</b>.</p>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <button onClick="{{ goRequest }}" style="background:var(--ws-ink);border:0;border-radius:12px;padding:13px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:48px">Edit the requirement instead</button>
+              <button onClick="{{ restartFresh }}" style="background:var(--ws-accent);border:0;border-radius:12px;padding:13px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:48px">Discard this one and start fresh</button>
+              <button onClick="{{ keepAndNew }}" style="background:#FFFFFF;border:1px solid var(--ws-border);border-radius:12px;padding:13px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:48px">Keep it pending and start a new one</button>
+              <button onClick="{{ closeDlg }}" style="background:none;border:0;color:var(--ws-ink-2);font:600 13px 'Schibsted Grotesk',sans-serif;cursor:pointer;min-height:44px">Never mind</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dlgCancel }}">
+        <div style="position:absolute;inset:0;background:rgba(26,23,20,.45);backdrop-filter:blur(3px);display:flex;align-items:flex-end;border-radius:34px">
+          <div style="background:#FFFFFF;border-radius:26px 26px 34px 34px;padding:20px 18px 24px;width:100%">
+            <h3 style="margin:0 0 6px;font-size:18px;font-weight:700;letter-spacing:-0.02em">Delete this intent?</h3>
+            <p style="margin:0 0 12px;font-size:12.5px;color:var(--ws-ink-2);line-height:1.6"><b style="color:var(--ws-ink)">{{ selTitle }}</b> and everything Reservedge researched for it are removed. Suppliers are not contacted again, and any offers they made simply expire.</p>
+            <p style="margin:0 0 14px;font-size:12px;color:var(--ws-ink-3);line-height:1.6">Completed intents stay in history. Deleted ones do not — the audit trail keeps a single "intent deleted" entry.</p>
+            <div style="display:flex;gap:9px">
+              <button onClick="{{ confirmDelete }}" style="flex:1;background:var(--danger);border:0;border-radius:12px;padding:13px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:#fff;cursor:pointer;min-height:48px">Delete intent</button>
+              <button onClick="{{ closeDlg }}" style="flex:1;background:#FFFFFF;border:1px solid var(--ws-border);border-radius:12px;padding:13px;font:600 13.5px 'Schibsted Grotesk',sans-serif;color:var(--ws-ink);cursor:pointer;min-height:48px">Keep it</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:940}}">
+const STATUS = {
+  decision:  { label: 'Decision ready',           bg: 'var(--ws-accent-soft)', fg: 'var(--ws-accent-d)' },
+  needs:     { label: 'Needs a detail',           bg: 'var(--amber-soft)',     fg: 'var(--amber)' },
+  running:   { label: 'Researching',              bg: 'var(--info-soft)',      fg: 'var(--info)' },
+  pending:   { label: 'Pending · paused by you',  bg: 'var(--ws-muted)',       fg: 'var(--ws-ink-2)' },
+  draft:     { label: 'Draft',                    bg: 'var(--ws-muted)',       fg: 'var(--ws-ink-2)' },
+  done:      { label: 'Authorized · simulated',   bg: 'var(--green-soft)',     fg: 'var(--green)' },
+  cancelled: { label: 'Cancelled by you',         bg: 'var(--ws-muted)',       fg: 'var(--ws-ink-3)' }
+};
+
+const FILTERS = [
+  { key: 'all', label: 'All' }, { key: 'needs', label: 'Needs you' },
+  { key: 'running', label: 'Running' }, { key: 'pending', label: 'Pending' }, { key: 'history', label: 'History' }
+];
+const DAYS = [
+  { key: 'today', label: 'Today · 29 Aug' },
+  { key: 'yesterday', label: 'Yesterday · 28 Aug' },
+  { key: 'earlier', label: 'Earlier' }
+];
+const TABS = [
+  { key: 'request', label: 'Request' }, { key: 'research', label: 'Research' },
+  { key: 'offers', label: 'Offers' }, { key: 'activity', label: 'Activity' }
+];
+
+const DOMAINS = {
+  parking: {
+    code: 'Pk', name: 'Airport parking',
+    tier: 'Anonymous until you book', tierBg: 'var(--green-soft)', tierFg: 'var(--green)',
+    tierNote: 'Tier 1 · suppliers price without any attribute about you. Name and plate are shared only when you authorize.',
+    typed: '"Need parking at JFK for my flight on the 4th, back on the 8th."',
+    questions: [
+      { id: 'where', label: 'AIRPORT', text: 'Which airport and terminal?', why: 'changes shuttle pricing', chips: ['JFK · Terminal 8', 'JFK · Terminal 4', 'Another airport'] },
+      { id: 'when', label: 'PARKING WINDOW', text: 'When do you need the space?', why: 'changes availability', chips: ['4–8 Sep, from your flight', 'Pick exact times'] },
+      { id: 'matters', label: 'MUST-HAVES', text: 'What matters most this trip?', why: 'ranks the offers', chips: ['Free cancellation', 'Covered bay', 'Lowest total', 'Shortest shuttle'] }
+    ],
+    extraRows: [{ label: 'VEHICLE CLASS', value: 'Standard sedan, electric', note: 'From your saved vehicle. Only the class is ever sent.' }],
+    reqRows: [
+      { label: 'AIRPORT', value: 'JFK · Terminal 8', note: 'You answered question 1', kind: 'ok' },
+      { label: 'PARKING WINDOW', value: '4 Sep 16:40 → 8 Sep 08:15', note: '2h before departure, 1h after landing — your usual buffer', kind: 'ok' },
+      { label: 'VEHICLE', value: 'Tesla Model 3 · plate ending 4RK', note: 'Assumed — you skipped this question. Only the class is ever sent.', kind: 'warn', fix: true },
+      { label: 'MUST-HAVES', tags: ['Free cancellation', 'Shuttle under 15 min', 'EV charging if cheap'] }
+    ],
+    sideEyebrow: 'HOW THIS WAS CAPTURED',
+    sideTier: '', sideTierBg: '', sideTierFg: '',
+    sideBody: 'You typed one line; Reservedge asked 3 questions and you answered 2. The exchange is kept here as evidence, not as a conversation to continue.',
+    sideBtn: '⌄ Show the 3 questions',
+    sideNote: ''
+  },
+  rental: {
+    code: 'Rc', name: 'Rental car',
+    tier: 'Needs licence class and driver age', tierBg: 'var(--amber-soft)', tierFg: 'var(--amber)',
+    tierNote: 'Tier 2 · rental suppliers cannot price without age band and licence class. Your identity is still withheld until authorization.',
+    typed: '"Also need a car when I land back at JFK on the 8th, until the 11th."',
+    questions: [
+      { id: 'when', label: 'PICKUP AND RETURN', text: 'Pickup and return times?', why: 'derived from your flight', chips: ['Match flight AA118 · 8 Sep 09:15 → 11 Sep 17:00', 'Pick exact times'] },
+      { id: 'class', label: 'VEHICLE CLASS', text: 'What size car?', why: 'changes price band', chips: ['Compact', 'Mid-size SUV', 'Estate', 'No preference'] },
+      { id: 'driver', label: 'DRIVER AGE AND LICENCE', text: 'Driver age band and licence class?', why: 'required — no offer without it', required: true, chips: ['30–65 · full EU category B', '25–29 · full EU category B', 'Under 25'] }
+    ],
+    extraRows: [{ label: 'MUST-HAVES', value: 'Free cancellation · unlimited mileage · no debit deposit', note: 'Two global preferences plus one you set for rentals.' }],
+    reqRows: [
+      { label: 'PICKUP', value: 'JFK · on-airport or shuttle', note: 'You answered question 1', kind: 'ok' },
+      { label: 'PICKUP AND RETURN', value: '8 Sep 09:15 → 11 Sep 17:00', note: 'Pickup set 1h after landing, from the same flight', kind: 'ok' },
+      { label: 'VEHICLE CLASS', value: 'Mid-size SUV', note: 'You answered question 2', kind: 'ok' },
+      { label: 'DRIVER AGE · REQUIRED', value: '30–65', note: 'Suppliers cannot price without this. Sent as a band, never a date of birth.', kind: 'req' },
+      { label: 'LICENCE CLASS · REQUIRED', value: 'Full EU category B · held 9 years', note: 'Class and years held only. Licence number stays with you until authorization.', kind: 'req' },
+      { label: 'MUST-HAVES', tags: ['Free cancellation', 'Unlimited mileage', 'No debit-card deposit'] }
+    ],
+    sideEyebrow: 'DISCLOSURE TIER · STATED UP FRONT',
+    sideTier: 'Tier 2 · attributes required', sideTierBg: 'var(--amber-soft)', sideTierFg: 'var(--amber)',
+    sideBody: 'You knew this before starting: rental suppliers need age band and licence class to price at all. Parking needs neither. Your identity is still withheld until the final authorization in both.',
+    sideBtn: '',
+    sideNote: 'Same components as parking, different schema: 6 fields instead of 4, two of them hard-required, and pickup time derived from the flight rather than typed.'
+  },
+  ents: {
+    code: 'En', name: 'Entertainment booking',
+    tier: 'Anonymous · party size only', tierBg: 'var(--green-soft)', tierFg: 'var(--green)',
+    tierNote: 'Tier 1 · venues price without knowing who you are. Party size and date are sent; your name goes on the ticket only after you authorize.',
+    typed: '"Two tickets to something good in Brooklyn on the 12th, under $150 total."',
+    questions: [
+      { id: 'what', label: 'CATEGORY', text: 'What kind of night?', why: 'narrows the venues', chips: ['Live music', 'Comedy', 'Theatre', 'Surprise me'] },
+      { id: 'when', label: 'EVENING', text: 'Which evening?', why: 'changes availability', chips: ['Fri 12 Sep · doors after 19:00', 'Sat 13 Sep · any time', 'Pick exact times'] },
+      { id: 'party', label: 'PARTY SIZE', text: 'How many seats, and together?', why: 'required — venues cannot hold seats without it', required: true, chips: ['2 seats · must be together', '2 seats · apart is fine', '3 or more'] }
+    ],
+    extraRows: [{ label: 'CEILING', value: '$150 total, all in', note: 'From what you typed. Sent as a band, not an exact figure.' }],
+    reqRows: [
+      { label: 'CATEGORY', value: 'Live music', note: 'You answered question 1', kind: 'ok' },
+      { label: 'EVENING', value: 'Fri 12 Sep · doors after 19:00', note: 'You answered question 2', kind: 'ok' },
+      { label: 'PARTY SIZE · REQUIRED', value: '2 seats · must be together', note: 'Venues cannot hold seats without it. Sent as a number, never who with.', kind: 'req' },
+      { label: 'CEILING', value: '$150 total, all in', note: 'From what you typed. Sent as a band, not an exact figure.', kind: 'ok' },
+      { label: 'MUST-HAVES', tags: ['Seats together', 'Exchangeable', 'Mobile ticket'] }
+    ],
+    sideEyebrow: 'DISCLOSURE TIER · STATED UP FRONT',
+    sideTier: 'Tier 1 · anonymous, party size only', sideTierBg: 'var(--green-soft)', sideTierFg: 'var(--green)',
+    sideBody: 'A venue can hold two seats together without knowing anything about you. Your name appears only on the issued ticket, after you authorize.',
+    sideBtn: '',
+    sideNote: 'Third domain, no new screens: 5 requirement fields, one of them hard-required, 5 offer dimensions. Only the schema, the tier and the dimensions were declared.'
+  }
+};
+
+const REQ_KIND = {
+  ok:   { pill: 'High',     bg: 'var(--green-soft)', fg: 'var(--green)', note: 'var(--ws-ink-2)', row: 'transparent' },
+  req:  { pill: 'Required', bg: 'var(--info-soft)',  fg: 'var(--info)',  note: 'var(--ws-ink-2)', row: 'transparent' },
+  warn: { pill: 'Check',    bg: 'var(--amber-soft)', fg: 'var(--amber)', note: 'var(--amber)',    row: '#FEFBF4' }
+};
+
+const SEED = [
+  { id: 'jfk',    domain: 'parking', title: 'JFK airport parking · Sep 4–8', sub: '3 private offers · recommended $71.40 all-in', status: 'decision', stage: 'offers', step: 'Decision ready · offers tab', day: 'today', date: '29 Aug · 14:09' },
+  { id: 'rental', domain: 'rental',  title: 'Rental car from JFK · Sep 8–11', sub: '3 offers · 1 incomplete · recommended $214.60', status: 'decision', stage: 'offers', step: 'Decision ready · one offer incomplete', day: 'today', date: '29 Aug · 13:40' },
+  { id: 'bkn',    domain: 'ents',    title: 'Two tickets · Brooklyn Sep 12',  sub: '3 offers · recommended $118.00 all-in', status: 'decision', stage: 'offers', step: 'Decision ready · offers tab', day: 'today', date: '29 Aug · 12:15' },
+  { id: 'lga',    domain: 'parking', title: 'LGA parking · Oct 2–4',          sub: 'Public listings only. Nothing shared yet.', status: 'running',  stage: 'research', step: 'Market research · research tab', day: 'today', date: '29 Aug · 11:02' },
+  { id: 'bos',    domain: 'rental',  title: 'Rental car · Boston Oct 12–15',  sub: 'Paused before the tier 2 disclosure.',     status: 'pending',  stage: 'gate',     step: 'Paused at disclosure', day: 'yesterday', date: '28 Aug · 19:02' },
+  { id: 'jfkjul', domain: 'parking', title: 'JFK parking · Jul 2–6',          sub: '$44.10 · ref SIM-3B77',                    status: 'done',     stage: 'done',     step: 'Completed', day: 'earlier', date: '2 Jul · 08:10' },
+  { id: 'mia',    domain: 'rental',  title: 'Rental car · Miami Jun 8–11',    sub: 'Cancelled before any disclosure.',         status: 'cancelled',stage: 'done',     step: 'Cancelled at requirement', day: 'earlier', date: '8 Jun · 21:30' }
+];
+
+const OFFERS = {
+  parking: {
+    resLine1: 'Public rates near JFK · 14 lots found', resLine2: 'Shuttle frequency and reviews',
+    range: '$68–$121', rangeNote: '4 nights, all-in',
+    fail: 'Airport authority rates unavailable. Proceeding with 13 of 14 lots; anything unverified is marked.',
+    gateIntro: 'Approving here sends a request for offers to three parking suppliers. It does not buy anything, and it contains nothing that identifies you.',
+    gatePurpose: 'Get parking offers', gateTier: 'Tier 1 · anonymous',
+    sent: [
+      { label: 'Airport and terminal — JFK, T8', why: 'Needed to price shuttle distance' },
+      { label: 'Dates and times', why: 'Needed to check availability' },
+      { label: 'Vehicle class — standard sedan, electric', why: 'Needed for bay size and EV charging' },
+      { label: 'Must-have terms — free cancellation', why: "So offers you'd reject aren't made" },
+      { label: 'A one-time request code', why: 'Lets a supplier answer without knowing who you are' }
+    ],
+    held: [
+      { label: 'Your name, email and phone' }, { label: 'Licence plate' },
+      { label: 'Flight number and full itinerary' }, { label: 'Payment details' },
+      { label: 'Your price sensitivity and past bookings' }, { label: 'That you are also renting a car' }
+    ],
+    suppliers: [
+      { code: 'JP', name: 'JetPark JFK', grad: 'var(--grad-indigo)', state: 'Offer received · 12s' },
+      { code: 'AV', name: 'Avia Lot 3', grad: 'var(--grad-green)', state: 'Offer received · 31s' },
+      { code: 'RC', name: 'RoyalCourt Parking', grad: 'var(--grad-violet)', state: 'Offer received · 1m 04s' }
+    ],
+    recoName: 'JetPark JFK', recoTotal: '$71.40', recoValid: '26m',
+    recoWhy: 'Cheapest all-in of the three, and the only one with free cancellation up to 24h.',
+    recoBreak: '$14.60 / night · $8.20 tax · $4.00 access fee',
+    dims: [
+      { label: 'Shuttle', value: '8 min · every 10', color: 'var(--ws-ink)' },
+      { label: 'Distance', value: '1.9 mi', color: 'var(--ws-ink)' },
+      { label: 'Cover', value: 'Uncovered', color: 'var(--ws-ink)' },
+      { label: 'Cancellation', value: 'Free to 24h', color: 'var(--green)' }
+    ],
+    plus: '$11 under the public rate for the same lot',
+    minus: 'Uncovered parking. Avia has covered bays for $9 more.',
+    gap: 'EV charging not stated by this supplier',
+    reasons: [
+      { head: 'Met every must-have.', body: 'Free cancellation and a shuttle under 15 minutes. RoyalCourt failed both.' },
+      { head: '$8.70 less than Avia, all in.', body: "You've chosen price over cover on your last three trips." },
+      { head: 'Only EV charging is unverified.', body: 'Price and terms match published policy.' }
+    ],
+    recoSwitch: 'If covered parking became a must-have, Avia wins. If you dropped free cancellation, RoyalCourt wins by $5.40.',
+    cols: ['JetPark JFK', 'Avia Lot 3', 'RoyalCourt'],
+    rows: [
+      { label: 'Total, all in', a: '$71.40', b: '$80.10', c: '$78.00', pub: '$68–$121', mono: true },
+      { label: 'Cancellation', a: 'Free to 24h', b: 'Free to 48h', c: 'Non-refundable', pub: 'Varies', ca: 'var(--green)', cb: 'var(--green)', cc: 'var(--danger)' },
+      { label: 'Shuttle', a: '8 min · every 10', b: '6 min · every 8', c: '18 min · every 20', pub: '5–25 min' },
+      { label: 'Distance', a: '1.9 mi', b: '1.4 mi', c: '4.6 mi', pub: '1.2–6 mi' },
+      { label: 'Cover', a: 'Uncovered', b: 'Covered', c: 'Uncovered', pub: 'Mostly uncovered', cb: 'var(--green)' },
+      { label: 'EV charging', a: 'Not stated', b: '$6 / session', c: 'Not stated', pub: '4 of 14 lots', ca: 'var(--ws-ink-3)', cc: 'var(--ws-ink-3)' },
+      { label: 'Evidence checked', a: '●●●○ 3 of 4', b: '●●●● 4 of 4', c: '●●○○ 2 of 4', pub: '—' },
+      { label: 'Offer valid for', a: '26m', b: '42m', c: '4m', pub: '—', mono: true, cc: 'var(--danger)' }
+    ],
+    incomplete: null,
+    authWhat: 'Parking 4–8 Sep, JFK T8, uncovered bay',
+    authDoes: 'one booking with JetPark at $71.40, and sharing your name and plate with that supplier only.',
+    receiptRef: 'SIM-8F42-JFK-0904', receiptShared: 'Name, plate 4RK',
+    audit: [
+      { t: '14:12', what: 'You authorized $71.40 · simulated', why: 'Why · you accepted the recommended offer', shared: 'Shared: name, plate' },
+      { t: '14:09', what: 'Reservedge recommended JetPark', why: 'Why · met both must-haves at the lowest all-in price', shared: 'Nothing shared' },
+      { t: '14:08', what: '3 offers received', why: 'Why · all three suppliers answered within 65s', shared: 'Received only' },
+      { t: '14:06', what: 'You approved a tier 1 disclosure', why: 'Why · you held to send on the disclosure preview', shared: '5 sent, 6 withheld' },
+      { t: '14:02', what: 'Public research completed', why: 'Why · 13 of 14 sources · one unavailable', shared: 'Nothing shared' },
+      { t: '13:58', what: 'Requirement confirmed after 3 questions', why: 'Why · you answered 2 of 3, vehicle assumed', shared: 'Nothing shared' }
+    ]
+  },
+  rental: {
+    resLine1: 'Public rates for JFK pickups · 11 suppliers', resLine2: 'Deposit and mileage policies published online',
+    range: '$198–$340', rangeNote: '3 days, mid-size SUV, all-in',
+    fail: 'One aggregator blocked automated reads. Proceeding with 9 of 11 suppliers; unverified claims are marked.',
+    gateIntro: 'This domain is tier 2: suppliers need your age band and licence class before they can price at all. You knew that when you picked it — this screen confirms exactly what goes.',
+    gatePurpose: 'Get rental car offers', gateTier: 'Tier 2 · attributes required',
+    sent: [
+      { label: 'Pickup location — JFK', why: 'Needed to find available fleet' },
+      { label: 'Pickup and return times', why: 'Needed to price the rental period' },
+      { label: 'Vehicle class — mid-size SUV', why: 'Needed to quote a category' },
+      { label: 'Driver age band — 30–65', why: 'Required. Young-driver surcharges are priced from this.' },
+      { label: 'Licence class — full EU category B, held 9 years', why: 'Required. Suppliers cannot legally quote without it.' },
+      { label: 'Must-have terms — free cancellation, unlimited mileage', why: "So offers you'd reject aren't made" }
+    ],
+    held: [
+      { label: 'Your name, email and phone' }, { label: 'Licence number and exact date of birth' },
+      { label: 'Flight number and full itinerary' }, { label: 'Payment details' },
+      { label: 'Your price sensitivity and past bookings' }, { label: 'That you also booked parking at JFK' }
+    ],
+    suppliers: [
+      { code: 'NT', name: 'Northgate Mobility', grad: 'var(--grad-indigo)', state: 'Offer received · 22s' },
+      { code: 'HV', name: 'Harbourview Cars', grad: 'var(--grad-green)', state: 'Offer received · 40s' },
+      { code: 'CD', name: 'CityDrive', grad: 'var(--grad-violet)', state: 'Offer received · incomplete' }
+    ],
+    recoName: 'Northgate Mobility', recoTotal: '$214.60', recoValid: '38m',
+    recoWhy: 'Only offer that clears all three must-haves, and its deposit hold is the smallest of the three.',
+    recoBreak: '$61.20 / day · $22.40 tax · $9.20 airport fee',
+    dims: [
+      { label: 'Vehicle', value: 'Mid-size SUV · RAV4 or similar', color: 'var(--ws-ink)' },
+      { label: 'Mileage', value: 'Unlimited', color: 'var(--green)' },
+      { label: 'Deposit hold', value: '$200 · credit card', color: 'var(--ws-ink)' },
+      { label: 'Cancellation', value: 'Free to 48h', color: 'var(--green)' }
+    ],
+    plus: '$36 under the public median for the same class and window',
+    minus: 'Pickup is a 7-minute shuttle, not on-airport. Harbourview is on-airport for $28 more.',
+    gap: 'Fuel policy stated as "full to full" but not verifiable online',
+    reasons: [
+      { head: 'It clears all three must-haves.', body: 'Free cancellation, unlimited mileage, and no debit-card deposit — the preference you set for rentals.' },
+      { head: 'Cheapest of the two complete offers.', body: 'CityDrive is $12 cheaper on paper but left its deposit hold unstated, so it cannot be recommended.' },
+      { head: 'Pickup fits your landing time.', body: 'Shuttle runs every 12 minutes from Terminal 8, where flight AA118 arrives.' }
+    ],
+    recoSwitch: 'If on-airport pickup became a must-have, Harbourview wins. If you allowed a debit deposit, CityDrive would compete once it answered.',
+    cols: ['Northgate', 'Harbourview', 'CityDrive'],
+    rows: [
+      { label: 'Total, all in', a: '$214.60', b: '$242.80', c: '$202.40', pub: '$198–$340', mono: true },
+      { label: 'Cancellation', a: 'Free to 48h', b: 'Free to 24h', c: 'Free to 24h', pub: 'Varies', ca: 'var(--green)', cb: 'var(--green)', cc: 'var(--green)' },
+      { label: 'Vehicle class', a: 'Mid-size SUV', b: 'Mid-size SUV', c: 'Mid-size SUV', pub: 'As requested' },
+      { label: 'Mileage', a: 'Unlimited', b: 'Unlimited', c: '250 mi / day', pub: 'Mixed', ca: 'var(--green)', cb: 'var(--green)', cc: 'var(--amber)' },
+      { label: 'Pickup', a: 'Shuttle · 7 min', b: 'On-airport counter', c: 'Shuttle · 14 min', pub: 'Both' },
+      { label: 'Deposit hold', a: '$200 · credit only', b: '$150 · credit only', c: 'Not stated', pub: '$100–$500', cc: 'var(--ws-ink-3)' },
+      { label: 'Evidence checked', a: '●●●●○ 4 of 5', b: '●●●●● 5 of 5', c: '●●○○○ 2 of 5', pub: '—' },
+      { label: 'Offer valid for', a: '38m', b: '55m', c: '9m', pub: '—', mono: true, cc: 'var(--danger)' }
+    ],
+    incomplete: { name: 'CityDrive', why: 'It could not state a deposit hold without knowing whether you would pay by credit or debit card — and "no debit deposit" is one of your must-haves.' },
+    authWhat: 'Mid-size SUV, JFK 8 Sep 09:15 → 11 Sep 17:00',
+    authDoes: 'one rental with Northgate at $214.60, and sharing your name and licence number with that supplier only.',
+    receiptRef: 'SIM-4A19-JFK-0908', receiptShared: 'Name, licence number',
+    reaskSent: [{ label: 'Payment method type — credit card', why: 'Required to quote a deposit hold. The card number itself is not included.' }],
+    reaskHeld: [{ label: 'Card number, expiry and CVC' }, { label: 'Your name' }, { label: 'Licence number' }, { label: 'That two other suppliers also offered' }],
+    reaskPurpose: "Complete CityDrive's offer",
+    reaskRecipient: 'CityDrive only — not the other two suppliers',
+    reaskResult: 'CityDrive answered: $400 deposit hold, credit only. Its offer is now complete, and still not recommended — the hold is $200 higher than Northgate\'s and mileage is capped at 250 mi / day.',
+    audit: [
+      { t: '13:40', what: '3 offers received · 1 incomplete', why: 'Why · CityDrive could not state its deposit hold', shared: 'Received only' },
+      { t: '13:31', what: 'You approved a tier 2 disclosure', why: 'Why · rental suppliers cannot price without age band and licence class', shared: '6 sent, 6 withheld' },
+      { t: '13:26', what: 'Public research completed', why: 'Why · 9 of 11 suppliers · one aggregator blocked reads', shared: 'Nothing shared' },
+      { t: '13:20', what: 'Requirement confirmed after 3 questions', why: 'Why · pickup derived from flight AA118, class and licence answered', shared: 'Nothing shared' },
+      { t: '13:18', what: 'Domain chosen · rental car (tier 2)', why: 'Why · you accepted that licence class and age band are required', shared: 'Nothing shared' }
+    ]
+  },
+  ents: {
+    resLine1: 'Public listings for Brooklyn · 22 events found', resLine2: 'Face value and resale spreads',
+    range: '$88–$260', rangeNote: '2 seats, all-in',
+    fail: 'One resale marketplace rate-limited us. Proceeding with 19 of 22 listings; unverified prices are marked.',
+    gateIntro: 'Approving here sends a request to three venues. It carries your party size and the evening, nothing that identifies you, and no name until a ticket is issued.',
+    gatePurpose: 'Get ticket offers', gateTier: 'Tier 1 · anonymous',
+    sent: [
+      { label: 'Evening and time window — Fri 12 Sep, after 19:00', why: 'Needed to check what is on' },
+      { label: 'Party size — 2 seats, seated together', why: 'Required. Venues cannot hold seats without it.' },
+      { label: 'Category — live music', why: 'Needed to shortlist the right rooms' },
+      { label: 'Price ceiling as a band — under $150 all-in', why: "So offers you'd reject aren't made" },
+      { label: 'A one-time request code', why: 'Lets a venue answer without knowing who you are' }
+    ],
+    held: [
+      { label: 'Your name, email and phone' }, { label: 'Payment details' },
+      { label: 'Who you are going with' }, { label: 'Your past bookings and price sensitivity' },
+      { label: 'That you are also booking parking and a car' }, { label: 'Where you live' }
+    ],
+    suppliers: [
+      { code: 'BR', name: 'Baxter Room', grad: 'var(--grad-indigo)', state: 'Offer received · 18s' },
+      { code: 'HW', name: 'Halyard Warehouse', grad: 'var(--grad-green)', state: 'Offer received · 44s' },
+      { code: 'TN', name: 'The Nines', grad: 'var(--grad-violet)', state: 'Offer received · 1m 21s' }
+    ],
+    recoName: 'Baxter Room', recoTotal: '$118.00', recoValid: '31m',
+    recoWhy: 'Two seats together under your ceiling, and the only one that will exchange up to 24h before.',
+    recoBreak: '$49.00 / seat · $12.00 service · $8.00 tax',
+    dims: [
+      { label: 'Seats', value: 'Tier 2, row F · together', color: 'var(--ws-ink)' },
+      { label: 'Doors', value: '19:30 · set 20:15', color: 'var(--ws-ink)' },
+      { label: 'Exchange', value: 'Free to 24h', color: 'var(--green)' },
+      { label: 'Delivery', value: 'Mobile ticket', color: 'var(--ws-ink)' }
+    ],
+    plus: '$26 under the resale median for the same room and night',
+    minus: 'Standing room at the bar only, no seated service.',
+    gap: 'Support act not announced by the venue',
+    reasons: [
+      { head: 'It met the one hard requirement.', body: 'Two seats together. The Nines could only offer two singles four rows apart.' },
+      { head: '$14 under your ceiling.', body: 'Halyard is $9 cheaper but non-exchangeable, and you have chosen exchangeable twice this year.' },
+      { head: 'Only the support act is unverified.', body: "Price, seating and exchange terms match the venue's published policy." }
+    ],
+    recoSwitch: 'If sitting together stopped mattering, The Nines wins by $22. If you raised the ceiling to $200, Halyard\'s seated tier opens up.',
+    cols: ['Baxter Room', 'Halyard', 'The Nines'],
+    rows: [
+      { label: 'Total, all in', a: '$118.00', b: '$109.00', c: '$96.00', pub: '$88–$260', mono: true },
+      { label: 'Seats together', a: 'Yes · row F', b: 'Yes · row R', c: 'No · 4 rows apart', pub: 'Varies', ca: 'var(--green)', cb: 'var(--green)', cc: 'var(--danger)' },
+      { label: 'Exchange', a: 'Free to 24h', b: 'Non-exchangeable', c: 'Free to 48h', pub: 'Mostly none', ca: 'var(--green)', cb: 'var(--danger)', cc: 'var(--green)' },
+      { label: 'Seat zone', a: 'Tier 2, row F', b: 'Rear stalls', c: 'Balcony', pub: 'All zones' },
+      { label: 'Delivery', a: 'Mobile ticket', b: 'Mobile ticket', c: 'Box office pickup', pub: 'Both' },
+      { label: 'Evidence checked', a: '●●●○ 3 of 4', b: '●●●● 4 of 4', c: '●●○○ 2 of 4', pub: '—' },
+      { label: 'Offer valid for', a: '31m', b: '26m', c: '7m', pub: '—', mono: true, cc: 'var(--danger)' }
+    ],
+    incomplete: null,
+    authWhat: '2 seats together, Baxter Room, Fri 12 Sep 19:30',
+    authDoes: 'one booking with Baxter Room at $118.00, and putting your name on those two tickets with that venue only.',
+    receiptRef: 'SIM-9C05-BKN-0912', receiptShared: 'Name on tickets',
+    audit: [
+      { t: '12:15', what: 'Reservedge recommended Baxter Room', why: 'Why · only offer with two seats together and an exchange window', shared: 'Nothing shared' },
+      { t: '12:14', what: '3 offers received', why: 'Why · all three venues answered within 82s', shared: 'Received only' },
+      { t: '12:09', what: 'You approved a tier 1 disclosure', why: 'Why · party size is required before a venue will hold seats', shared: '5 sent, 6 withheld' },
+      { t: '12:04', what: 'Public research completed', why: 'Why · 19 of 22 listings · one marketplace rate-limited', shared: 'Nothing shared' },
+      { t: '12:01', what: 'Requirement confirmed after 3 questions', why: 'Why · you answered 3 of 3, ceiling taken from what you typed', shared: 'Nothing shared' }
+    ]
+  }
+};
+
+class Component extends DCLogic {
+  state = {
+    view: 'list', sel: 'jfk', tab: 'offers', ov: 'reco',
+    filter: 'all', dlg: null, reasked: false, intents: SEED.map(i => ({ ...i })), n: 0,
+    composer: null
+  };
+
+  landingTab(i) {
+    if (!i) return 'request';
+    if (i.stage === 'offers' || i.stage === 'gate' || i.stage === 'done') return 'offers';
+    if (i.stage === 'research') return 'research';
+    return 'request';
+  }
+  select(id) {
+    const i = this.state.intents.find(x => x.id === id);
+    this.setState({ sel: id, view: 'intent', dlg: null, tab: this.landingTab(i), ov: i && i.stage === 'gate' ? 'gate' : 'reco' });
+  }
+  remove(id) {
+    const rest = this.state.intents.filter(i => i.id !== id);
+    const next = this.state.sel === id ? (rest[0] ? rest[0].id : null) : this.state.sel;
+    const ni = rest.find(x => x.id === next);
+    this.setState({ intents: rest, dlg: null, sel: next, view: 'list', tab: this.landingTab(ni) });
+  }
+  patch(id, fields) {
+    this.setState({ intents: this.state.intents.map(i => (i.id === id ? { ...i, ...fields } : i)), dlg: null });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const nav = {}, act = {};
+    ['activity', 'prefs', 'privacy', 'paywall'].forEach(k => {
+      nav[k] = () => this.setState({ view: k, dlg: null });
+      act[k] = st.view === k ? 1 : 0;
+    });
+    act.intent = ['list', 'intent', 'domains', 'composer'].includes(st.view) ? 1 : 0;
+
+    const inFilter = i => {
+      if (st.filter === 'all') return !['done', 'cancelled'].includes(i.status);
+      if (st.filter === 'needs') return ['decision', 'needs'].includes(i.status);
+      if (st.filter === 'running') return i.status === 'running';
+      if (st.filter === 'pending') return ['pending', 'draft'].includes(i.status);
+      return ['done', 'cancelled'].includes(i.status);
+    };
+    const shown = st.intents.filter(inFilter);
+    const groups = DAYS.map(d => ({
+      label: d.label,
+      items: shown.filter(i => i.day === d.key).map(i => {
+        const s = STATUS[i.status] || STATUS.draft;
+        const on = i.id === st.sel && st.view === 'intent';
+        return {
+          title: i.title, sub: i.sub, date: i.date, code: DOMAINS[i.domain].code,
+          statusLabel: s.label, pillBg: s.bg, pillFg: s.fg,
+          rowBg: on ? 'var(--ws-canvas)' : '#FFFFFF',
+          rowBorder: on ? '1px solid var(--ws-accent)' : '1px solid var(--ws-border)',
+          canDelete: i.status !== 'done',
+          open: () => this.select(i.id),
+          del: () => this.setState({ sel: i.id, view: 'intent', dlg: 'cancel' })
+        };
+      })
+    })).filter(g => g.items.length);
+
+    const filters = FILTERS.map(f => ({
+      label: f.label,
+      bg: st.filter === f.key ? 'var(--ws-ink)' : 'var(--ws-muted)',
+      fg: st.filter === f.key ? '#FFFFFF' : 'var(--ws-ink-2)',
+      pick: () => this.setState({ filter: f.key })
+    }));
+
+    const sel = st.intents.find(i => i.id === st.sel) || null;
+    const dom = sel ? DOMAINS[sel.domain] : DOMAINS.parking;
+    const O = sel ? OFFERS[sel.domain] : OFFERS.parking;
+    const ss = sel ? (STATUS[sel.status] || STATUS.draft) : STATUS.draft;
+    const live = sel ? !['done', 'cancelled'].includes(sel.status) : false;
+
+    const tabs = TABS.map(t => ({
+      label: t.label,
+      bg: st.tab === t.key ? '#FFFFFF' : 'transparent',
+      fg: st.tab === t.key ? 'var(--ws-ink)' : 'var(--ws-ink-2)',
+      shadow: st.tab === t.key ? '0 1px 3px rgba(40,30,15,.14)' : 'none',
+      pick: () => this.setState({ tab: t.key })
+    }));
+
+    const OVS = [{ key: 'gate', label: 'Disclosure record' }, { key: 'reco', label: 'Recommendation' }, { key: 'compare', label: 'Compare offers' }];
+    const offerViews = OVS.map(v => ({
+      label: v.label,
+      bg: st.ov === v.key ? 'var(--ws-ink)' : '#FFFFFF',
+      fg: st.ov === v.key ? '#FFFFFF' : 'var(--ws-ink-2)',
+      pick: () => this.setState({ ov: v.key })
+    }));
+
+    const c = st.composer;
+    const cDom = c ? DOMAINS[c.domain] : DOMAINS.parking;
+    const cq = c ? cDom.questions[c.i] : null;
+    const cRows = (c ? cDom.questions : []).map(q => {
+      const a = c.ans[q.id];
+      return {
+        label: q.label,
+        value: a === 'skipped' ? 'Assumed — you skipped this' : (a || 'Not answered yet'),
+        note: a === 'skipped' ? 'Correctable at any time in the Request tab' : (a ? 'You answered' : q.why),
+        color: a && a !== 'skipped' ? 'var(--ws-ink)' : (a === 'skipped' ? 'var(--amber)' : 'var(--ws-ink-3)')
+      };
+    }).concat(c ? cDom.extraRows.map(r => ({ label: r.label, value: r.value, note: r.note, color: 'var(--ws-ink)' })) : []);
+    const cFilled = c ? Object.keys(c.ans).filter(k => c.ans[k] && c.ans[k] !== 'skipped').length : 0;
+
+    const missingReq = c ? cDom.questions.filter(q => q.required && (!c.ans[q.id] || c.ans[q.id] === 'skipped')) : [];
+    const startComposer = d => this.setState({ view: 'composer', composer: { domain: d, ans: {}, i: 0, typed: null, draft: '' }, dlg: null });
+    const jumpToReq = () => {
+      if (!c || !missingReq.length) return;
+      const idx = cDom.questions.findIndex(q => q.id === missingReq[0].id);
+      this.setState({ composer: { ...c, ans: { ...c.ans, [missingReq[0].id]: null }, i: idx } });
+    };
+    const finish = () => {
+      if (missingReq.length) { jumpToReq(); return; }
+      const n = st.n + 1, id = 'new' + n, d = c ? c.domain : 'parking';
+      const title = (d === 'parking' ? 'JFK airport parking · new' : 'Rental car · new');
+      this.setState({
+        intents: [{ id, domain: d, title, sub: 'Requirement confirmed. Researching public options.', status: 'running', stage: 'research', step: 'Market research · research tab', day: 'today', date: '29 Aug · now' }, ...st.intents],
+        n, sel: id, view: 'intent', tab: 'research', composer: null, dlg: null
+      });
+    };
+
+    const reasked = st.reasked && !!sel && sel.domain === 'rental';
+    const rowSrc = reasked ? O.rows.map(r => (
+      r.label === 'Deposit hold' ? { ...r, c: '$400 · credit only', cc: 'var(--ws-ink)' } :
+      r.label === 'Evidence checked' ? { ...r, c: '●●●○○ 3 of 5' } : r
+    )) : O.rows;
+    const reqRows = (dom.reqRows || []).map((r, ix, arr) => {
+      const k = REQ_KIND[r.kind] || REQ_KIND.ok;
+      const isTags = !!r.tags;
+      return {
+        label: r.label, value: r.value, note: r.note, tags: r.tags || [],
+        hasValue: !isTags, hasTags: isTags, fix: !!r.fix, hasPill: !isTags,
+        pill: r.pill || k.pill, pillBg: k.bg, pillFg: k.fg,
+        noteColor: k.note, rowBg: k.row,
+        bb: ix === arr.length - 1 ? '0' : '1px solid var(--ws-border-2)'
+      };
+    });
+    const cmpRows = rowSrc.map(r => ({
+      label: r.label, a: r.a, b: r.b, c: r.c, pub: r.pub,
+      ca: r.ca || 'var(--ws-ink)', cb: r.cb || 'var(--ws-ink)', cc: r.cc || 'var(--ws-ink)',
+      wa: r.label === 'Total, all in' ? '600' : '400'
+    }));
+
+    const showTab = k => st.view === 'intent' && sel && st.tab === k;
+
+    return {
+      nav, act, filters, groups, tabs, offerViews,
+      hasNone: shown.length === 0,
+      needsCount: st.intents.filter(i => ['decision', 'needs'].includes(i.status)).length,
+      pendingCount: st.intents.filter(i => i.status === 'pending').length,
+      goIntents: () => this.setState({ view: 'list', dlg: null }),
+      showBack: st.view !== 'list',
+      showMark: st.view === 'list',
+      goBack: () => this.setState({ view: 'list', dlg: null }),
+      newIntent: () => this.setState({ view: 'domains', dlg: null }),
+      pickParking: () => startComposer('parking'),
+      pickRental: () => startComposer('rental'),
+      pickEnts: () => startComposer('ents'),
+
+      headerTitle: st.view === 'list' ? 'Intents' : st.view === 'domains' ? 'New intent' : (st.view === 'composer' ? cDom.name + ' · new intent' : (sel ? sel.title : 'Reservedge')),
+      headerMeta: st.view === 'intent' && sel ? sel.date : '',
+
+      show: {
+        list: st.view === 'list',
+        domains: st.view === 'domains',
+        composer: st.view === 'composer' && !!c,
+        intent: st.view === 'intent' && !!sel,
+        req: showTab('request'),
+        reask: showTab('offers') && st.ov === 'reask',
+        research: showTab('research'),
+        gate: showTab('offers') && sel.stage === 'gate',
+        record: showTab('offers') && sel.stage !== 'gate' && st.ov === 'gate',
+        progress: showTab('offers') && st.ov === 'progress',
+        reco: showTab('offers') && st.ov === 'reco' && sel.stage !== 'gate' && sel.status !== 'done',
+        compare: showTab('offers') && st.ov === 'compare' && sel.stage !== 'gate',
+        receipt: showTab('offers') && sel.status === 'done' && st.ov === 'reco',
+        act: showTab('activity'),
+        gActivity: st.view === 'activity',
+        prefs: st.view === 'prefs',
+        privacy: st.view === 'privacy',
+        paywall: st.view === 'paywall'
+      },
+
+      selTitle: sel ? sel.title : 'No intent selected',
+      selCode: dom.code, selStep: sel ? sel.step : '',
+      selStatusLabel: ss.label, selPillBg: ss.bg, selPillFg: ss.fg,
+      isLive: live, isPending: sel ? sel.status === 'pending' : false,
+      isHistory: sel ? ['done', 'cancelled'].includes(sel.status) : false,
+
+      cDomainCode: cDom.code, cDomainName: cDom.name,
+      cTyped: c && c.typed ? c.typed : cDom.typed,
+      cStep1: !!c && !c.typed, cAfterTyped: !!c && !!c.typed,
+      cDraft: c ? c.draft : '',
+      cExample: cDom.typed,
+      cCanSend: !!c && !!c.draft && c.draft.trim().length > 0,
+      cSendOpacity: (!!c && !!c.draft && c.draft.trim().length > 0) ? '1' : '.45',
+      cOnDraft: e => c && this.setState({ composer: { ...c, draft: e.target.value } }),
+      cUseExample: () => c && this.setState({ composer: { ...c, draft: cDom.typed.replace(/^"|"$/g, '') } }),
+      cSubmitTyped: () => { if (c && c.draft && c.draft.trim()) this.setState({ composer: { ...c, typed: '"' + c.draft.trim() + '"' } }); },
+      cTier: cDom.tier, cTierBg: cDom.tierBg, cTierFg: cDom.tierFg, cTierNote: cDom.tierNote,
+      cHasQuestion: !!cq && !!c && !!c.typed, cReady: !!c && !!c.typed && !cq && !missingReq.length,
+      cCanSkip: !!cq && !cq.required,
+      cRequiredNote: cq && cq.required ? 'Required — suppliers in this domain cannot price without it.' : '',
+      cBlocked: missingReq.length > 0,
+      cBlockedNote: missingReq.length ? missingReq.length + ' required answer left: ' + missingReq[0].text : '',
+      cBtnOpacity: missingReq.length ? '.5' : '1',
+      cFixRequired: jumpToReq,
+      cQNum: c ? c.i + 1 : 1, cQTotal: cDom.questions.length,
+      cQText: cq ? cq.text : '', cQWhy: cq ? cq.why : '',
+      cChips: cq ? cq.chips.map(ch => ({ label: ch, pick: () => this.setState({ composer: { ...c, ans: { ...c.ans, [cq.id]: ch }, i: c.i + 1 } }) })) : [],
+      cSkip: () => cq && this.setState({ composer: { ...c, ans: { ...c.ans, [cq.id]: 'skipped' }, i: c.i + 1 } }),
+      cRows, cFilled, cFields: cRows.length,
+      cQLeft: cq ? 'Question ' + (c.i + 1) + ' of ' + cDom.questions.length + '.' : 'All questions done.',
+      cConfirm: finish, cUseWhatYouHave: finish,
+
+      resLine1: O.resLine1, resLine2: O.resLine2, resRange: O.range, resRangeNote: O.rangeNote, resFail: O.fail,
+      goOffers: () => this.setState({ tab: 'offers', ov: sel && sel.stage === 'gate' ? 'gate' : 'reco' }),
+
+      gateIntro: O.gateIntro, gatePurpose: O.gatePurpose, gateTier: O.gateTier,
+      recordWhen: sel && sel.domain === 'rental' ? '29 Aug · 13:31' : '29 Aug · 14:06',
+      sentRows: O.sent, heldRows: O.held, sentCount: O.sent.length, heldCount: O.held.length,
+      dispatch: () => { if (sel) { this.patch(sel.id, { stage: 'offers', status: 'decision', step: 'Decision ready · offers tab', sub: 'Offers received. A decision is waiting.' }); this.setState({ ov: 'progress' }); } },
+      suppliers: O.suppliers,
+      toReco: () => this.setState({ ov: 'reco' }),
+      toCompare: () => this.setState({ ov: 'compare' }),
+      toActivity: () => this.setState({ tab: 'activity' }),
+      goRequest: () => this.setState({ tab: 'request', dlg: null }),
+
+      recoName: O.recoName, recoTotal: O.recoTotal, recoValid: O.recoValid, recoWhy: O.recoWhy,
+      recoBreak: O.recoBreak, recoDims: O.dims, recoPlus: O.plus, recoMinus: O.minus, recoGap: O.gap,
+      recoReasons: O.reasons, recoSwitch: O.recoSwitch,
+      colA: O.cols[0], colB: O.cols[1], colC: O.cols[2], cmpRows,
+      hasIncomplete: !!O.incomplete && !reasked,
+      reqRows,
+      sideEyebrow: dom.sideEyebrow, sideBody: dom.sideBody, sideBtn: dom.sideBtn, sideNote: dom.sideNote,
+      sideTier: dom.sideTier, sideTierBg: dom.sideTierBg, sideTierFg: dom.sideTierFg,
+      hasSideTier: !!dom.sideTier, hasSideBtn: !!dom.sideBtn, hasSideNote: !!dom.sideNote,
+      reaskSent: O.reaskSent || [], reaskHeld: O.reaskHeld || [], reaskHeldCount: (O.reaskHeld || []).length,
+      reaskPurpose: O.reaskPurpose || '', reaskRecipient: O.reaskRecipient || '',
+      reaskDone: reasked, reaskResult: O.reaskResult || '',
+      goReask: () => this.setState({ dlg: null, ov: 'reask' }),
+      sendReask: () => { if (sel) this.patch(sel.id, { step: 'Decision ready · all three offers complete', sub: '3 offers · complete · recommended ' + O.recoTotal }); this.setState({ reasked: true, ov: 'compare', dlg: null }); },
+      incompleteName: O.incomplete ? O.incomplete.name : '',
+      incompleteWhy: O.incomplete ? O.incomplete.why : '',
+      askReask: () => this.setState({ dlg: 'reask' }),
+
+      authWhat: O.authWhat, authDoes: O.authDoes,
+      receiptRef: O.receiptRef, receiptShared: O.receiptShared,
+      askAuth: () => this.setState({ dlg: 'auth' }),
+      confirmAuth: () => sel && this.patch(sel.id, { status: 'done', stage: 'done', step: 'Completed · simulated receipt', sub: O.recoTotal + ' · ref ' + O.receiptRef, day: 'today' }),
+      auditRows: reasked ? [{ t: '13:52', what: 'You approved a single added field', why: 'Why · CityDrive could not quote a deposit hold without the payment method type', shared: '1 sent, 1 recipient' }].concat(O.audit) : O.audit,
+
+      dlgAuth: st.dlg === 'auth', dlgReask: st.dlg === 'reask',
+      dlgModify: st.dlg === 'modify', dlgCancel: st.dlg === 'cancel',
+      askModify: () => this.setState({ dlg: 'modify' }),
+      askCancel: () => this.setState({ dlg: 'cancel' }),
+      closeDlg: () => this.setState({ dlg: null }),
+      keepPending: () => sel && this.patch(sel.id, { status: 'pending', stage: sel.stage, step: 'Paused by you at ' + sel.stage, sub: 'Paused. Nothing further was shared.' }),
+      resume: () => sel && this.patch(sel.id, { status: sel.stage === 'offers' ? 'decision' : 'running', step: 'Resumed · ' + sel.stage + ' tab', sub: 'Resumed just now.' }),
+      restartFresh: () => { const id = sel && sel.id, d = sel && sel.domain; if (id) { this.remove(id); startComposer(d); } },
+      keepAndNew: () => { if (sel) this.patch(sel.id, { status: 'pending', step: 'Kept pending by you', sub: 'Kept pending while you work on something else.' }); this.setState({ view: 'domains', dlg: null }); },
+      confirmDelete: () => sel && this.remove(sel.id)
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+[project]
+name = "itaa"
+version = "0.0.0"
+description = "Intent to Action Agent — privacy-first buyer agent (Reservedge)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Nexcache Limited" }]
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "itaa-application",
+    "itaa-domain",
+    "itaa-observability",
+    "itaa-policy",
+    "itaa-ranking",
+    "itaa-contracts-generated",
+    "itaa-supplier-simulator",
+    "itaa-api",
+    "itaa-google-adapter[live]",
+    "itaa-aws-adapter[live]",
+    "itaa-redact-check",
+    "itaa-validate-contracts",
+    "httpx2==2.12.0",
+    "jsonschema==4.25.0",
+    "mypy==1.17.1",
+    "pytest==8.4.1",
+    "pytest-cov==6.2.1",
+    "ruff==0.12.11",
+    "types-jsonschema==4.25.0.20250809",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "packages/domain",
+    "packages/application",
+    "packages/policy",
+    "packages/observability",
+    "packages/ranking",
+    "packages/contracts/generated/python",
+    "apps/supplier-simulator",
+    "apps/api",
+    "adapters/google",
+    "adapters/aws-strands-bedrock-agentcore",
+    "tools/validate-contracts",
+    "tools/redact-check",
+]
+
+[tool.uv.sources]
+itaa-domain = { workspace = true }
+itaa-application = { workspace = true }
+itaa-policy = { workspace = true }
+itaa-observability = { workspace = true }
+itaa-ranking = { workspace = true }
+itaa-contracts-generated = { workspace = true }
+itaa-supplier-simulator = { workspace = true }
+itaa-api = { workspace = true }
+itaa-google-adapter = { workspace = true }
+itaa-aws-adapter = { workspace = true }
+itaa-validate-contracts = { workspace = true }
+itaa-redact-check = { workspace = true }
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["packages", "apps", "tools", "tests", "adapters"]
+extend-exclude = ["tests/security/fixtures", "packages/contracts/generated"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "boundaries",
+    "itaa_application",
+    "itaa_contracts_generated",
+    "itaa_domain",
+    "itaa_observability",
+    "itaa_policy",
+    "itaa_ranking",
+    "itaa_redact_check",
+    "itaa_api",
+    "itaa_google_adapter",
+    "itaa_aws_adapter",
+    "itaa_supplier_simulator",
+    "itaa_validate_contracts",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+mypy_path = "packages/domain/src:packages/application/src:packages/policy/src:packages/observability/src:packages/ranking/src:apps/supplier-simulator/src:apps/api/src:packages/contracts/generated/python:tools/validate-contracts/src:tools/redact-check/src:tests/security:adapters/google/src:adapters/aws-strands-bedrock-agentcore/src"
+files = [
+    "packages/domain/src",
+    "packages/application/src",
+    "packages/policy/src",
+    "packages/observability/src",
+    "packages/ranking/src",
+    "apps/api/src",
+    "apps/supplier-simulator/src",
+    "packages/contracts/generated/python",
+    "tools/validate-contracts/src",
+    "tools/redact-check/src",
+    "adapters/google/src",
+    "adapters/aws-strands-bedrock-agentcore/src",
+    "tests",
+]
+explicit_package_bases = true
+exclude = ["tests/security/fixtures"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["packages", "apps", "tests", "tools", "adapters/google/tests", "adapters/aws-strands-bedrock-agentcore/tests"]
+pythonpath = [
+    "packages/domain/src",
+    "packages/application/src",
+    "packages/policy/src",
+    "packages/observability/src",
+    "packages/ranking/src",
+    "apps/supplier-simulator/src",
+    "apps/api/src",
+    "packages/contracts/generated/python",
+    "tools/validate-contracts/src",
+    "tools/redact-check/src",
+    "tests/security",
+    "packages/domain/tests",
+    "packages/policy/tests",
+    "packages/application/tests",
+    "packages/ranking/tests",
+    "apps/supplier-simulator/tests",
+    "apps/api/tests",
+    "adapters/google/src",
+    "adapters/google/tests",
+    "adapters/aws-strands-bedrock-agentcore/src",
+    "adapters/aws-strands-bedrock-agentcore/tests",
+]
+addopts = "-W error --strict-markers --cov=itaa_domain --cov=itaa_application --cov=itaa_policy --cov=itaa_observability --cov=itaa_ranking --cov=itaa_supplier_simulator --cov=itaa_api --cov=itaa_validate_contracts --cov=itaa_redact_check --cov=itaa_google_adapter --cov=itaa_aws_adapter --cov-report=term-missing"
+markers = [
+    "unit: unit and smoke tests",
+    "security: architecture boundary and secret-hygiene checks",
+    "contract: contract-validation checks",
+]

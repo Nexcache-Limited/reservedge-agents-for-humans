@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "1.0",
+  "planId": "pl_01k2m3n4p5q6r7s8t9v0w1x2p2",
+  "intentId": "oi_01k2m3n4p5q6r7s8t9v0w1x2p1",
+  "taskIds": ["bt_01k2m3n4p5q6r7s8t9v0w1x2p4", "bt_01k2m3n4p5q6r7s8t9v0w1x2p5"],
+  "combinedRecommendationsEligible": true
+}

@@ -1,0 +1,89 @@
+/* ============================================================
+   AdeHQ — Typography tokens
+   ------------------------------------------------------------
+   WORKSPACE  body    : Schibsted Grotesk  (geometric humanist grotesk)
+   WORKSPACE  mono    : JetBrains Mono     (numbers, IDs, costs, ⌘K)
+   MARKETING  body    : Geist              (clean neutral grotesk)
+   MARKETING  mono    : Geist Mono         (uppercase eyebrow labels)
+   MARKETING  accent  : Newsreader italic  (editorial pull-quotes, missions)
+   ============================================================ */
+
+:root {
+  /* ---------- families (semantic, default = workspace) ---------- */
+  --font-sans:  'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  --font-serif: 'Newsreader', Georgia, serif;
+
+  /* raw family handles */
+  --font-grotesk:    'Schibsted Grotesk', system-ui, sans-serif;
+  --font-jetbrains:  'JetBrains Mono', ui-monospace, monospace;
+  --font-geist:      'Geist', system-ui, sans-serif;
+  --font-geist-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-newsreader: 'Newsreader', Georgia, serif;
+
+  /* ---------- weights ---------- */
+  --fw-light:    300;  /* @kind font */
+  --fw-regular:  400;  /* @kind font */
+  --fw-medium:   500;  /* @kind font */
+  --fw-semibold: 600;  /* @kind font */
+  --fw-bold:     700;  /* @kind font */
+  --fw-extra:    800;  /* @kind font */
+
+  /* ---------- type scale (px values matched to the products) ---------- */
+  --text-display:  46px;  /* marketing hero "Who do you want to hire?" */
+  --text-h1:       30px;  /* page / section heroes      */
+  --text-h2:       24px;  /* page titles                */
+  --text-h3:       16px;  /* section headings           */
+  --text-lg:       18px;  /* prominent labels / quotes  */
+  --text-base:     14px;  /* default UI body            */
+  --text-md:       13.5px;
+  --text-sm:       12.5px; /* secondary / meta          */
+  --text-xs:       11px;  /* captions / hints           */
+  --text-2xs:      10.5px; /* eyebrow / mono labels     */
+
+  /* ---------- line-heights ---------- */
+  --lh-tight:    1.05;  /* @kind other */
+  --lh-snug:     1.25;  /* @kind other */
+  --lh-normal:   1.5;   /* @kind other */
+  --lh-relaxed:  1.6;   /* @kind other */
+
+  /* ---------- letter-spacing ---------- */
+  --tracking-display: -0.035em; /* @kind other */
+  --tracking-tight:   -0.02em;  /* @kind other */
+  --tracking-snug:    -0.01em;  /* @kind other */
+  --tracking-normal:  0;        /* @kind other */
+  --tracking-eyebrow: 0.07em;   /* @kind other */
+}
+
+.surface-marketing {
+  --font-sans:  'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono:  'Geist Mono', ui-monospace, monospace;
+  --font-serif: 'Newsreader', Georgia, serif;
+}
+
+/* ---------- ready-made text roles ---------- */
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.t-display {
+  font-family: var(--font-sans);
+  font-size: var(--text-display);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--lh-tight);
+}
+.t-serif-quote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lg);
+  line-height: var(--lh-normal);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

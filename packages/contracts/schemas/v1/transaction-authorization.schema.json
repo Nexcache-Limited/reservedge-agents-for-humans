@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/transaction-authorization.schema.json",
+  "title": "TransactionAuthorization",
+  "description": "MVP authorization is SIMULATED only. Signing and idempotency storage are later work.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "authorizationId",
+    "acceptanceId",
+    "action",
+    "amountMinor",
+    "currency",
+    "supplierToken",
+    "mode",
+    "idempotencyKey",
+    "userApprovalId",
+    "authorizedAt",
+    "expiresAt",
+    "receiptSignature"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "authorizationId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/AuthorizationId"
+    },
+    "acceptanceId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/AcceptanceId"
+    },
+    "action": {
+      "const": "reserve_parking"
+    },
+    "amountMinor": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/MinorUnits"
+    },
+    "currency": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/CurrencyCode"
+    },
+    "supplierToken": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SupplierToken"
+    },
+    "mode": {
+      "const": "SIMULATED",
+      "description": "Any other mode fails the MVP profile."
+    },
+    "idempotencyKey": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/IdempotencyKey"
+    },
+    "userApprovalId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/ApprovalId"
+    },
+    "authorizedAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "expiresAt": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/UtcTimestamp"
+    },
+    "receiptSignature": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OpaqueSignature"
+    }
+  }
+}

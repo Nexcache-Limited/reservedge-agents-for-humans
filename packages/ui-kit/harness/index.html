@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ITAA UI-00 design-system harness</title>
+        <link rel="stylesheet" href="../src/itaa-ui-kit.css" />
+        <link rel="stylesheet" href="./harness.css" />
+    </head>
+    <body>
+        <main class="harness">
+            <header>
+                <h1>ITAA UI-00 design-system harness</h1>
+                <p class="harness-note">
+                    Framework-agnostic tokens and primitives. Open this file in a browser. Fonts use
+                    local Newsreader, Libre Franklin, and JetBrains Mono when installed; otherwise
+                    Georgia, system sans, and system mono. No remote font loader.
+                </p>
+            </header>
+
+            <section id="tokens">
+                <h2>Token swatches</h2>
+                <p class="harness-note">
+                    Green is verified/consent, not “best deal”. Clay is review/caution, not urgency.
+                    Red is failure or destructive action only.
+                </p>
+                <div class="swatch-grid">
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-text-primary)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>text.primary / ink</strong>
+                            <p>#171B20 — primary text and neutral high-emphasis controls</p>
+                        </div>
+                    </article>
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-text-secondary)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>text.secondary / muted</strong>
+                            <p>#586069 — secondary text and metadata</p>
+                        </div>
+                    </article>
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-surface-canvas)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>surface.canvas / desk</strong>
+                            <p>#E4E8EA — application canvas</p>
+                        </div>
+                    </article>
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-surface-raised)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>surface.raised / surface</strong>
+                            <p>#FFFFFF — cards and principal surfaces</p>
+                        </div>
+                    </article>
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-status-confidence)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>status.confidence</strong>
+                            <p>#2F7A58 — verified, safe completion, consent</p>
+                        </div>
+                    </article>
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-status-attention)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>status.attention</strong>
+                            <p>#B25A34 — needs review or factual caution</p>
+                        </div>
+                    </article>
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-status-denial)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>status.denial</strong>
+                            <p>#A13529 — failure, destructive, invalidated approval</p>
+                        </div>
+                    </article>
+                    <article class="swatch">
+                        <div
+                            class="swatch__chip"
+                            style="background: var(--itaa-color-border-default)"
+                        ></div>
+                        <div class="swatch__meta">
+                            <strong>border.default / rule</strong>
+                            <p>#CBD2D6 — decorative separator only</p>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="typography">
+                <h2>Typography roles</h2>
+                <h1 class="itaa-text itaa-text--display">
+                    Editorial display — Newsreader / Georgia
+                </h1>
+                <h2 class="itaa-text itaa-text--heading">
+                    Editorial heading — short judgment titles
+                </h2>
+                <p class="itaa-text itaa-text--body">
+                    Interface body — Libre Franklin / system sans. Minimum 16 CSS pixels.
+                </p>
+                <p class="itaa-text itaa-text--label">Interface label</p>
+                <p class="itaa-text itaa-text--meta">Metadata role for secondary facts</p>
+                <p class="itaa-text itaa-text--fact">
+                    Fact $128.40 · 2026-08-22T19:10:00Z · intent_01
+                </p>
+            </section>
+
+            <section id="spacing">
+                <h2>Spacing and radius</h2>
+                <div class="space-grid">
+                    <div class="space-sample">
+                        <code>4</code>
+                        <div class="space-sample__bar" style="width: 4px"></div>
+                    </div>
+                    <div class="space-sample">
+                        <code>8</code>
+                        <div class="space-sample__bar" style="width: 8px"></div>
+                    </div>
+                    <div class="space-sample">
+                        <code>12</code>
+                        <div class="space-sample__bar" style="width: 12px"></div>
+                    </div>
+                    <div class="space-sample">
+                        <code>16</code>
+                        <div class="space-sample__bar" style="width: 16px"></div>
+                    </div>
+                    <div class="space-sample">
+                        <code>24</code>
+                        <div class="space-sample__bar" style="width: 24px"></div>
+                    </div>
+                    <div class="space-sample">
+                        <code>32</code>
+                        <div class="space-sample__bar" style="width: 32px"></div>
+                    </div>
+                    <div class="space-sample">
+                        <code>40</code>
+                        <div class="space-sample__bar" style="width: 40px"></div>
+                    </div>
+                </div>
+                <div class="radius-row">
+                    <div class="radius-sample" style="border-radius: 10px">card 10px</div>
+                    <div class="radius-sample" style="border-radius: 12px">card 12px</div>
+                    <div class="radius-sample" style="border-radius: 16px">card 16px</div>
+                </div>
+            </section>
+
+            <section id="primitives">
+                <h2>Primitives and states</h2>
+                <section class="itaa-surface itaa-surface--raised itaa-surface--pad-lg">
+                    <p class="itaa-text itaa-text--heading">Surface / Card</p>
+                    <p class="itaa-text itaa-text--body">
+                        Raised card on the desk canvas. Decorative rule border.
+                    </p>
+                </section>
+                <h3>Buttons</h3>
+                <div class="button-row">
+                    <button
+                        type="button"
+                        class="itaa-button itaa-button--primary itaa-focus-ring"
+                        data-variant="primary"
+                        data-state="default"
+                    >
+                        <span class="itaa-button__label">Primary</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="itaa-button itaa-button--consent itaa-focus-ring"
+                        data-variant="consent"
+                        data-state="default"
+                    >
+                        <span class="itaa-button__label">Consent</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="itaa-button itaa-button--ghost itaa-focus-ring"
+                        data-variant="ghost"
+                        data-state="default"
+                    >
+                        <span class="itaa-button__label">Ghost</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="itaa-button itaa-button--destructive itaa-focus-ring"
+                        data-variant="destructive"
+                        data-state="default"
+                    >
+                        <span class="itaa-button__label">Destructive</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="itaa-button itaa-button--primary itaa-focus-ring"
+                        data-variant="primary"
+                        data-state="disabled"
+                        disabled
+                        aria-disabled="true"
+                        aria-describedby="demo-disabled-reason"
+                    >
+                        <span class="itaa-button__label">Disabled</span>
+                    </button>
+                    <span id="demo-disabled-reason" class="itaa-visually-hidden"
+                        >Action is locked until review is complete</span
+                    >
+                    <button
+                        type="button"
+                        class="itaa-button itaa-button--consent itaa-focus-ring"
+                        data-variant="consent"
+                        data-state="busy"
+                        disabled
+                        aria-disabled="true"
+                        aria-busy="true"
+                    >
+                        <span class="itaa-button__label">Busy</span>
+                        <span class="itaa-visually-hidden">Working</span>
+                    </button>
+                </div>
+                <h3>Status indicators</h3>
+                <div class="status-row">
+                    <span
+                        class="itaa-status itaa-status--neutral"
+                        role="status"
+                        data-variant="neutral"
+                    >
+                        <span class="itaa-status__swatch" aria-hidden="true"></span>
+                        <span class="itaa-status__label">Ready</span>
+                    </span>
+                    <span
+                        class="itaa-status itaa-status--working"
+                        role="status"
+                        data-variant="working"
+                    >
+                        <span class="itaa-status__swatch" aria-hidden="true"></span>
+                        <span class="itaa-status__label">Working</span>
+                    </span>
+                    <span
+                        class="itaa-status itaa-status--attention"
+                        role="status"
+                        data-variant="attention"
+                    >
+                        <span class="itaa-status__swatch" aria-hidden="true"></span>
+                        <span class="itaa-status__label">Needs review</span>
+                    </span>
+                    <span
+                        class="itaa-status itaa-status--confidence"
+                        role="status"
+                        data-variant="confidence"
+                    >
+                        <span class="itaa-status__swatch" aria-hidden="true"></span>
+                        <span class="itaa-status__label">Verified</span>
+                    </span>
+                    <span
+                        class="itaa-status itaa-status--denial"
+                        role="status"
+                        data-variant="denial"
+                    >
+                        <span class="itaa-status__swatch" aria-hidden="true"></span>
+                        <span class="itaa-status__label">Failed</span>
+                    </span>
+                    <span
+                        class="itaa-status itaa-status--offline"
+                        role="status"
+                        data-variant="offline"
+                    >
+                        <span class="itaa-status__swatch" aria-hidden="true"></span>
+                        <span class="itaa-status__label">Offline</span>
+                    </span>
+                </div>
+            </section>
+
+            <section id="simulation">
+                <h2>SimulationBanner</h2>
+                <h3>Compact</h3>
+                <div id="simulation-compact" class="harness-frame harness-frame--compact">
+                    <div
+                        class="itaa-simulation-banner itaa-simulation-banner--compact"
+                        role="status"
+                        data-itaa-simulation="true"
+                        data-placement="offers"
+                        data-density="compact"
+                        aria-label="SIMULATED - NO REAL CHARGES OR RESERVATIONS"
+                    >
+                        <p class="itaa-simulation-banner__label">
+                            SIMULATED - NO REAL CHARGES OR RESERVATIONS
+                        </p>
+                    </div>
+                </div>
+                <h3>Wide</h3>
+                <div id="simulation-wide" class="harness-frame harness-frame--wide">
+                    <div
+                        class="itaa-simulation-banner itaa-simulation-banner--wide"
+                        role="status"
+                        data-itaa-simulation="true"
+                        data-placement="demo-shell"
+                        data-density="wide"
+                        aria-label="SIMULATED - NO REAL CHARGES OR RESERVATIONS"
+                    >
+                        <p class="itaa-simulation-banner__label">
+                            SIMULATED - NO REAL CHARGES OR RESERVATIONS
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="zoom-200">
+                <h2>200% / large text</h2>
+                <p class="harness-note">
+                    This frame uses CSS zoom: 2 as a 200% candidate. Text and controls must remain
+                    unclipped.
+                </p>
+                <div class="harness-zoom harness-frame">
+                    <div
+                        class="itaa-simulation-banner itaa-simulation-banner--compact"
+                        role="status"
+                        data-itaa-simulation="true"
+                        data-placement="authorization"
+                        data-density="compact"
+                        aria-label="SIMULATED - NO REAL CHARGES OR RESERVATIONS"
+                    >
+                        <p class="itaa-simulation-banner__label">
+                            SIMULATED - NO REAL CHARGES OR RESERVATIONS
+                        </p>
+                    </div>
+                    <div class="button-row">
+                        <button
+                            type="button"
+                            class="itaa-button itaa-button--primary itaa-focus-ring"
+                        >
+                            <span class="itaa-button__label">Continue</span>
+                        </button>
+                        <span
+                            class="itaa-status itaa-status--attention"
+                            role="status"
+                            data-variant="attention"
+                        >
+                            <span class="itaa-status__swatch" aria-hidden="true"></span>
+                            <span class="itaa-status__label">Needs review</span>
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="reduced-motion" class="harness-reduced-motion">
+                <h2>Reduced motion</h2>
+                <p class="harness-note">
+                    This section forces <code>--itaa-motion-duration: 0ms</code>. The stylesheet
+                    also honors <code>prefers-reduced-motion: reduce</code>. Hover these buttons;
+                    state must not rely on motion.
+                </p>
+                <div class="button-row">
+                    <button type="button" class="itaa-button itaa-button--primary itaa-focus-ring">
+                        <span class="itaa-button__label">Still readable</span>
+                    </button>
+                    <button type="button" class="itaa-button itaa-button--ghost itaa-focus-ring">
+                        <span class="itaa-button__label">No animation required</span>
+                    </button>
+                </div>
+            </section>
+
+            <section id="focus-sequence">
+                <h2>Keyboard focus sequence</h2>
+                <p class="harness-note">
+                    Tab through these controls. Each must show the ink focus ring.
+                </p>
+                <div class="focus-row">
+                    <button type="button" class="itaa-button itaa-button--primary itaa-focus-ring">
+                        <span class="itaa-button__label">First</span>
+                    </button>
+                    <button type="button" class="itaa-button itaa-button--consent itaa-focus-ring">
+                        <span class="itaa-button__label">Second</span>
+                    </button>
+                    <button type="button" class="itaa-button itaa-button--ghost itaa-focus-ring">
+                        <span class="itaa-button__label">Third</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="itaa-button itaa-button--destructive itaa-focus-ring"
+                    >
+                        <span class="itaa-button__label">Fourth</span>
+                    </button>
+                </div>
+                <div
+                    class="itaa-live-region itaa-visually-hidden"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="false"
+                ></div>
+            </section>
+        </main>
+    </body>
+</html>

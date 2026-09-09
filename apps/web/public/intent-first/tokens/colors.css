@@ -1,0 +1,129 @@
+/* ============================================================
+   AdeHQ — Color tokens
+   ------------------------------------------------------------
+   AdeHQ ships TWO surfaces that share one brand spine:
+   • WORKSPACE  (the product)   — warm cream paper, coral accent,
+                                   dark sidebar rail. The default.
+   • MARKETING  (hire / funnel) — cool near-white, near-black UI,
+                                   indigo→cyan "AI" gradient.
+
+   Raw brand values live under --ws-* / --mk-*.
+   Semantic aliases (--surface-*, --text-*, --accent-*, …) default
+   to the workspace and are remapped wholesale by .surface-marketing.
+   Build components against the SEMANTIC tokens so they theme for free.
+   ============================================================ */
+
+:root {
+  /* ---------- WORKSPACE raw palette (warm) ---------- */
+  --ws-cream:      #E9E6DF;  /* outermost page */
+  --ws-canvas:     #F6F3EE;  /* app canvas      */
+  --ws-surface:    #FFFFFF;  /* cards / panels  */
+  --ws-muted:      #F0EDE6;  /* fills / tracks  */
+  --ws-border:     #E6E1D8;
+  --ws-border-2:   #EFEBE3;
+  --ws-rail:       #1A1714;  /* dark nav rail   */
+  --ws-rail-2:     #262119;
+
+  --ws-ink:        #221F1A;  /* primary text    */
+  --ws-ink-2:      #6C685F;  /* secondary       */
+  --ws-ink-3:      #9B968B;  /* tertiary / hint */
+
+  --ws-accent:     #E85D2C;  /* coral           */
+  --ws-accent-d:   #CE4E22;  /* coral pressed   */
+  --ws-accent-soft:#FBE9DE;
+
+  /* ---------- MARKETING raw palette (cool mono) ---------- */
+  --mk-bg:         #F4F4F1;
+  --mk-surface:    #FFFFFF;
+  --mk-panel:      #FAFAFA;
+  --mk-ink:        #111113;  /* near-black, also the "button" color */
+  --mk-ink-2:      #1C1C1F;
+  --mk-ink-press:  #2A2A2E;
+  --mk-line:       rgba(17,17,19,.09);
+  --mk-line-2:     rgba(17,17,19,.07);
+
+  /* The marketing "AI" signature gradient (recommended / generative) */
+  --mk-ai-grad:    linear-gradient(135deg, #6366F1, #22D3EE);   /* @kind color */
+  --mk-ai-grad-3:  linear-gradient(135deg, #6366F1, #3B82F6 55%, #8B5CF6); /* @kind color */
+  --mk-indigo:     #6366F1;
+  --mk-cyan:       #22D3EE;
+
+  /* ---------- Shared semantic status palette ---------- */
+  --green:       #1BA672;  --green-soft:  #E3F4EB;
+  --amber:       #CB8A1B;  --amber-soft:  #FBEFD6;
+  --danger:      #D9483B;  --danger-soft: #FBE3E0;
+  --info:        #2F6FED;  --info-soft:   #E5EDFD;
+  --emerald-ok:  #10B981;  /* marketing success check */
+  --warn-flag:   #F59E0B;  /* marketing "!" flag      */
+
+  /* ---------- Avatar / employee gradients (workspace) ---------- */
+  --grad-coral:  linear-gradient(140deg, #E85D2C, #F2974E);  /* @kind color */
+  --grad-indigo: linear-gradient(140deg, #4759A8, #7A8BD8);  /* @kind color */
+  --grad-green:  linear-gradient(140deg, #1BA672, #54C79A);  /* @kind color */
+  --grad-violet: linear-gradient(140deg, #9A6BCB, #C29BE6);  /* @kind color */
+  --grad-slate:  linear-gradient(140deg, #3B4C6B, #5A6E94);  /* @kind color */
+
+  /* ---------- Candidate orb gradients (marketing) ---------- */
+  --orb-warm:    linear-gradient(135deg, #FBBF24, #F97316 55%, #EF4444); /* @kind color */
+  --orb-indigo:  linear-gradient(135deg, #6366F1, #3B82F6 55%, #8B5CF6); /* @kind color */
+  --orb-slate:   linear-gradient(135deg, #64748B, #7C3AED 65%, #1E293B); /* @kind color */
+
+  /* ====================================================
+     SEMANTIC ALIASES — default = WORKSPACE
+     ==================================================== */
+  --surface-page:    var(--ws-cream);
+  --surface-canvas:  var(--ws-canvas);
+  --surface-card:    var(--ws-surface);
+  --surface-muted:   var(--ws-muted);
+  --surface-rail:    var(--ws-rail);
+
+  --border-default:  var(--ws-border);
+  --border-subtle:   var(--ws-border-2);
+
+  --text-strong:     var(--ws-ink);
+  --text-default:    var(--ws-ink);
+  --text-muted:      var(--ws-ink-2);
+  --text-subtle:     var(--ws-ink-3);
+  --text-on-accent:  #FFFFFF;
+
+  --accent:          var(--ws-accent);
+  --accent-strong:   var(--ws-accent-d);
+  --accent-soft:     var(--ws-accent-soft);
+
+  --selection-bg:    rgba(232,93,44,.18);
+}
+
+/* ====================================================
+   MARKETING SURFACE — remap the semantic aliases.
+   Wrap a marketing screen/section in class="surface-marketing".
+   ==================================================== */
+.surface-marketing {
+  --surface-page:    var(--mk-bg);
+  --surface-canvas:  var(--mk-bg);
+  --surface-card:    var(--mk-surface);
+  --surface-muted:   var(--mk-panel);
+  --surface-rail:    var(--mk-ink);
+
+  --border-default:  var(--mk-line);
+  --border-subtle:   var(--mk-line-2);
+
+  --text-strong:     var(--mk-ink);
+  --text-default:    var(--mk-ink-2);
+  --text-muted:      rgba(17,17,19,.55);
+  --text-subtle:     rgba(17,17,19,.4);
+  --text-on-accent:  #FFFFFF;
+
+  --accent:          var(--mk-ink);
+  --accent-strong:   var(--mk-ink-press);
+  --accent-soft:     rgba(17,17,19,.06);
+
+  --selection-bg:    #111113;
+}
+
+/* ---------- Optional WORKSPACE accent themes ----------
+   The workspace ships swappable accents. Apply alongside the
+   default to recolor the coral accent triad.                */
+.theme-blue    { --accent:#2F6FED; --accent-strong:#2557C7; --accent-soft:#E5EDFD; }
+.theme-violet  { --accent:#7C5CD6; --accent-strong:#6845C0; --accent-soft:#EDE7FB; }
+.theme-emerald { --accent:#1BA672; --accent-strong:#14855B; --accent-soft:#E3F4EB; }
+.theme-coral   { --accent:#E85D2C; --accent-strong:#CE4E22; --accent-soft:#FBE9DE; }

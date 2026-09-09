@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "offerId": "of_01k2m3n4p5q6r7s8t9v0w1x2q1",
+  "supplierToken": "sp_01k2m3n4p5q6r7s8t9v0w1x2q2",
+  "version": 1,
+  "sourceType": "supplier_private_quote",
+  "offerClass": "standard",
+  "issuedAt": "2026-08-20T16:00:00Z",
+  "validFrom": "2026-08-20T16:00:00Z",
+  "validUntil": "2026-08-21T16:00:00Z",
+  "termsHash": "sha256:aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900",
+  "price": {
+    "totalMinor": 16900,
+    "taxMinor": 1400,
+    "feesMinor": 2000,
+    "currency": "USD",
+    "depositMinor": 0,
+    "payLaterMinor": 5000
+  },
+  "fit": "strong",
+  "simulation": true,
+  "validity": "valid",
+  "inventory": "not_held",
+  "transactionResult": "simulated",
+  "completeness": "complete",
+  "evidence": [
+    {
+      "type": "supplier_policy",
+      "ref": "policy.parkdirect.v1"
+    }
+  ]
+}

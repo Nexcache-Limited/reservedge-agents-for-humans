@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.itaa.invalid/v1/booking-task.schema.json",
+  "title": "BookingTask",
+  "description": "Per-domain task under an OrchestrationIntent. Must not embed conversation, siblings, preferences, or competitor offers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "taskId", "intentId", "domain", "state", "simulation"],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/SchemaVersion"
+    },
+    "taskId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/BookingTaskId"
+    },
+    "intentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OrchestrationIntentId"
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["parking", "rental", "ents"]
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "missing_details",
+        "a1_review",
+        "a1_blocked",
+        "public_research",
+        "a2_required",
+        "researching",
+        "supplier_timeout",
+        "no_offer",
+        "offers_ready",
+        "offers_expiring",
+        "offers_expired",
+        "superseded",
+        "a3_review",
+        "a3_ineligible",
+        "a4_required",
+        "a4_failed",
+        "authorized_simulated",
+        "authorized_live",
+        "booking_pending",
+        "confirmed_booking",
+        "booking_failed",
+        "paused",
+        "cancelled",
+        "failed",
+        "offline_readonly"
+      ]
+    },
+    "simulation": {
+      "const": true,
+      "description": "MVP profile requires simulation exactly true."
+    },
+    "requirementVersion": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/PositiveVersion"
+    },
+    "purchaseIntentId": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/IntentId"
+    },
+    "validity": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/OfferValidity"
+    },
+    "inventory": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/InventoryState"
+    },
+    "transactionResult": {
+      "$ref": "https://contracts.itaa.invalid/v1/common.schema.json#/$defs/TransactionResult"
+    }
+  }
+}

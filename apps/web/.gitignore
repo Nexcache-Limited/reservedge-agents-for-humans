@@ -1,0 +1,5 @@
+coverage/
+dist/
+evidence/*.png
+evidence/*.json
+evidence/*.html

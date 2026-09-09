@@ -1,0 +1,57 @@
+/* ============================================================
+   AdeHQ — Spacing, radius, shadow & border tokens
+   ------------------------------------------------------------
+   Both surfaces favour GENEROUS rounding (11–22px) and soft,
+   low-opacity ambient shadows — never hard drop shadows.
+   The workspace shadows are warm-tinted (rgba(40,30,15,…));
+   the marketing shadows are neutral-cool (rgba(17,17,19,…)).
+   ============================================================ */
+
+:root {
+  /* ---------- spacing scale ---------- */
+  --space-1:  4px;
+  --space-2:  6px;
+  --space-3:  8px;
+  --space-4:  11px;
+  --space-5:  14px;
+  --space-6:  18px;
+  --space-7:  22px;
+  --space-8:  26px;
+  --space-9:  32px;
+  --space-10: 40px;
+  --space-12: 56px;
+
+  /* ---------- radii ---------- */
+  --radius-xs:   5px;   /* keycaps, tiny badges            */
+  --radius-sm:   8px;   /* tags, mono chips, small icons   */
+  --radius-md:   11px;  /* buttons, inputs, nav items      */
+  --radius-lg:   14px;  /* badges-on-cards, list rows      */
+  --radius-xl:   16px;  /* standard cards                  */
+  --radius-2xl:  18px;  /* feature cards, panels           */
+  --radius-3xl:  22px;  /* hero blocks, modals             */
+  --radius-pill: 999px; /* status pills, suggestion chips  */
+
+  /* ---------- borders ---------- */
+  --border-width: 1px;
+  --border-dashed: 1px dashed var(--border-default); /* @kind other */
+
+  /* ---------- shadows — WORKSPACE (warm) ---------- */
+  --shadow-card:    0 1px 3px rgba(40,30,15,.10);
+  --shadow-lift:    0 12px 30px -14px rgba(40,34,24,.22);
+  --shadow-pop:     0 10px 30px -18px rgba(40,30,15,.32);
+  --shadow-modal:   0 40px 90px -24px rgba(26,18,8,.55);
+  --shadow-accent:  0 8px 20px -8px rgba(232,93,44,.50);
+
+  /* ---------- shadows — MARKETING (cool/neutral) ---------- */
+  --shadow-mk-card:  0 1px 2px rgba(17,17,19,.04);
+  --shadow-mk-lift:  0 12px 24px -16px rgba(17,17,19,.30);
+  --shadow-mk-pop:   0 24px 48px -28px rgba(17,17,19,.22);
+  --shadow-mk-modal: 0 40px 90px -30px rgba(17,17,19,.50);
+
+  /* ---------- motion ---------- */
+  --ease-out:   cubic-bezier(.2,.7,.3,1);   /* @kind other */
+  --ease-pop:   cubic-bezier(.2,.8,.3,1.2); /* @kind other */
+  --dur-fast:   .14s;  /* @kind other */
+  --dur-base:   .25s;  /* @kind other */
+  --dur-slow:   .5s;   /* @kind other */
+}
