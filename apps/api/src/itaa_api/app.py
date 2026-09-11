@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from itaa_api.agent_session import attach_default_plan_provider
 from itaa_api.agent_session import router as agent_router
 from itaa_api.composition import build_facade
 from itaa_api.errors import (
@@ -64,6 +65,7 @@ def create_app(
     application.include_router(intake_router)
     application.include_router(orchestration_router)
     application.include_router(agent_router)
+    attach_default_plan_provider(application)
     application.add_exception_handler(ApplicationError, application_error_handler)  # type: ignore[arg-type]
     application.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
     application.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]

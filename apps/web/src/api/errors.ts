@@ -16,6 +16,9 @@ const BUYER_MESSAGES: Record<string, string> = {
   malformed: "The request was incomplete.",
   invalid_opaque_syntax: "An identifier was not in the expected form.",
   unavailable: "The extraction service is not available. Try again in a moment.",
+  network_failure:
+    "The service did not confirm the last action. Refresh status before trying again.",
+  timeout: "That took too long. Nothing was sent to any supplier. Try Start booking again.",
 };
 
 export class ClosedApiError extends Error {

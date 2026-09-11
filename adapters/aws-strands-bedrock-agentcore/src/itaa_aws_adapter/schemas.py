@@ -6,12 +6,13 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-TaskKind = Literal["parking", "rental", "ents", "flight", "hotel"]
+TaskKind = Literal["parking", "rental", "ents", "flight", "hotel", "experience"]
 TaskProvenance = Literal["explicit", "inferred", "proposed"]
-TaskSupport = Literal["live_simulated", "demonstration", "unsupported"]
+TaskSupport = Literal["live_simulated", "demonstration", "unsupported", "sandbox_search"]
 ClarifyPhase = Literal["clarify", "forming", "ready"]
-QuestionId = Literal["dates", "departureAirport", "carNeed"]
+QuestionId = Literal["dates", "departureAirport", "carNeed", "helpWith"]
 CarNeed = Literal["yes", "no", "unsure", ""]
+HelpWith = Literal["stay", "rental", "parking", "flights_sorted", "experience", "unsure", ""]
 DayPart = Literal["morning", "afternoon", "evening", "anytime", ""]
 
 
@@ -25,6 +26,7 @@ class EvidenceSpan(BaseModel):
 class ExtractedFacts(BaseModel):
     model_config = ConfigDict(extra="forbid")
     destination: str = ""
+    originCity: str = ""
     destinationAirport: str = ""
     parkingAirport: str = ""
     departureAirport: str = ""
@@ -38,7 +40,11 @@ class ExtractedFacts(BaseModel):
     rentalStated: bool = False
     entsStated: bool = False
     hotelStated: bool = False
+    experienceStated: bool = False
+    experiencePreferences: list[str] = Field(default_factory=list)
     flightStated: bool = False
+    flightSatisfied: bool = False
+    helpWith: HelpWith = ""
     landing: bool = False
     travel: bool = False
     conference: bool = False
@@ -91,6 +97,7 @@ class PlanAnswers(BaseModel):
     model_config = ConfigDict(extra="forbid")
     departureAirport: str = ""
     carNeed: CarNeed = ""
+    helpWith: HelpWith = ""
     dates: str = ""
     startDate: str = ""
     endDate: str = ""

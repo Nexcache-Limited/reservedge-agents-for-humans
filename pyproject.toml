@@ -1,10 +1,10 @@
 [project]
 name = "itaa"
 version = "0.0.0"
-description = "Intent to Action Agent — privacy-first buyer agent (Reservedge)"
+description = "Intent to Action Agent — cloud-neutral monorepo foundation"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-license = { text = "Apache-2.0" }
+license = { text = "UNLICENSED" }
 authors = [{ name = "Nexcache Limited" }]
 dependencies = []
 
@@ -20,6 +20,8 @@ dev = [
     "itaa-api",
     "itaa-google-adapter[live]",
     "itaa-aws-adapter[live]",
+    "itaa-liteapi-hotels",
+    "itaa-prioticket-experiences",
     "itaa-redact-check",
     "itaa-validate-contracts",
     "httpx2==2.12.0",
@@ -46,6 +48,8 @@ members = [
     "apps/api",
     "adapters/google",
     "adapters/aws-strands-bedrock-agentcore",
+    "adapters/liteapi-hotels",
+    "adapters/prioticket-experiences",
     "tools/validate-contracts",
     "tools/redact-check",
 ]
@@ -61,6 +65,8 @@ itaa-supplier-simulator = { workspace = true }
 itaa-api = { workspace = true }
 itaa-google-adapter = { workspace = true }
 itaa-aws-adapter = { workspace = true }
+itaa-liteapi-hotels = { workspace = true }
+itaa-prioticket-experiences = { workspace = true }
 itaa-validate-contracts = { workspace = true }
 itaa-redact-check = { workspace = true }
 
@@ -86,6 +92,8 @@ known-first-party = [
     "itaa_api",
     "itaa_google_adapter",
     "itaa_aws_adapter",
+    "itaa_liteapi_hotels",
+    "itaa_prioticket_experiences",
     "itaa_supplier_simulator",
     "itaa_validate_contracts",
 ]
@@ -98,7 +106,7 @@ python_version = "3.12"
 strict = true
 warn_unused_configs = true
 plugins = ["pydantic.mypy"]
-mypy_path = "packages/domain/src:packages/application/src:packages/policy/src:packages/observability/src:packages/ranking/src:apps/supplier-simulator/src:apps/api/src:packages/contracts/generated/python:tools/validate-contracts/src:tools/redact-check/src:tests/security:adapters/google/src:adapters/aws-strands-bedrock-agentcore/src"
+mypy_path = "packages/domain/src:packages/application/src:packages/policy/src:packages/observability/src:packages/ranking/src:apps/supplier-simulator/src:apps/api/src:packages/contracts/generated/python:tools/validate-contracts/src:tools/redact-check/src:tests/security:adapters/google/src:adapters/aws-strands-bedrock-agentcore/src:adapters/liteapi-hotels/src:adapters/prioticket-experiences/src"
 files = [
     "packages/domain/src",
     "packages/application/src",
@@ -112,6 +120,8 @@ files = [
     "tools/redact-check/src",
     "adapters/google/src",
     "adapters/aws-strands-bedrock-agentcore/src",
+    "adapters/liteapi-hotels/src",
+    "adapters/prioticket-experiences/src",
     "tests",
 ]
 explicit_package_bases = true
@@ -119,7 +129,7 @@ exclude = ["tests/security/fixtures"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-testpaths = ["packages", "apps", "tests", "tools", "adapters/google/tests", "adapters/aws-strands-bedrock-agentcore/tests"]
+testpaths = ["packages", "apps", "tests", "tools", "adapters/google/tests", "adapters/aws-strands-bedrock-agentcore/tests", "adapters/liteapi-hotels/tests", "adapters/prioticket-experiences/tests"]
 pythonpath = [
     "packages/domain/src",
     "packages/application/src",
@@ -142,8 +152,12 @@ pythonpath = [
     "adapters/google/tests",
     "adapters/aws-strands-bedrock-agentcore/src",
     "adapters/aws-strands-bedrock-agentcore/tests",
+    "adapters/liteapi-hotels/src",
+    "adapters/liteapi-hotels/tests",
+    "adapters/prioticket-experiences/src",
+    "adapters/prioticket-experiences/tests",
 ]
-addopts = "-W error --strict-markers --cov=itaa_domain --cov=itaa_application --cov=itaa_policy --cov=itaa_observability --cov=itaa_ranking --cov=itaa_supplier_simulator --cov=itaa_api --cov=itaa_validate_contracts --cov=itaa_redact_check --cov=itaa_google_adapter --cov=itaa_aws_adapter --cov-report=term-missing"
+addopts = "-W error --strict-markers --cov=itaa_domain --cov=itaa_application --cov=itaa_policy --cov=itaa_observability --cov=itaa_ranking --cov=itaa_supplier_simulator --cov=itaa_api --cov=itaa_validate_contracts --cov=itaa_redact_check --cov=itaa_google_adapter --cov=itaa_aws_adapter --cov=itaa_liteapi_hotels --cov=itaa_prioticket_experiences --cov-report=term-missing"
 markers = [
     "unit: unit and smoke tests",
     "security: architecture boundary and secret-hygiene checks",

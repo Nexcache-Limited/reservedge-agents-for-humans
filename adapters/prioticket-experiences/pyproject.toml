@@ -1,0 +1,20 @@
+[project]
+name = "itaa-prioticket-experiences"
+version = "0.1.0"
+description = "Competition-only Prioticket experience-search adapter behind ExperienceSearchPort."
+requires-python = ">=3.12,<3.13"
+license = { text = "UNLICENSED" }
+dependencies = [
+    "itaa-application",
+    "httpx==0.28.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/itaa_prioticket_experiences"]
+
+[tool.uv.sources]
+itaa-application = { workspace = true }

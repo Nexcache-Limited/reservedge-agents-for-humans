@@ -317,7 +317,7 @@ def test_parking_asks_all_remaining_fields_in_one_message() -> None:
 
 
 def test_rental_only_does_not_drive_parking_questions() -> None:
-    from itaa_api.agent_requirements import COMPETITION_PARKING_ONLY_COPY
+    from itaa_api.agent_requirements import RENTAL_NO_ADAPTER_COPY
 
     client, _provider = _wired()
     body = client.post(f"{PREFIX}/sessions", json={"objective": RENTAL_ONLY_LHR}).json()
@@ -332,7 +332,7 @@ def test_rental_only_does_not_drive_parking_questions() -> None:
         assert parking_task["provenance"] != "explicit"
         assert parking_task["accepted"] is not True
     message = body.get("buyerSafeMessage") or ""
-    assert message == COMPETITION_PARKING_ONLY_COPY
+    assert message == RENTAL_NO_ADAPTER_COPY
     assert "when should parking" not in message.lower()
 
 

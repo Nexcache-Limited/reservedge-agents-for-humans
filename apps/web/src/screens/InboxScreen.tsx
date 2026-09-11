@@ -73,7 +73,6 @@ export function InboxScreen({
   const switchedToRunning = useRef("");
   const switchedToHistory = useRef("");
   const liveRow = planSessionToRow(planSession);
-  const runningChat = filter === "running" && showRunningInboxChat(planSession);
 
   useEffect(() => {
     if (liveRow?.status === "done") {
@@ -141,6 +140,9 @@ export function InboxScreen({
   }, [api, setIntents]);
 
   const shown = useMemo(() => rows.filter((row) => matchesFilter(row, filter)), [rows, filter]);
+  const compact = location.pathname !== "/" && location.pathname !== "/bookings";
+  const onClarify = location.pathname === "/intents/clarify";
+  const runningChat = filter === "running" && showRunningInboxChat(planSession) && !onClarify;
   const cardRows = useMemo(() => {
     if (!runningChat || liveRow == null) {
       return shown;
@@ -152,7 +154,6 @@ export function InboxScreen({
     (row) => row.status === "decision" || row.status === "needs",
   ).length;
   const pendingCount = rows.filter((row) => row.status === "pending").length;
-  const compact = location.pathname !== "/" && location.pathname !== "/bookings";
 
   function startNewIntent() {
     setParkedSessions((current) => withParked(current, planSession));
@@ -281,8 +282,9 @@ export function InboxScreen({
 }
 
 function BookingSharedContext() {
+  const location = useLocation();
   const { planSession } = usePortfolio();
-  if (planSession == null) {
+  if (planSession == null || location.pathname === "/intents/clarify") {
     return null;
   }
   const projection =

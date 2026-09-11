@@ -16,7 +16,7 @@ from itaa_application.errors import ApplicationError
 
 FieldSource = Literal["current_turn", "earlier_turn", "direct_edit", "system_proposal"]
 FieldProvenance = Literal["explicit", "inferred", "proposed"]
-DomainKind = Literal["parking", "rental", "ents", "flight", "hotel"]
+DomainKind = Literal["parking", "rental", "ents", "flight", "hotel", "experience"]
 Completeness = Literal[
     "incomplete",
     "ready",
@@ -279,12 +279,19 @@ COMPETITION_PARKING_ONLY_COPY = (
     "Send a parking requirement (airport, dates, and times) to test the live simulated path."
 )
 
+RENTAL_NO_ADAPTER_COPY = (
+    "Rental car is on the plan as a requirement. No rental inventory adapter is "
+    "integrated in this build, so no rental offers are shown. Hotel search can run "
+    "when stay is Explicit. Airport parking is a separate simulated path if you add it."
+)
+
 SUPPORT_LABELS: dict[str, str] = {
     "parking": "live_simulated",
     "rental": "demonstration",
     "ents": "demonstration",
     "flight": "unsupported",
-    "hotel": "unsupported",
+    "hotel": "sandbox_search",
+    "experience": "sandbox_search",
 }
 
 
@@ -302,7 +309,8 @@ def capabilities_catalog() -> dict[str, object]:
             },
             "ents": {"support": "demonstration", "fields": []},
             "flight": {"support": "unsupported", "fields": []},
-            "hotel": {"support": "unsupported", "fields": []},
+            "hotel": {"support": "sandbox_search", "fields": []},
+            "experience": {"support": "sandbox_search", "fields": []},
         },
     }
 

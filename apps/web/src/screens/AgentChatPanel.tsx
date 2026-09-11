@@ -23,7 +23,7 @@ import {
   withoutUpdatingActivity,
   withUpdatingActivity,
 } from "../intent-first/agent.js";
-import { projectPlan, type PlanSession } from "../intent-first/plan.js";
+import { firstTurnCopy, projectPlan, type PlanSession } from "../intent-first/plan.js";
 
 export function AgentChatPanel({
   api,
@@ -226,14 +226,6 @@ export function AgentChatPanel({
                   {item.text}
                 </div>
               ))}
-              {session.extraNote.trim() !== "" &&
-              !(
-                session.agent?.transcript.some(
-                  (item) => item.role === "user" && item.text.includes(session.extraNote.trim()),
-                ) ?? false
-              ) ? (
-                <div className="re-clarify-bubble re-clarify-bubble-user">{session.extraNote}</div>
-              ) : null}
             </>
           ) : (
             <>
@@ -244,7 +236,7 @@ export function AgentChatPanel({
               <div className="re-clarify-agent">
                 <span className="re-clarify-mark" aria-hidden />
                 <div className="re-clarify-bubble re-clarify-bubble-agent">
-                  {projection.summary}
+                  {firstTurnCopy(projection.facts) || projection.summary}
                 </div>
               </div>
             </>

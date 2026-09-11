@@ -23,11 +23,11 @@ The review covered every supplied file in `Reservedge prototype walkthrough-2.zi
 
 It was reconciled with the current local baseline:
 
-- live worktree: `(local path omitted)`;
+- live worktree: `[local-path]/ITAA-comp-g1-05`;
 - branch: `work/comp-g1-05-reservedge-ui`;
 - current commit: `ff12fefdd1b56f78a7b390959d46ad04cd3f7be6` (deployment evidence only);
 - current React routes, shell, domain registry, composer, live/fixture workspaces, offer UI, API DTOs, in-memory/session state and visual evidence;
-- local source-of-truth folder: `(local path omitted)`;
+- local source-of-truth folder: `[local-path]/Documents/Reservedge-ITAA project`;
 - existing responsive evidence at 1440, 1280, 410, 390 and 320 CSS pixels.
 
 The in-app browser rejected local `file://` navigation under its security policy. Visual conclusions therefore use the supplied HTML/CSS specifications plus the repository’s existing rendered visual evidence; no claim is made that the new `.dc.html` files were interactively rendered in the browser during this review.

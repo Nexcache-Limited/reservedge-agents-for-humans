@@ -12,12 +12,12 @@ IAM, create API keys, or download service-account keys.
 
 | Resource                      | Value                                                         |
 | ----------------------------- | ------------------------------------------------------------- |
-| Project                       | owner-supplied `example-gcp-project`                          |
+| Project                       | owner-supplied `itaa-g1-dev`                                  |
 | Region                        | `us-central1`                                                 |
 | Artifact Registry repository  | `itaa-containers`                                             |
 | Image                         | `google-adapter`                                              |
 | Cloud Run service             | `itaa-google-adapter`                                         |
-| Runtime identity              | `runtime@example-gcp-project.iam.gserviceaccount.com`         |
+| Runtime identity              | `itaa-g1-runtime@itaa-g1-dev.iam.gserviceaccount.com`         |
 | Model                         | `gemini-2.5-flash`                                            |
 | Live overall deadline         | `ITAA_GOOGLE_TIMEOUT_MS=30000` (bounds 5000-45000)            |
 | Cloud Run request timeout     | 60s; the model deadline must stay below this                  |
@@ -26,15 +26,15 @@ IAM, create API keys, or download service-account keys.
 
 Unused duplicate (do **not** use, modify, disable, or delete in this package):
 
-`unused-runtime@example-gcp-project.iam.gserviceaccount.com`
+`itaa-google-runtime@itaa-g1-dev.iam.gserviceaccount.com`
 
 ## Image identity
 
 Production rollouts must use an immutable digest or a commit-derived tag:
 
 ```text
-us-central1-docker.pkg.dev/example-gcp-project/itaa-containers/google-adapter@sha256:<digest>
-us-central1-docker.pkg.dev/example-gcp-project/itaa-containers/google-adapter:<git-sha>
+us-central1-docker.pkg.dev/itaa-g1-dev/itaa-containers/google-adapter@sha256:<digest>
+us-central1-docker.pkg.dev/itaa-g1-dev/itaa-containers/google-adapter:<git-sha>
 ```
 
 Do **not** treat `:latest` as deployment evidence.

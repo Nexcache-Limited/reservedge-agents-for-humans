@@ -41,8 +41,30 @@ SKIP_SUFFIXES = {
     ".woff2",
 }
 
-ALLOWLIST_RELATIVE_PATHS = {
-    ".env.example",
+
+def _is_local_env_file(name: str) -> bool:
+    if name == ".env":
+        return True
+    return name.startswith(".env.") and not name.endswith(".example")
+
+
+ALLOWLIST_RELATIVE_PATHS: set[str] = set()
+
+_ENV_EXAMPLE_ALLOWED_LINES = {
+    "POSTGRES_HOST=localhost",
+    "POSTGRES_PORT=5433",
+    "POSTGRES_USER=itaa",
+    "POSTGRES_PASSWORD=itaa_dev_only",
+    "POSTGRES_DB=itaa_dev",
+    "POSTGRES_URL=postgresql://itaa:itaa_dev_only@localhost:5433/itaa_dev",
+    "ITAA_STAY_SEARCH_MODE=fake",
+    "ITAA_LITEAPI_API_KEY=",
+    "ITAA_LITEAPI_TIMEOUT_MS=12000",
+    "ITAA_EXPERIENCE_SEARCH_MODE=fake",
+    "ITAA_PRIOTICKET_CLIENT_ID=",
+    "ITAA_PRIOTICKET_CLIENT_SECRET=",
+    "ITAA_PRIOTICKET_TIMEOUT_MS=12000",
+    "ITAA_PRIOTICKET_BASE_URL=",
 }
 
 PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -51,6 +73,17 @@ PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("github-pat", re.compile(r"\bghp_[A-Za-z0-9]{36}\b")),
     ("github-fine-grained-pat", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b")),
     ("slack-bot-token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
+    (
+        "liteapi-api-key",
+        re.compile(
+            r"\b(?:sand|live)_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
+            re.I,
+        ),
+    ),
+    (
+        "prioticket-client-secret",
+        re.compile(r"ITAA_PRIOTICKET_CLIENT_SECRET=[A-Za-z0-9_./+\-]{8,}"),
+    ),
 )
 
 
@@ -77,7 +110,18 @@ def iter_files(root: Path) -> Iterable[Path]:
             continue
         if path.suffix.lower() in SKIP_SUFFIXES:
             continue
+        if _is_local_env_file(path.name):
+            continue
         yield path
+
+
+def _line_is_allowlisted(relative_path: str, line: str) -> bool:
+    if relative_path != ".env.example":
+        return False
+    stripped = line.strip()
+    if stripped == "" or stripped.startswith("#"):
+        return True
+    return stripped in _ENV_EXAMPLE_ALLOWED_LINES
 
 
 def scan_text(relative_path: str, text: str) -> list[Finding]:
@@ -85,6 +129,8 @@ def scan_text(relative_path: str, text: str) -> list[Finding]:
         return []
     findings: list[Finding] = []
     for line_number, line in enumerate(text.splitlines(), start=1):
+        if _line_is_allowlisted(relative_path, line):
+            continue
         for rule, pattern in PATTERNS:
             if pattern.search(line):
                 findings.append(Finding(relative_path=relative_path, line=line_number, rule=rule))

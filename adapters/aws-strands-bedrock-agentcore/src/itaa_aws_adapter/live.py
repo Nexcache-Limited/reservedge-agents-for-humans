@@ -17,6 +17,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from itaa_application.errors import ApplicationError
+from itaa_application.external_search_port import ExperienceSearchPort, ExternalSearchPort
 from itaa_application.golden_path import GoldenPathFacade
 from itaa_aws_adapter.events import activity_event
 from itaa_aws_adapter.mode import (
@@ -36,14 +37,25 @@ PLAN_SYSTEM = (
     "You are the Reservedge buyer orchestrator. Interpret a free-form travel objective. "
     "Return only the structured PlanTurn schema. Do not approve A1-A4, rank offers, "
     "mint identifiers, or invent airport codes that the human did not state. "
-    "blockingQuestions.id must be one of dates, departureAirport, carNeed. "
+    "blockingQuestions.id must be one of dates, departureAirport, or carNeed. "
     "Leave blockingQuestions empty when parking or rental is an active booking domain; "
     "code asks every remaining catalog-missing parking fact in one buyer message. "
     "If the buyer answers only some of them, the rest are asked together next turn. "
     "Emit requirementPatches for closed catalog fields evidenced in the latest buyer turn. "
     "requirementPatches.kind must be parking or rental. fieldId must be a catalog field. "
-    "suggestedTasks.kind must be parking, rental, ents, flight, or hotel. "
+    "suggestedTasks.kind must be parking, rental, ents, flight, hotel, or experience. "
     "suggestedTasks.provenance must be explicit, inferred, or proposed. "
+    "Mark a task explicit only when the buyer named that component. "
+    "Destination and dates alone are not hotel, parking, rental, or experience evidence. "
+    "Travelling alone is not experience evidence. Things to do, attractions, activities, "
+    "museums, or tours make experience explicit. "
+    "If the buyer says flights are already booked, do not search flights. "
+    "When a trip is named but no booking component is explicit, ask in buyerSafeMessage "
+    "what to book. Invite hotels, things to do, car rentals, and parking. Do not say you "
+    "will not search. "
+    "If destination is already named, do not ask where. If dates are already named, do not "
+    "ask when. Ask only for the missing fact. "
+    "Do not emit a helpWith blocking question. Do not invent a vertical. "
     "Evidence spans must be character offsets in the objective or answers. "
     "Copy calendar years from the objective or answers; do not assume 2024. "
     "Set fallback to false when returning a valid PlanTurn. "
@@ -58,6 +70,14 @@ PLAN_SYSTEM = (
     "'I don't need covered parking' is covered=none, not preferred. "
     "Parking start and end require buyer clock times. Do not invent noon, midnight, or 12:00Z. "
     "Do not treat a rental-car or entertainment request as airport parking. "
+    "Do not treat a dated destination trip as automatic hotel search, experience search, "
+    "or airport parking. "
+    "Do not invent JFK. Do not copy Mumbai, Milan, London, or New York into parking. "
+    "Provider search is a later capability after an Explicit task and required fields; "
+    "it is not a booking and does not use A1-A4. "
+    "Fill facts.destination with the named city even when it is uncommon. "
+    "Fill facts.startDate and facts.endDate as ISO dates when the buyer named a stay window. "
+    "Do not restrict destinations to a city list. "
     "Ask every remaining material missing parking fact in one buyer-safe message. "
     "Do not claim offers "
     "are ready, ranked, selected, or refreshed before authorized supplier solicitation."
@@ -258,10 +278,14 @@ class LiveOrchestrator:
         facade: GoldenPathFacade | None = None,
         *,
         plan_invoker: PlanInvoker | None = None,
+        stay_search: ExternalSearchPort | None = None,
+        experience_search: ExperienceSearchPort | None = None,
     ) -> None:
         resolve_live_model_id()
         resolve_timeout_ms()
-        self._tools = ClosedTools(facade)
+        self._tools = ClosedTools(
+            facade, stay_search=stay_search, experience_search=experience_search
+        )
         self._plan_invoker = plan_invoker
         self.last_plan_turn: PlanTurn | None = None
         self._context = PlanTurnContext()

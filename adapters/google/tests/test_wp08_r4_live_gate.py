@@ -27,7 +27,7 @@ def test_credentialed_live_module_is_opt_in_and_strict() -> None:
     assert "FakeModel" in source
     assert "LIVE_VERTEX_OK" in source
     assert "JFK_TEXT" in source
-    assert "example-gcp-project" not in source
+    assert "itaa-g1-dev" not in source
     assert "timeout_ms=LIVE_TEST_DEADLINE_MS" not in source
     assert "ResiliencePolicy(timeout_ms=" not in source
 

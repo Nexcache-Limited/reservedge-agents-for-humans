@@ -35,6 +35,7 @@ def test_demo_b_multitask_provenance() -> None:
     assert by_kind["rental"].provenance == "explicit"  # type: ignore[union-attr]
     assert by_kind["parking"].provenance == "inferred"  # type: ignore[union-attr]
     assert by_kind["hotel"].provenance == "proposed"  # type: ignore[union-attr]
+    assert by_kind["hotel"].support == "sandbox_search"  # type: ignore[union-attr]
     assert "flight" not in by_kind or by_kind["flight"].provenance != "explicit"  # type: ignore[union-attr]
     assert projection.facts.destination == "Edinburgh"
     assert projection.facts.destinationAirport == "EDI"
@@ -72,3 +73,62 @@ def test_model_cannot_upgrade_hotel_to_explicit() -> None:
     turn.suggestedTasks.append(SuggestedTask(kind="hotel", provenance="explicit"))
     projection = project_plan(DEMO_A, PlanAnswers(), turn)
     assert all(task.kind != "hotel" or task.provenance != "explicit" for task in projection.tasks)
+
+
+def test_bedrock_named_city_is_not_gazetteer_limited() -> None:
+    from itaa_aws_adapter.projector import project_plan
+    from itaa_aws_adapter.schemas import ExtractedFacts, PlanTurn
+
+    turn = PlanTurn(
+        understanding="Stay in Osaka",
+        facts=ExtractedFacts(
+            destination="Osaka",
+            startDate="2026-11-12",
+            endDate="2026-11-15",
+            hasExactDates=True,
+            hotelStated=True,
+        ),
+        buyerSafeMessage="I have Osaka and the dates.",
+    )
+    projection = project_plan("hotel needed from 12 to 15 november", PlanAnswers(), turn)
+    assert projection.facts.destination == "Osaka"
+    assert projection.facts.startDate == "2026-11-12"
+    assert projection.facts.endDate == "2026-11-15"
+    assert projection.facts.parkingAirport == ""
+    assert "jfk" not in projection.model_dump_json().lower()
+
+
+def test_bedrock_iata_is_not_copied_as_a_city() -> None:
+    from itaa_aws_adapter.projector import project_plan
+    from itaa_aws_adapter.schemas import ExtractedFacts, PlanTurn
+
+    turn = PlanTurn(
+        understanding="Parking",
+        facts=ExtractedFacts(destination="JFK", hotelStated=True),
+        buyerSafeMessage="ok",
+    )
+    projection = project_plan("hotel needed from 12 to 15 november", PlanAnswers(), turn)
+    assert projection.facts.destination != "JFK"
+    assert projection.facts.parkingAirport == ""
+
+
+def test_bedrock_dates_fill_when_extractor_misses() -> None:
+    from itaa_aws_adapter.projector import project_plan
+    from itaa_aws_adapter.schemas import ExtractedFacts, PlanTurn
+
+    turn = PlanTurn(
+        understanding="Stay in Osaka",
+        facts=ExtractedFacts(
+            destination="Osaka",
+            startDate="2026-11-12",
+            endDate="2026-11-15",
+            hasExactDates=True,
+            hotelStated=True,
+        ),
+        buyerSafeMessage="I have Osaka and the dates.",
+    )
+    projection = project_plan("I need a hotel in that city", PlanAnswers(), turn)
+    assert projection.facts.destination == "Osaka"
+    assert projection.facts.startDate == "2026-11-12"
+    assert projection.facts.endDate == "2026-11-15"
+    assert projection.facts.hasExactDates is True

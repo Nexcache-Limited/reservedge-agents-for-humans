@@ -4,9 +4,10 @@ import {
   parkingBookingStarted,
   projectPlan,
   type PlanSession,
+  type PlanTask,
 } from "../intent-first/plan.js";
 import { projectAgentSession } from "../intent-first/agent.js";
-import type { IntentRow, IntentStatus } from "./inbox.js";
+import type { DomainId, IntentRow, IntentStatus } from "./inbox.js";
 
 export function planSessionToRow(session: PlanSession | null): IntentRow | null {
   if (session?.agent == null) {
@@ -17,21 +18,15 @@ export function planSessionToRow(session: PlanSession | null): IntentRow | null 
   const facts = overlayParkingDomainFacts(projection.facts, parking);
   const intentId = typeof parking?.intentId === "string" ? parking.intentId : "";
   const id = intentId.startsWith("pi_") ? intentId : session.agent.sessionId;
+  const domain = primaryInboxDomain(projection.tasks, parking);
   const airport = fieldValue(parking, "airportCode") || facts.parkingAirport;
-  const liveParking =
-    parkingBookingStarted(parking) ||
-    parking?.accepted === true ||
-    parking?.provenance === "explicit";
-  const title =
-    liveParking && airport !== ""
-      ? `Airport parking · ${airport}`
-      : projection.title || "Current booking";
+  const title = inboxTitle(projection.tasks, facts.destination, airport, domain);
   const status = rowStatus(session, parking);
   const sub = rowSub(status, session);
   const now = new Date();
   return {
     id,
-    domain: "parking",
+    domain,
     title,
     sub,
     status,
@@ -120,15 +115,62 @@ export function showRunningInboxChat(session: PlanSession | null): boolean {
   return parkingBookingStarted(parking);
 }
 
+function primaryInboxDomain(tasks: PlanTask[], parking?: AgentDomainState): DomainId {
+  const explicit = new Set(
+    tasks
+      .filter(
+        (task) =>
+          task.provenance === "explicit" || (task.accepted && task.provenance !== "proposed"),
+      )
+      .map((task) => task.kind),
+  );
+  if (explicit.has("parking") || parkingBookingStarted(parking)) {
+    return "parking";
+  }
+  if (explicit.has("hotel")) {
+    return "stay";
+  }
+  if (explicit.has("rental")) {
+    return "rental";
+  }
+  if (explicit.has("ents")) {
+    return "ents";
+  }
+  return "stay";
+}
+
+function inboxTitle(
+  tasks: PlanTask[],
+  destination: string,
+  airport: string,
+  domain: DomainId,
+): string {
+  const named = tasks
+    .filter(
+      (task) =>
+        (task.kind === "hotel" || task.kind === "parking" || task.kind === "rental") &&
+        (task.provenance === "explicit" || (task.accepted && task.provenance !== "proposed")),
+    )
+    .map((task) => (task.kind === "hotel" ? "stay" : task.kind));
+  const place = destination || airport;
+  if (named.length > 1 && place !== "") {
+    return `${place} · ${named.join(" + ")}`;
+  }
+  if (domain === "parking" && airport !== "") {
+    return `Airport parking · ${airport}`;
+  }
+  if (place !== "") {
+    return place;
+  }
+  return "Current booking";
+}
+
 function rowStatus(session: PlanSession, parking?: AgentDomainState): IntentStatus {
   if (parking?.completeness === "authorized" || session.shelf === "history") {
     return "done";
   }
   if (session.shelf === "pending") {
     return "pending";
-  }
-  if (parkingBookingStarted(parking)) {
-    return "running";
   }
   if (session.phase === "clarify") {
     return "needs";
@@ -151,10 +193,7 @@ function rowSub(status: IntentStatus, session: PlanSession): string {
       ? "Waiting on your answers."
       : "Confirm to request parking offers.";
   }
-  if (parkingBookingStarted(session.agent?.domains?.parking)) {
-    return "Running · continue in chat.";
-  }
-  return "Plan forming.";
+  return "Running · continue in chat.";
 }
 
 function fieldValue(domain: AgentDomainState | undefined, id: string): string {

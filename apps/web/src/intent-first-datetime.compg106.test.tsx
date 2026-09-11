@@ -216,11 +216,47 @@ describe("intent-first date and time clarification", () => {
   });
 
   it("retains 14 to 19 October from natural speech and does not collapse to one date", async () => {
-    await startObjective("I'm travelling to Edinburgh from 14 to 19 October 2026.");
-    expect(await screen.findByText("14–19 Oct 2026")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Start date")).toBeNull();
-    expect(screen.queryByText(/^19 Oct 2026$/)).toBeNull();
-    expect(screen.getByLabelText("Departing from")).toBeInTheDocument();
+    const matchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("max-width: 1179px"),
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    try {
+      const user = userEvent.setup();
+      renderApp("/");
+      const field = await screen.findByRole("textbox", {
+        name: "What are you planning or trying to get done?",
+      });
+      fireEvent.change(field, {
+        target: { value: "I'm travelling to Edinburgh from 14 to 19 October 2026." },
+      });
+      await user.click(screen.getByRole("button", { name: "Start booking" }));
+      expect(
+        await screen.findByRole("button", { name: "Confirm plan" }, { timeout: 8000 }),
+      ).toBeInTheDocument();
+      const planTab = screen.queryByRole("tab", { name: /Plan/ });
+      if (planTab !== null && planTab.getAttribute("aria-selected") !== "true") {
+        await user.click(planTab);
+      }
+      const range = /14\s*[–-]\s*19\s+Oct\s+2026/;
+      expect(await screen.findByText(range, {}, { timeout: 8000 })).toHaveTextContent(range);
+      expect(document.body.textContent ?? "").toMatch(range);
+      expect(screen.queryByLabelText("Start date")).toBeNull();
+      expect(screen.queryByText(/^19 Oct 2026$/)).toBeNull();
+      expect(screen.queryByText(/^14 Oct 2026$/)).toBeNull();
+      expect(screen.queryByLabelText("Departing from")).toBeNull();
+      expect(screen.queryByRole("group", { name: "What should I help book?" })).toBeNull();
+      expect(screen.getByRole("button", { name: "Confirm plan" })).toBeInTheDocument();
+      expect(screen.queryByText("Airport parking · EDI")).toBeNull();
+    } finally {
+      window.matchMedia = matchMedia;
+    }
   });
 
   it("keeps 16–20 Oct after Evening and hands those dates into parking", async () => {

@@ -31,7 +31,7 @@ Until edit 6 is accepted, do not start Intent-first feature implementation.
 
 ### Worktree
 
-- Live tree: `(local path omitted)`
+- Live tree: `[local-path]/ITAA-comp-g1-05`
 - Uncommitted COMP-G1-05 Reservedge chrome, live parking composer, RC UAT remediation (EV/`ev_charging`, WallClock, portal CTA, honest click labels).
 - Must be preserved. Do not reset, rebase, or mix a second product cut into the same uncommitted delta without a new work order and file leases.
 

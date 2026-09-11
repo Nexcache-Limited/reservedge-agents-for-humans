@@ -64,21 +64,40 @@ describe("intent-first Clarify & plan", () => {
     expect(screen.queryByText(/Will you need a car/i)).toBeNull();
   });
 
-  it("does not select booking domains until answers are submitted", async () => {
-    const user = await startObjective("I'm travelling to Edinburgh from 14 to 19 October 2026.");
-    expect(await screen.findByText("14–19 Oct 2026")).toBeInTheDocument();
-    expect(screen.getByText("Gathering")).toBeInTheDocument();
-    expect(screen.getByText(/No domain is selected yet/)).toBeInTheDocument();
+  it("invites hotels, cars, and parking in chat for a dated city trip without inventing airport parking", async () => {
+    const user = userEvent.setup();
+    renderApp("/");
+    const field = await screen.findByRole("textbox", {
+      name: "What are you planning or trying to get done?",
+    });
+    fireEvent.change(field, {
+      target: { value: "I'm travelling to Edinburgh from 14 to 19 October 2026." },
+    });
+    await user.click(screen.getByRole("button", { name: "Start booking" }));
+    expect(
+      await screen.findByText(/I can help with hotels, things to do, car rentals, and parking/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "What should I help book?" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Answer and update plan" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Confirm plan" })).toBeInTheDocument();
     expect(screen.queryByText("Airport parking · EDI")).toBeNull();
-    expect(screen.queryByText("Flight")).toBeNull();
-    expect(screen.queryByText("Hotel")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Add to plan" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Not needed" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Add airport parking/i })).toBeNull();
-    await submitAnswers(user);
-    expect(screen.getByText("Forming")).toBeInTheDocument();
-    expect(screen.getByText("Airport parking · EDI")).toBeInTheDocument();
-    expect(screen.getByText("Flight")).toBeInTheDocument();
+    expect(screen.queryByText("Airport parking · Edinburgh")).toBeNull();
+    expect(screen.queryByText("JFK")).toBeNull();
+  });
+
+  it("does not show a date card for a named city trip and asks when in chat", async () => {
+    const user = userEvent.setup();
+    renderApp("/");
+    const field = await screen.findByRole("textbox", {
+      name: "What are you planning or trying to get done?",
+    });
+    fireEvent.change(field, { target: { value: "travelling to London" } });
+    await user.click(screen.getByRole("button", { name: "Start booking" }));
+    expect(await screen.findByText(/I have London\. When are you travelling/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Where and when are you travelling/i)).toBeNull();
+    expect(screen.queryByLabelText("Start date")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Answer and update plan" })).toBeNull();
+    expect(screen.getByText(/Reply with your dates in the chat/i)).toBeInTheDocument();
   });
 
   it("asks only missing blocking questions and keeps an explicit rental-car task", async () => {
@@ -270,15 +289,21 @@ describe("intent-first Clarify & plan", () => {
     expect(screen.getByRole("button", { name: "Send to Reservedge" })).toBeInTheDocument();
   });
 
-  it("asks whether a car is needed when the objective did not say so", async () => {
-    const user = await startObjective("I'm planning a five-day trip to New York in October.");
-    expect(await screen.findByRole("button", { name: "Yes" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "No" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Not sure" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Yes" }));
-    expect(screen.getByRole("button", { name: "Yes" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(planRoot()).queryByText(/Rental car ·/)).toBeNull();
-    await submitAnswers(user);
-    expect(within(planRoot()).getByText(/Rental car ·/)).toBeInTheDocument();
+  it("does not force a car question for a New York stay trip", async () => {
+    const user = userEvent.setup();
+    renderApp("/");
+    const field = await screen.findByRole("textbox", {
+      name: "What are you planning or trying to get done?",
+    });
+    fireEvent.change(field, {
+      target: { value: "I'm planning a five-day trip to New York in October." },
+    });
+    await user.click(screen.getByRole("button", { name: "Start booking" }));
+    expect(await screen.findByText(/When are you travelling/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Start date")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Answer and update plan" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Yes" })).toBeNull();
+    expect(screen.queryByText(/Will you need a car/i)).toBeNull();
+    expect(screen.queryByText("JFK")).toBeNull();
   });
 });

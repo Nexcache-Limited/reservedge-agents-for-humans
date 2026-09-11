@@ -1,4 +1,7 @@
-"""Provider-neutral agent-session BFF. HTTP-forwards to /v1/aws/** only.
+"""Provider-neutral agent-session BFF.
+
+Fake model mode plans in-process and never requires Bedrock or an adapter listener.
+Live split topology still HTTP-forwards to /v1/aws/** only.
 
 Browser product path is /v1/agent/**. This module must not import strands, boto3,
 botocore, Bedrock, or AgentCore. Raw objective text stays session-local.
@@ -27,6 +30,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from itaa_api.agent_requirements import (
     COMPETITION_PARKING_ONLY_COPY,
+    RENTAL_NO_ADAPTER_COPY,
     apply_defaults,
     apply_model_patches,
     apply_patch,
@@ -59,6 +63,11 @@ from itaa_api.intake import (
     register_agent_intake,
 )
 from itaa_api.portfolio_http import attach_portfolio_cookie
+from itaa_application.capability_routing import (
+    Capability,
+    established_capabilities,
+    snapshots_from_projection,
+)
 from itaa_application.errors import ApplicationError
 from itaa_application.golden_path import GoldenPathFacade
 
@@ -82,14 +91,23 @@ _HANDOFF_KEYS = (
     "accessibility",
     "intakeId",
 )
-_ANSWER_KEYS = ("departureAirport", "carNeed", "dates", "startDate", "endDate")
+_ANSWER_KEYS = ("departureAirport", "carNeed", "helpWith", "dates", "startDate", "endDate")
+_CAPABILITY_TOOLS: dict[Capability, str] = {
+    Capability.STAY_SEARCH: "search_stay_offers",
+    Capability.EXPERIENCE_SEARCH: "search_experience_offers",
+}
 _TIMEOUT_MIN_MS = 5000
 _TIMEOUT_MAX_MS = 45000
 _FAKE_TIMEOUT_S = 5.0
 _TIMEOUT_MARGIN_S = 5.0
 _PREPARE_TOOL = "prepare_parking_requirement"
 _MUTATING_TOOLS = frozenset(
-    {"solicit_parking_offers", "accept_offer", "authorize_simulated_transaction"}
+    {
+        "solicit_parking_offers",
+        "accept_offer",
+        "authorize_simulated_transaction",
+        "book_stay_sandbox",
+    }
 )
 PARKING_INTAKE_PATH = "/intents/new/parking"
 FALLBACK_COPY = "Using the local planner (labelled)"
@@ -158,6 +176,11 @@ class AgentSession:
     transcript: list[dict[str, object]] = field(default_factory=list)
     domains: dict[str, dict[str, object]] = field(default_factory=dict)
     buyer_safe_message: str = ""
+    stay_search: dict[str, object] | None = None
+    stay_search_fingerprint: str = ""
+    stay_rate_refs: dict[str, str] = field(default_factory=dict)
+    experience_search: dict[str, object] | None = None
+    experience_search_fingerprint: str = ""
 
 
 def mint_opaque(prefix: str) -> str:
@@ -199,6 +222,8 @@ def build_agent_app(
     application.state.agent_sessions = {}
     if facade is not None:
         application.state.facade = facade
+    if provider is None:
+        attach_default_plan_provider(application)
     application.include_router(router)
     application.add_exception_handler(ApplicationError, application_error_handler)  # type: ignore[arg-type]
     application.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
@@ -216,6 +241,83 @@ class HttpAwsProvider:
 
     def execute_turn(self, payload: Mapping[str, object]) -> dict[str, object]:
         return _http_post(AWS_EXECUTE_PATH, payload)
+
+
+class _InProcessFakeProvider:
+    """Same-process fake Plan/Execute. Never HTTP, Bedrock, or adapter loopback."""
+
+    def __init__(self, orchestrator: Any) -> None:
+        self._orchestrator = orchestrator
+
+    def plan_turn(self, payload: Mapping[str, object]) -> dict[str, object]:
+        from itaa_aws_adapter.schemas import PlanAnswers, PlanTurnContext
+
+        raw_answers = payload.get("answers")
+        answers = PlanAnswers.model_validate(raw_answers if isinstance(raw_answers, dict) else {})
+        objective = str(payload.get("objective") or "")
+        raw_trusted = payload.get("trustedDomains")
+        context = PlanTurnContext(
+            lastUserMessage=str(payload.get("lastUserMessage") or ""),
+            trustedDomains=raw_trusted if isinstance(raw_trusted, dict) else {},
+        )
+        model, projection, events = self._orchestrator.plan_turn(objective, answers, context)
+        return {
+            "planTurn": model.model_dump(mode="json"),
+            "projection": projection.model_dump(mode="json"),
+            "events": events,
+            "correlationId": payload.get("correlationId"),
+        }
+
+    def execute_turn(self, payload: Mapping[str, object]) -> dict[str, object]:
+        tool = str(payload.get("tool") or "")
+        inner = payload.get("payload")
+        result = self._orchestrator.execute_turn(tool, inner if isinstance(inner, dict) else {})
+        return {
+            "tool": tool,
+            "result": result,
+            "correlationId": payload.get("correlationId"),
+        }
+
+
+def _model_mode_is_live() -> bool:
+    raw = os.environ.get("ITAA_AWS_MODEL_MODE", "").strip().lower()
+    if raw == "live":
+        return True
+    return raw == "" and os.environ.get("ITAA_AWS_LIVE") == "1"
+
+
+def _explicit_adapter_url() -> bool:
+    return os.environ.get("ITAA_AWS_ADAPTER_URL", "").strip() != ""
+
+
+def _should_use_in_process_fake() -> bool:
+    if _model_mode_is_live() or _explicit_adapter_url():
+        return False
+    raw = os.environ.get("ITAA_AWS_MODEL_MODE", "").strip().lower()
+    return raw in {"", "fake"}
+
+
+def _build_fake_in_process_provider(facade: GoldenPathFacade | None) -> AwsProvider | None:
+    try:
+        from itaa_aws_adapter.agent import compose_orchestrator
+    except ImportError:
+        return None
+    return _InProcessFakeProvider(compose_orchestrator(facade=facade))
+
+
+def attach_default_plan_provider(application: FastAPI) -> None:
+    """Inject the credential-free fake orchestrator when the BFF is started alone."""
+
+    if getattr(application.state, "aws_provider", None) is not None:
+        return
+    if not _should_use_in_process_fake():
+        return
+    facade = getattr(application.state, "facade", None)
+    provider = _build_fake_in_process_provider(
+        facade if isinstance(facade, GoldenPathFacade) else None
+    )
+    if provider is not None:
+        application.state.aws_provider = provider
 
 
 def _http_post(path: str, payload: Mapping[str, object]) -> dict[str, object]:
@@ -278,6 +380,10 @@ def _provider(request: Request) -> AwsProvider:
     injected = getattr(request.app.state, "aws_provider", None)
     if injected is not None:
         return cast(AwsProvider, injected)
+    attach_default_plan_provider(request.app)
+    attached = getattr(request.app.state, "aws_provider", None)
+    if attached is not None:
+        return cast(AwsProvider, attached)
     return HttpAwsProvider()
 
 
@@ -458,16 +564,18 @@ def _sync_domains(
         if not isinstance(item, dict):
             continue
         kind = item.get("kind")
-        if kind not in {"parking", "rental"}:
+        if kind not in {"parking", "rental", "hotel", "experience"}:
             continue
         provenance = str(item.get("provenance") or "proposed")
         accepted = item.get("accepted") is True or provenance == "explicit"
-        if kind == "parking" and not accepted:
+        if kind in {"parking", "hotel", "experience"} and not accepted:
             continue
-        current = session.domains.get(kind)
+        domain_key = "stay" if kind == "hotel" else str(kind)
+        domain_kind = "hotel" if kind == "hotel" else str(kind)
+        current = session.domains.get(domain_key)
         if current is None:
-            session.domains[kind] = empty_domain(
-                kind,
+            session.domains[domain_key] = empty_domain(
+                domain_kind,  # type: ignore[arg-type]
                 provenance=provenance,
                 accepted=accepted,
             )
@@ -512,8 +620,27 @@ def _parking_led(session: AgentSession) -> bool:
     )
 
 
+def _stay_explicit(session: AgentSession) -> bool:
+    stay = session.domains.get("stay")
+    if isinstance(stay, dict) and (
+        stay.get("accepted") is True or str(stay.get("provenance") or "") == "explicit"
+    ):
+        return True
+    tasks = session.projection.get("tasks")
+    if not isinstance(tasks, list):
+        return False
+    for item in tasks:
+        if not isinstance(item, dict):
+            continue
+        if item.get("kind") != "hotel":
+            continue
+        if item.get("accepted") is True or str(item.get("provenance") or "") == "explicit":
+            return True
+    return False
+
+
 def _non_parking_booking_request(session: AgentSession) -> bool:
-    if _parking_led(session):
+    if _parking_led(session) or _stay_explicit(session):
         return False
     for kind in ("rental", "ents"):
         domain = session.domains.get(kind)
@@ -568,6 +695,12 @@ _PARKING_VEHICLE_ASK_RE = re.compile(r"\bvehicle class\b", re.I)
 
 def _compose_buyer_message(session: AgentSession, model_message: str, *, a2_complete: bool) -> str:
     if _non_parking_booking_request(session):
+        rental = session.domains.get("rental")
+        rental_explicit = isinstance(rental, dict) and (
+            rental.get("accepted") is True or str(rental.get("provenance") or "") == "explicit"
+        )
+        if rental_explicit:
+            return RENTAL_NO_ADAPTER_COPY
         return COMPETITION_PARKING_ONLY_COPY
     next_ask = _next_catalog_ask(session)
     cleaned = sanitize_buyer_message(model_message, a2_complete=a2_complete)
@@ -642,10 +775,11 @@ def _apply_extracted_patches(session: AgentSession, *, source: str) -> None:
                 calendar_context=conversation,
             )
         )
-    changed: list[str] = []
+    parking_changed: list[str] = []
     for patch in patches:
         kind = str(patch.get("kind") or "")
-        domain = session.domains.get(kind)
+        domain_key = "stay" if kind == "hotel" else kind
+        domain = session.domains.get(domain_key)
         if not isinstance(domain, dict):
             continue
         field_id = str(patch.get("fieldId") or "")
@@ -658,26 +792,33 @@ def _apply_extracted_patches(session: AgentSession, *, source: str) -> None:
                 if isinstance(held, dict):
                     current = held.get("value")
             inst = overlay_time_on_instant(current, str(patch.get("value") or ""))
-            if inst and apply_patch(
+            if (
+                inst
+                and apply_patch(
+                    domain,
+                    target,
+                    inst,
+                    source=source,  # type: ignore[arg-type]
+                    provenance="explicit",
+                )
+                and kind == "parking"
+            ):
+                parking_changed.append(target)
+            continue
+        if (
+            apply_patch(
                 domain,
-                target,
-                inst,
+                field_id,
+                patch.get("value"),
                 source=source,  # type: ignore[arg-type]
                 provenance="explicit",
-            ):
-                changed.append(target)
-            continue
-        if apply_patch(
-            domain,
-            field_id,
-            patch.get("value"),
-            source=source,  # type: ignore[arg-type]
-            provenance="explicit",
+            )
+            and kind == "parking"
         ):
-            changed.append(field_id)
+            parking_changed.append(field_id)
     parking = session.domains.get("parking")
-    if isinstance(parking, dict) and changed:
-        mark_stale(parking, changed)
+    if isinstance(parking, dict) and parking_changed:
+        mark_stale(parking, parking_changed)
 
 
 def _seed_parking_from_facts(session: AgentSession, *, source: str) -> None:
@@ -857,6 +998,48 @@ def _offer_amount(item: Mapping[str, object]) -> tuple[object, object]:
     return total, currency or "USD"
 
 
+def _shared_booking_context(session: AgentSession) -> dict[str, object]:
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    if not isinstance(facts, dict):
+        facts = {}
+    items: list[dict[str, object]] = []
+    mapping = (
+        ("originCity", "origin"),
+        ("destination", "destination"),
+        ("dates", "dates"),
+        ("startDate", "startDate"),
+        ("endDate", "endDate"),
+    )
+    for key, label in mapping:
+        value = facts.get(key)
+        if isinstance(value, str) and value.strip():
+            items.append(
+                {
+                    "id": key,
+                    "label": label,
+                    "value": value.strip(),
+                    "source": "buyer",
+                    "provenance": "explicit",
+                }
+            )
+    if facts.get("rentalStated") is True:
+        items.append(
+            {
+                "id": "travellersPreference",
+                "label": "preference",
+                "value": "rental car requested",
+                "source": "buyer",
+                "provenance": "explicit",
+            }
+        )
+    return {
+        "facts": items,
+        "note": (
+            "Shared context never travels as one payload. Each capability sends only its envelope."
+        ),
+    }
+
+
 def _public_projection(session: AgentSession) -> dict[str, object]:
     projection = deepcopy(session.projection)
     if session.confirmed:
@@ -886,6 +1069,18 @@ def _public_session(session: AgentSession) -> dict[str, object]:
         "transcript": list(session.transcript),
         "domains": {kind: public_domain(item) for kind, item in session.domains.items()},
         "buyerSafeMessage": session.buyer_safe_message,
+        "staySearch": None if session.stay_search is None else dict(session.stay_search),
+        "experienceSearch": (
+            None if session.experience_search is None else dict(session.experience_search)
+        ),
+        "sharedBookingContext": _shared_booking_context(session),
+        "workspace": {
+            "persistence": "process-local",
+            "note": (
+                "Running and Pending are this browser session. "
+                "API restart drops agent sessions; resume is not durable."
+            ),
+        },
     }
 
 
@@ -907,6 +1102,7 @@ def _plan(request: Request, session: AgentSession) -> None:
         _append_event(session, "FAILED_CLOSED", FAILED_COPY)
         raise ApplicationError("model", "unavailable") from None
     _apply_plan_result(session, result)
+    _dispatch_capability_searches(request, session)
 
 
 def _execute(
@@ -937,6 +1133,409 @@ def _execute(
     if not isinstance(inner, dict):
         raise ApplicationError("model", "unavailable")
     return dict(inner)
+
+
+def _dispatch_capability_searches(request: Request, session: AgentSession) -> None:
+    """Invoke configured provider adapters for established Explicit capabilities.
+
+    Destination plus dates never activates stay.search or experience.search. Unconfigured
+    capabilities (rental.search) stay silent — no simulated substitute. Parking uses the
+    existing simulated A1–A4 path, not this dispatcher.
+    """
+
+    tasks, facts = snapshots_from_projection(session.projection)
+    for capability in established_capabilities(tasks, facts):
+        tool = _CAPABILITY_TOOLS.get(capability)
+        if tool == "search_stay_offers":
+            _search_stay_offers(
+                request,
+                session,
+                facts.destination,
+                facts.start_date,
+                facts.end_date,
+                facts.origin_city,
+            )
+        elif tool == "search_experience_offers":
+            prefs = _experience_preferences(session)
+            _search_experience_offers(request, session, facts.destination, prefs)
+
+
+def _search_stay_offers(
+    request: Request,
+    session: AgentSession,
+    destination: str,
+    start: str,
+    end: str,
+    origin: str,
+) -> None:
+    fingerprint = "|".join((destination, start, end))
+    if fingerprint == session.stay_search_fingerprint and session.stay_search is not None:
+        current = session.stay_search
+        if isinstance(current, dict):
+            current["stale"] = False
+        return
+    previous = session.stay_search if isinstance(session.stay_search, dict) else None
+    if previous is not None and previous.get("offers"):
+        stale = dict(previous)
+        stale["stale"] = True
+        session.stay_search = stale
+    payload: dict[str, object] = {
+        "destination": destination,
+        "checkIn": start,
+        "checkOut": end,
+        "origin": origin,
+        "correlationId": session.correlation_id,
+    }
+    try:
+        provider = _provider(request)
+        result = provider.execute_turn(
+            {
+                "tool": "search_stay_offers",
+                "payload": payload,
+                "correlationId": session.correlation_id,
+            }
+        )
+        inner = result.get("result") if isinstance(result, dict) else None
+        if not isinstance(inner, dict):
+            raise ApplicationError("staySearch", "unavailable")
+        session.stay_rate_refs = _stay_rate_refs(inner)
+        public = _public_stay_search(inner)
+    except ApplicationError:
+        if previous is not None and previous.get("offers"):
+            public = dict(previous)
+            public["stale"] = True
+            public["buyerSafeMessage"] = (
+                "Hotel results are stale after a requirement change. "
+                "Search is unavailable right now. No simulated parking was substituted."
+            )
+        else:
+            public = {
+                "status": "unavailable",
+                "label": "Hotel search",
+                "providerId": "",
+                "source": "sandbox",
+                "query": {
+                    "domain": "stay",
+                    "destination": {"kind": "city", "value": destination},
+                    "checkIn": start,
+                    "checkOut": end,
+                },
+                "offers": [],
+                "buyerSafeMessage": (
+                    "Hotel search is unavailable right now. No simulated parking was substituted."
+                ),
+                "bookingAuthority": "none",
+                "stale": False,
+                "offerKind": "regular",
+            }
+    session.stay_search = public
+    session.stay_search_fingerprint = fingerprint
+    stay = session.domains.get("stay")
+    if isinstance(stay, dict):
+        stay["completeness"] = "stale" if public.get("stale") is True else "offers"
+        offer = stay.get("offerSet")
+        if isinstance(offer, dict):
+            offer["stale"] = public.get("stale") is True
+    session.tool_trace.append({"kind": "execute", "tool": "search_stay_offers"})
+    note = str(public.get("buyerSafeMessage") or "")
+    if note:
+        _append_agent_turn(session, note)
+
+
+def _public_stay_search(raw: Mapping[str, object]) -> dict[str, object]:
+    offers_in = raw.get("offers")
+    offers: list[dict[str, object]] = []
+    if isinstance(offers_in, list):
+        for item in offers_in:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            if not name:
+                continue
+            lower = name.lower()
+            if any(token in lower for token in ("skyshield", "parkdirect", "terminalflex")):
+                continue
+            price_raw = item.get("price")
+            price = dict(price_raw) if isinstance(price_raw, dict) else {}
+            price_out: dict[str, object] = {}
+            if "currency" in price:
+                price_out["currency"] = price["currency"]
+            if "amountMinor" in price:
+                price_out["amountMinor"] = price["amountMinor"]
+            cancellation = item.get("cancellation")
+            photo = item.get("photoUrl")
+            hold_raw = item.get("sandboxHold")
+            hold = dict(hold_raw) if isinstance(hold_raw, dict) else None
+            offer: dict[str, object] = {
+                "id": str(item.get("id") or ""),
+                "name": name,
+                "locality": str(item.get("locality") or ""),
+                "checkIn": str(item.get("checkIn") or ""),
+                "checkOut": str(item.get("checkOut") or ""),
+                "price": price_out,
+                "cancellation": cancellation if isinstance(cancellation, str) else None,
+                "availability": str(item.get("availability") or ""),
+                "bookingAuthority": "none",
+                "offerKind": "regular",
+            }
+            if isinstance(photo, str) and photo.startswith("https://") and " " not in photo:
+                offer["photoUrl"] = photo.strip()[:500]
+            if hold is not None:
+                offer["sandboxHold"] = {
+                    "status": str(hold.get("status") or ""),
+                    "bookingId": str(hold.get("bookingId") or "")[:80],
+                    "simulatedPayment": hold.get("simulatedPayment") is True,
+                }
+            offers.append(offer)
+    query_raw = raw.get("query")
+    query = dict(query_raw) if isinstance(query_raw, dict) else None
+    status = str(raw.get("status") or "ok")
+    source = str(raw.get("source") or "fake")
+    label = str(raw.get("label") or "")
+    if not label:
+        label = (
+            "Sandbox hotel search"
+            if source == "sandbox"
+            else "Labelled fake hotel search"
+            if source == "fake"
+            else "Hotel search"
+        )
+    out: dict[str, object] = {
+        "status": status,
+        "label": label,
+        "providerId": str(raw.get("providerId") or "liteapi"),
+        "source": source,
+        "query": query,
+        "offers": offers,
+        "buyerSafeMessage": str(raw.get("buyerSafeMessage") or label),
+        "bookingAuthority": "none",
+        "stale": False,
+        "offerKind": "regular",
+    }
+    if isinstance(raw.get("fetchedAt"), str):
+        out["fetchedAt"] = raw["fetchedAt"]
+    warnings = raw.get("warnings")
+    if isinstance(warnings, list):
+        out["warnings"] = [str(item) for item in warnings if isinstance(item, str)]
+    encoded = json.dumps(out).lower()
+    if "x-api-key" in encoded or "itaa_liteapi_api_key" in encoded or '"rateref"' in encoded:
+        raise ApplicationError("staySearch", "closed")
+    return out
+
+
+def _stay_rate_refs(raw: Mapping[str, object]) -> dict[str, str]:
+    refs: dict[str, str] = {}
+    offers_in = raw.get("offers")
+    if not isinstance(offers_in, list):
+        return refs
+    for item in offers_in:
+        if not isinstance(item, dict):
+            continue
+        offer_id = str(item.get("id") or "").strip()
+        rate_ref = str(item.get("rateRef") or "").strip()
+        if offer_id and rate_ref:
+            refs[offer_id] = rate_ref
+    return refs
+
+
+def _experience_preferences(session: AgentSession) -> tuple[str, ...]:
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    if not isinstance(facts, dict):
+        return ()
+    raw = facts.get("experiencePreferences")
+    if isinstance(raw, list):
+        return tuple(str(item).strip() for item in raw if str(item).strip())
+    day = str(facts.get("dayPart") or "").strip().lower()
+    if day in {"evening", "morning", "afternoon"}:
+        return (day,)
+    return ()
+
+
+def _search_experience_offers(
+    request: Request,
+    session: AgentSession,
+    destination: str,
+    preferences: tuple[str, ...],
+) -> None:
+    fingerprint = "|".join((destination, *preferences))
+    if (
+        fingerprint == session.experience_search_fingerprint
+        and session.experience_search is not None
+    ):
+        current = session.experience_search
+        if isinstance(current, dict):
+            current["stale"] = False
+        return
+    previous = session.experience_search if isinstance(session.experience_search, dict) else None
+    if previous is not None and previous.get("offers"):
+        stale = dict(previous)
+        stale["stale"] = True
+        session.experience_search = stale
+    payload: dict[str, object] = {
+        "destination": destination,
+        "preferences": list(preferences),
+        "correlationId": session.correlation_id,
+    }
+    try:
+        provider = _provider(request)
+        result = provider.execute_turn(
+            {
+                "tool": "search_experience_offers",
+                "payload": payload,
+                "correlationId": session.correlation_id,
+            }
+        )
+        inner = result.get("result") if isinstance(result, dict) else None
+        if not isinstance(inner, dict):
+            raise ApplicationError("experienceSearch", "unavailable")
+        public = _public_experience_search(inner)
+    except ApplicationError:
+        if previous is not None and previous.get("offers"):
+            public = dict(previous)
+            public["stale"] = True
+            public["buyerSafeMessage"] = (
+                "Experience results are stale after a requirement change. "
+                "Search is unavailable right now. No hotel inventory was substituted."
+            )
+        else:
+            public = {
+                "status": "unavailable",
+                "label": "Experience search",
+                "providerId": "",
+                "source": "sandbox",
+                "query": {
+                    "domain": "experience",
+                    "destination": {"kind": "city", "value": destination},
+                    "preferences": list(preferences),
+                },
+                "offers": [],
+                "buyerSafeMessage": (
+                    "Experience search is unavailable right now. "
+                    "No hotel or parking inventory was substituted."
+                ),
+                "bookingAuthority": "none",
+                "stale": False,
+                "offerKind": "regular",
+            }
+    session.experience_search = public
+    session.experience_search_fingerprint = fingerprint
+    experience = session.domains.get("experience")
+    if isinstance(experience, dict):
+        experience["completeness"] = "stale" if public.get("stale") is True else "offers"
+        offer = experience.get("offerSet")
+        if isinstance(offer, dict):
+            offer["stale"] = public.get("stale") is True
+    session.tool_trace.append({"kind": "execute", "tool": "search_experience_offers"})
+    note = str(public.get("buyerSafeMessage") or "")
+    if note:
+        _append_agent_turn(session, note)
+
+
+def _public_experience_search(raw: Mapping[str, object]) -> dict[str, object]:
+    offers_in = raw.get("offers")
+    offers: list[dict[str, object]] = []
+    if isinstance(offers_in, list):
+        for item in offers_in:
+            if not isinstance(item, dict):
+                continue
+            title = str(item.get("title") or item.get("name") or "").strip()
+            if not title:
+                continue
+            lower = title.lower()
+            if any(token in lower for token in ("skyshield", "parkdirect", "terminalflex")):
+                continue
+            price_raw = item.get("price")
+            price = dict(price_raw) if isinstance(price_raw, dict) else {}
+            price_out: dict[str, object] = {}
+            if "currency" in price:
+                price_out["currency"] = price["currency"]
+            if "amountMinor" in price:
+                price_out["amountMinor"] = price["amountMinor"]
+            duration = item.get("durationMinutes")
+            photo = item.get("photoUrl")
+            offer: dict[str, object] = {
+                "id": str(item.get("id") or ""),
+                "title": title,
+                "category": str(item.get("category") or "Experience"),
+                "location": str(item.get("location") or ""),
+                "availability": str(item.get("availability") or ""),
+                "price": price_out,
+                "durationMinutes": duration if isinstance(duration, int) else None,
+                "cancellation": item.get("cancellation")
+                if isinstance(item.get("cancellation"), str)
+                else None,
+                "bookingAuthority": "none",
+                "offerKind": "regular",
+            }
+            if isinstance(photo, str) and photo.startswith("https://") and " " not in photo:
+                offer["photoUrl"] = photo.strip()[:500]
+            offers.append(offer)
+    query_raw = raw.get("query")
+    query = dict(query_raw) if isinstance(query_raw, dict) else None
+    status = str(raw.get("status") or "ok")
+    source = str(raw.get("source") or "fake")
+    label = str(raw.get("label") or "")
+    if not label:
+        label = (
+            "Sandbox experience search"
+            if source == "sandbox"
+            else "Labelled fake experience search"
+            if source == "fake"
+            else "Experience search"
+        )
+    out: dict[str, object] = {
+        "status": status,
+        "label": label,
+        "providerId": str(raw.get("providerId") or "prioticket"),
+        "source": source,
+        "query": query,
+        "offers": offers,
+        "buyerSafeMessage": str(raw.get("buyerSafeMessage") or label),
+        "bookingAuthority": "none",
+        "stale": False,
+        "offerKind": "regular",
+    }
+    if isinstance(raw.get("fetchedAt"), str):
+        out["fetchedAt"] = raw["fetchedAt"]
+    warnings = raw.get("warnings")
+    if isinstance(warnings, list):
+        out["warnings"] = [str(item) for item in warnings if isinstance(item, str)]
+    encoded = json.dumps(out).lower()
+    if (
+        "itaa_prioticket_client_secret" in encoded
+        or "client_secret" in encoded
+        or "x-api-key" in encoded
+        or "authorization: basic" in encoded
+    ):
+        raise ApplicationError("experienceSearch", "closed")
+    return out
+
+
+def _apply_stay_sandbox_hold(
+    session: AgentSession, offer_id: str, result: Mapping[str, object]
+) -> None:
+    search = session.stay_search
+    if not isinstance(search, dict) or not offer_id:
+        return
+    offers_in = search.get("offers")
+    if not isinstance(offers_in, list):
+        return
+    updated: list[object] = []
+    for item in offers_in:
+        if not isinstance(item, dict) or str(item.get("id") or "") != offer_id:
+            updated.append(item)
+            continue
+        offer = dict(item)
+        offer["sandboxHold"] = {
+            "status": str(result.get("status") or ""),
+            "bookingId": str(result.get("bookingId") or "")[:80],
+            "simulatedPayment": result.get("simulatedPayment") is True,
+        }
+        updated.append(offer)
+    search["offers"] = updated
+    note = str(result.get("buyerSafeMessage") or "")
+    if note:
+        _append_agent_turn(session, note)
 
 
 def _parking_task(session: AgentSession) -> dict[str, object] | None:
@@ -1022,7 +1621,13 @@ def create_turn(
         raise ApplicationError("payload", "schema_invalid")
     if has_tool:
         tool = body.tool or ""
-        result = _execute(request, session, tool, body.payload)
+        payload = dict(body.payload)
+        if tool == "book_stay_sandbox":
+            offer_id = str(payload.get("offerId") or "")
+            payload["rateRef"] = session.stay_rate_refs.get(offer_id, "")
+        result = _execute(request, session, tool, payload)
+        if tool == "book_stay_sandbox":
+            _apply_stay_sandbox_hold(session, str(payload.get("offerId") or ""), result)
         public = _public_session(session)
         public["result"] = result
         return public
@@ -1056,6 +1661,7 @@ def confirm_session(
     session.confirmed = True
     _append_event(session, "PLAN_CONFIRMED", CONFIRMED_COPY)
     _attach_parking_handoff(request, session)
+    _dispatch_capability_searches(request, session)
     _sync_domains(session, source="earlier_turn")
     _refresh_pending(session)
     return _public_session(session)

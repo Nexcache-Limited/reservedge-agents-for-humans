@@ -282,11 +282,16 @@ export interface ActivityEntry {
 
 export type AgentPhase = "clarify" | "forming" | "ready";
 export type AgentTaskProvenance = "explicit" | "inferred" | "proposed";
-export type AgentTaskSupport = "live_simulated" | "demonstration" | "unsupported";
-export type AgentQuestionId = "dates" | "departureAirport" | "carNeed";
+export type AgentTaskSupport =
+  | "live_simulated"
+  | "demonstration"
+  | "unsupported"
+  | "sandbox_search";
+export type AgentQuestionId = "dates" | "departureAirport" | "carNeed" | "helpWith";
 
 export interface AgentFacts {
   destination: string;
+  originCity?: string;
   destinationAirport: string;
   parkingAirport: string;
   departureAirport: string;
@@ -300,7 +305,11 @@ export interface AgentFacts {
   rentalStated: boolean;
   entsStated: boolean;
   hotelStated: boolean;
+  experienceStated?: boolean;
+  experiencePreferences?: string[];
   flightStated: boolean;
+  flightSatisfied?: boolean;
+  helpWith?: string;
   landing: boolean;
   travel: boolean;
   conference: boolean;
@@ -312,7 +321,7 @@ export interface AgentFacts {
 
 export interface AgentPlanTask {
   id: string;
-  kind: "parking" | "rental" | "ents" | "flight" | "hotel";
+  kind: "parking" | "rental" | "ents" | "flight" | "hotel" | "experience";
   code: string;
   title: string;
   detail: string;
@@ -337,6 +346,101 @@ export interface AgentPlanProjection {
   summary: string;
   confirmedCount: number;
   proposedCount: number;
+}
+
+export interface AgentStaySandboxHold {
+  status: string;
+  bookingId: string;
+  simulatedPayment: boolean;
+}
+
+export interface AgentStayOffer {
+  id: string;
+  name: string;
+  locality: string;
+  checkIn: string;
+  checkOut: string;
+  price?: { currency?: string; amountMinor?: number } | null;
+  cancellation: string | null;
+  availability: string;
+  bookingAuthority: "none";
+  photoUrl?: string;
+  sandboxHold?: AgentStaySandboxHold;
+  offerKind?: "regular" | "curated";
+}
+
+export interface AgentExperienceOffer {
+  id: string;
+  title: string;
+  category: string;
+  location: string;
+  availability: string;
+  price?: { currency?: string; amountMinor?: number } | null;
+  durationMinutes?: number | null;
+  cancellation: string | null;
+  bookingAuthority: "none";
+  photoUrl?: string;
+  offerKind?: "regular" | "curated";
+}
+
+export interface AgentExperienceSearch {
+  status: string;
+  label: string;
+  providerId: string;
+  source: "fake" | "sandbox" | "live" | string;
+  query?: {
+    domain?: string;
+    destination?: { kind: string; value: string };
+    preferences?: string[];
+    checkIn?: string;
+    checkOut?: string;
+  } | null;
+  offers: AgentExperienceOffer[];
+  buyerSafeMessage: string;
+  bookingAuthority: "none";
+  fetchedAt?: string;
+  warnings?: string[];
+  stale?: boolean;
+  offerKind?: "regular" | "curated";
+}
+
+export interface AgentStaySearch {
+  status: string;
+  label: string;
+  providerId: string;
+  source: "fake" | "sandbox" | "live" | string;
+  query?: {
+    domain?: string;
+    destination?: { kind: string; value: string };
+    origin?: { kind: string; value: string };
+    checkIn?: string;
+    checkOut?: string;
+  } | null;
+  offers: AgentStayOffer[];
+  buyerSafeMessage: string;
+  bookingAuthority: "none";
+  fetchedAt?: string;
+  warnings?: string[];
+  stale?: boolean;
+  offerKind?: "regular" | "curated";
+}
+
+export interface AgentSharedContextFact {
+  id: string;
+  label: string;
+  value: string;
+  source: string;
+  provenance: string;
+}
+
+export interface AgentSharedBookingContext {
+  facts: AgentSharedContextFact[];
+  note: string;
+}
+
+export interface AgentWorkspaceMeta {
+  persistence: string;
+  note: string;
 }
 
 export interface AgentParkingHandoff {
@@ -413,6 +517,10 @@ export interface AgentSessionView {
   transcript?: AgentTranscriptItem[];
   domains?: Record<string, AgentDomainState>;
   buyerSafeMessage?: string;
+  staySearch?: AgentStaySearch | null;
+  experienceSearch?: AgentExperienceSearch | null;
+  sharedBookingContext?: AgentSharedBookingContext | null;
+  workspace?: AgentWorkspaceMeta | null;
 }
 
 export interface AgentSessionCreateBody {
@@ -428,6 +536,8 @@ export interface AgentTurnBody {
     endDate?: string;
   };
   message?: string;
+  tool?: string;
+  payload?: Record<string, unknown>;
   patches?: Array<{ domain: string; fieldId: string; value: unknown }>;
 }
 

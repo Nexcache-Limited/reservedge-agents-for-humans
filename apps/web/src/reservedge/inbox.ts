@@ -1,5 +1,5 @@
-export type DomainCode = "Pk" | "Rc" | "En";
-export type DomainId = "parking" | "rental" | "ents";
+export type DomainCode = "Pk" | "Rc" | "En" | "St";
+export type DomainId = "parking" | "rental" | "ents" | "stay";
 export type IntentStatus =
   | "decision"
   | "needs"
@@ -30,6 +30,7 @@ export const DOMAIN_META: Record<DomainId, { code: DomainCode; name: string }> =
   parking: { code: "Pk", name: "Airport parking" },
   rental: { code: "Rc", name: "Rental car" },
   ents: { code: "En", name: "Entertainment" },
+  stay: { code: "St", name: "Stay" },
 };
 
 export const STATUS_STYLE: Record<IntentStatus, { label: string; bg: string; fg: string }> = {

@@ -7,7 +7,11 @@
 import type {
   AgentDomainState,
   AgentPendingAuthorization,
+  AgentSharedBookingContext,
+  AgentExperienceSearch,
+  AgentStaySearch,
   AgentTranscriptItem,
+  AgentWorkspaceMeta,
 } from "../api/types.js";
 import {
   composeScheduleLabel,
@@ -33,14 +37,23 @@ export const PLAN_QUESTION_CAP = 3;
 export type ClarifyPhase = "clarify" | "forming" | "ready";
 export type ClarifyPane = "conversation" | "plan";
 export type CarNeed = "yes" | "no" | "unsure";
-export type TaskKind = "parking" | "rental" | "ents" | "flight" | "hotel";
+export type TaskKind = "parking" | "rental" | "ents" | "flight" | "hotel" | "experience";
 export type TaskProvenance = "explicit" | "inferred" | "proposed";
-export type TaskSupport = "live_simulated" | "demonstration" | "unsupported";
-export type QuestionId = "dates" | "departureAirport" | "carNeed";
+export type TaskSupport = "live_simulated" | "demonstration" | "unsupported" | "sandbox_search";
+export type QuestionId = "dates" | "departureAirport" | "carNeed" | "helpWith";
+export type HelpWith =
+  | "stay"
+  | "rental"
+  | "parking"
+  | "flights_sorted"
+  | "experience"
+  | "unsure"
+  | "";
 
 export interface PlanAnswers extends ScheduleAnswers {
   departureAirport: string;
   carNeed: CarNeed | "";
+  helpWith: HelpWith;
 }
 
 export interface TaskOverride {
@@ -77,10 +90,15 @@ export interface AgentPlanBinding {
   domains: Record<string, AgentDomainState>;
   pendingAuthorization: AgentPendingAuthorization | null;
   buyerSafeMessage: string;
+  staySearch: AgentStaySearch | null;
+  experienceSearch?: AgentExperienceSearch | null;
+  sharedBookingContext?: AgentSharedBookingContext | null;
+  workspace?: AgentWorkspaceMeta | null;
 }
 
 export interface ExtractedFacts {
   destination: string;
+  originCity: string;
   destinationAirport: string;
   parkingAirport: string;
   departureAirport: string;
@@ -94,7 +112,11 @@ export interface ExtractedFacts {
   rentalStated: boolean;
   entsStated: boolean;
   hotelStated: boolean;
+  experienceStated: boolean;
+  experiencePreferences: string[];
   flightStated: boolean;
+  flightSatisfied: boolean;
+  helpWith: HelpWith;
   landing: boolean;
   travel: boolean;
   conference: boolean;
@@ -109,7 +131,7 @@ export interface ClarificationQuestion {
   label: string;
   why: string;
   kind: "text" | "choice";
-  choices?: ReadonlyArray<{ id: CarNeed; label: string }>;
+  choices?: ReadonlyArray<{ id: string; label: string }>;
   unblocks: string[];
 }
 
@@ -146,6 +168,7 @@ export const EMPTY_ANSWERS: PlanAnswers = {
   ...emptySchedule(),
   departureAirport: "",
   carNeed: "",
+  helpWith: "",
 };
 
 const KNOWN_AIRPORTS: Record<string, { city: string; label: string }> = {
@@ -167,11 +190,26 @@ const CITY_AIRPORTS: Array<{ pattern: RegExp; city: string; airport: string }> =
   { pattern: /\bedinburgh\b/, city: "Edinburgh", airport: "EDI" },
   { pattern: /\bnew york\b|\bnyc\b|\bmanhattan\b/, city: "New York", airport: "" },
   { pattern: /\bmanchester\b/, city: "Manchester", airport: "MAN" },
+  { pattern: /\bmilan\b|\bmilano\b/, city: "Milan", airport: "" },
+  { pattern: /\bmumbai\b|\bbombay\b/, city: "Mumbai", airport: "" },
+  { pattern: /\brome\b|\broma\b/, city: "Rome", airport: "" },
   { pattern: /\blondon\b/, city: "London", airport: "LHR" },
   { pattern: /\bamsterdam\b/, city: "Amsterdam", airport: "AMS" },
   { pattern: /\bparis\b/, city: "Paris", airport: "CDG" },
   { pattern: /\bdublin\b/, city: "Dublin", airport: "DUB" },
   { pattern: /\bglasgow\b/, city: "Glasgow", airport: "GLA" },
+  { pattern: /\bmiami\b/, city: "Miami", airport: "" },
+  { pattern: /\bbarcelona\b/, city: "Barcelona", airport: "" },
+  { pattern: /\bmadrid\b/, city: "Madrid", airport: "" },
+  { pattern: /\bberlin\b/, city: "Berlin", airport: "" },
+  { pattern: /\btokyo\b/, city: "Tokyo", airport: "" },
+  { pattern: /\bdubai\b/, city: "Dubai", airport: "" },
+  { pattern: /\blos angeles\b/, city: "Los Angeles", airport: "" },
+  { pattern: /\bchicago\b/, city: "Chicago", airport: "" },
+  { pattern: /\bboston\b/, city: "Boston", airport: "" },
+  { pattern: /\bsan francisco\b/, city: "San Francisco", airport: "" },
+  { pattern: /\btoronto\b/, city: "Toronto", airport: "" },
+  { pattern: /\bsydney\b/, city: "Sydney", airport: "" },
 ];
 
 const MONTH_NAMES =
@@ -214,8 +252,14 @@ const TASK_META: Record<
   hotel: {
     code: "Ht",
     title: "Hotel",
-    support: "unsupported",
-    supportLabel: "Unsupported in this build",
+    support: "sandbox_search",
+    supportLabel: "Sandbox hotel search",
+  },
+  experience: {
+    code: "Ex",
+    title: "Experience",
+    support: "sandbox_search",
+    supportLabel: "Sandbox experience search",
   },
 };
 
@@ -229,6 +273,7 @@ export function normalizeAnswers(value: Partial<PlanAnswers> | undefined): PlanA
     ...schedule,
     departureAirport: value?.departureAirport ?? "",
     carNeed: value?.carNeed ?? "",
+    helpWith: value?.helpWith ?? "",
   };
 }
 
@@ -291,21 +336,54 @@ function seedAnswers(facts: ExtractedFacts, objective: string): PlanAnswers {
   });
 }
 
+function experiencePrefs(lower: string): string[] {
+  const prefs: string[] = [];
+  if (/\bevening\b|\btonight\b/.test(lower)) {
+    prefs.push("evening");
+  }
+  if (/\bfamily[-\s]?friendly\b/.test(lower)) {
+    prefs.push("family-friendly");
+  }
+  if (/\bmuseums?\b/.test(lower)) {
+    prefs.push("museum");
+  }
+  if (/\btours?\b/.test(lower)) {
+    prefs.push("tour");
+  }
+  if (/\bcity\s+centre\b|\bcity\s+center\b|\bdowntown\b/.test(lower)) {
+    prefs.push("city-centre");
+  }
+  return prefs;
+}
+
 export function extractFacts(objective: string): ExtractedFacts {
   const text = objective.trim();
   const lower = text.toLowerCase();
   const parkingWord = /\bparking\b/.test(lower);
   const rentalStated = carMentioned(lower);
-  const entsStated = /\b(ticket|concert|show|entertainment|gig)\b/.test(lower);
+  const entsStated =
+    /\b(tickets?|concerts?|entertainment|gigs?)\b/.test(lower) ||
+    (/\b(?:a |the |tonight'?s )?shows?\b/.test(lower) && !/\bshow(?:s)?\s+(?:me|us)\b/.test(lower));
   const hotelStated = /\b(hotel|accommodation|place to stay)\b/.test(lower);
-  const flightStated = /\b(flight|flights|flying)\b/.test(lower);
+  const experienceStated =
+    /\b(?:things?\s+to\s+do|what\s+to\s+do|places?\s+to\s+visit|attractions?|activit(?:y|ies)|museums?|tours?|sightseeing|experiences|family[-\s]?friendly)\b/.test(
+      lower,
+    );
+  const experiencePreferences = experiencePrefs(lower);
+  const flightSatisfied =
+    /\bflights?\s+(?:are|is|were|'re)\s+(?:already\s+)?booked\b/.test(lower) ||
+    /\balready booked(?:\s+\w+){0,4}\s+flights?\b/.test(lower);
+  const flightStated = /\b(flight|flights|flying)\b/.test(lower) && !flightSatisfied;
   const landing = /\b(when i land|when we land|when i arrive|when we arrive|land(?:ing)?)\b/.test(
     lower,
   );
   const conference = /\bconference\b/.test(lower);
   const travel = /\b(travell?ing|trip to|going to|visit(?:ing)?)\b/.test(lower);
   const nights = /\bnights?\b/.test(lower);
-  const city = matchCity(lower);
+  const route = parseRoute(text);
+  const city = matchCity(route.destination || lower);
+  const originMatched = matchCity(route.origin);
+  const originCity = originMatched?.city ?? (route.origin ? titleCase(route.origin) : "");
   const airports = matchAirports(text);
   const flyingFrom = text.match(/\b(?:flying|departing|leaving)\s+from\s+([A-Za-z]{3})\b/i);
   const parkingAt = text.match(/\b(?:parking\s+(?:at|in)|at)\s+([A-Za-z]{3})\b/i);
@@ -324,11 +402,10 @@ export function extractFacts(objective: string): ExtractedFacts {
       : parkingStated
         ? namedAirport
         : "";
-  const destination = city?.city ?? "";
+  const destination = city?.city ?? guessCity(text);
   const cityAirport = city?.airport ?? "";
-  const destinationAirport = cityAirport || parkingAirportFromText;
-  const parkingAirport =
-    parkingAirportFromText || (landing || travel || parkingStated ? cityAirport || "" : "");
+  const destinationAirport = cityAirport;
+  const parkingAirport = parkingAirportFromText;
   const monthDay = text.match(MONTH_DAY)?.[0]?.trim() ?? "";
   const weekday = text.match(WEEKDAY)?.[0] ?? "";
   const monthOnly = monthDay === "" && MONTH.test(lower);
@@ -350,6 +427,7 @@ export function extractFacts(objective: string): ExtractedFacts {
     (destination !== "" && rentalStated);
   return {
     destination,
+    originCity,
     destinationAirport,
     parkingAirport,
     departureAirport,
@@ -363,7 +441,11 @@ export function extractFacts(objective: string): ExtractedFacts {
     rentalStated,
     entsStated,
     hotelStated,
+    experienceStated,
+    experiencePreferences,
     flightStated,
+    flightSatisfied,
+    helpWith: "",
     landing,
     travel,
     conference,
@@ -376,6 +458,19 @@ export function extractFacts(objective: string): ExtractedFacts {
 
 export function selectClarifications(facts: ExtractedFacts): ClarificationQuestion[] {
   const questions: ClarificationQuestion[] = [];
+  const parkingActive = facts.parkingStated || facts.landing;
+  if (facts.parkingStated) {
+    if (!facts.hasExactDates) {
+      questions.push({
+        id: "dates",
+        label: "Exact dates",
+        why: "Sets parking duration, car hire window and hotel nights.",
+        kind: "text",
+        unblocks: unblocksFor(facts, "dates"),
+      });
+    }
+    return questions.slice(0, PLAN_QUESTION_CAP);
+  }
   if (!facts.hasExactDates) {
     questions.push({
       id: "dates",
@@ -385,7 +480,12 @@ export function selectClarifications(facts: ExtractedFacts): ClarificationQuesti
       unblocks: unblocksFor(facts, "dates"),
     });
   }
-  if (facts.tripLike && facts.departureAirport === "") {
+  if (
+    facts.tripLike &&
+    facts.departureAirport === "" &&
+    facts.originCity === "" &&
+    (parkingActive || facts.flightStated)
+  ) {
     questions.push({
       id: "departureAirport",
       label: "Departing from",
@@ -394,7 +494,7 @@ export function selectClarifications(facts: ExtractedFacts): ClarificationQuesti
       unblocks: unblocksFor(facts, "departure"),
     });
   }
-  if (facts.tripLike && facts.carNeed === "") {
+  if (facts.tripLike && facts.carNeed === "" && (parkingActive || facts.rentalStated)) {
     const place = facts.destination || "your destination";
     questions.push({
       id: "carNeed",
@@ -413,12 +513,14 @@ export function selectClarifications(facts: ExtractedFacts): ClarificationQuesti
 }
 
 export function projectPlan(session: PlanSession): PlanProjection {
-  const facts = extractFacts(combinedObjective(session));
+  const facts = applyAnswerOverlay(extractFacts(combinedObjective(session)), session.answers);
   const questions = selectClarifications(facts);
   const tasks = applyTaskOverrides(baseTasks(facts, session.answers), session.overrides);
   const chips = planContextChips(facts, session.answers, session.extraNote);
-  const visible = tasks.filter(
-    (task) => task.accepted || task.provenance === "proposed" || task.provenance === "inferred",
+  const visible = sortPlanTasks(
+    tasks.filter(
+      (task) => task.accepted || task.provenance === "proposed" || task.provenance === "inferred",
+    ),
   );
   const confirmed = visible.filter((task) => task.accepted && task.provenance !== "proposed");
   const proposed = visible.filter((task) => !task.accepted || task.provenance === "proposed");
@@ -514,7 +616,9 @@ function periodNote(part: DayPart, flexible: boolean): string {
 
 export function supportedAddableKinds(tasks: PlanTask[]): TaskKind[] {
   const present = new Set(tasks.map((task) => task.kind));
-  return (["parking", "rental", "ents"] as const).filter((kind) => !present.has(kind));
+  return (["parking", "rental", "ents", "experience"] as const).filter(
+    (kind) => !present.has(kind),
+  );
 }
 
 export function addTaskOverride(kind: TaskKind): TaskOverride {
@@ -562,6 +666,27 @@ export function combinedObjective(session: Pick<PlanSession, "objective" | "extr
     .join(" ");
 }
 
+function applyAnswerOverlay(facts: ExtractedFacts, answers: PlanAnswers): ExtractedFacts {
+  const help = answers.helpWith;
+  const next: ExtractedFacts = { ...facts, helpWith: help };
+  if (help === "stay") {
+    next.hotelStated = true;
+  } else if (help === "rental") {
+    next.rentalStated = true;
+    if (next.carNeed === "") {
+      next.carNeed = "yes";
+    }
+  } else if (help === "parking") {
+    next.parkingStated = true;
+  } else if (help === "flights_sorted") {
+    next.flightSatisfied = true;
+    next.flightStated = false;
+  } else if (help === "experience") {
+    next.experienceStated = true;
+  }
+  return next;
+}
+
 function baseTasks(facts: ExtractedFacts, answers: PlanAnswers): PlanTask[] {
   const tasks: PlanTask[] = [];
   const where = facts.destination || facts.parkingAirport || "the airport";
@@ -576,7 +701,7 @@ function baseTasks(facts: ExtractedFacts, answers: PlanAnswers): PlanTask[] {
         provenance,
         provenance === "explicit",
         parkingDetail(facts, answers, provenance, where),
-        facts.parkingAirport || facts.destination,
+        facts.parkingAirport || facts.destinationAirport || facts.destination,
       ),
     );
   }
@@ -611,7 +736,17 @@ function baseTasks(facts: ExtractedFacts, answers: PlanAnswers): PlanTask[] {
       ),
     );
   }
-  if (facts.tripLike && (facts.landing || facts.travel || facts.flightStated)) {
+  if (facts.experienceStated) {
+    tasks.push(
+      makeTask(
+        "experience",
+        "explicit",
+        true,
+        "You asked for things to do, attractions, or experiences.",
+      ),
+    );
+  }
+  if (facts.tripLike && (facts.landing || facts.flightStated) && !facts.flightSatisfied) {
     const provenance: TaskProvenance = facts.flightStated ? "explicit" : "proposed";
     const accepted = provenance === "explicit";
     tasks.push(
@@ -625,37 +760,17 @@ function baseTasks(facts: ExtractedFacts, answers: PlanAnswers): PlanTask[] {
       ),
     );
   }
-  if (facts.conference || facts.hotelStated || facts.nights) {
-    const provenance: TaskProvenance = facts.hotelStated ? "explicit" : "proposed";
-    tasks.push(
-      makeTask(
-        "hotel",
-        provenance,
-        provenance === "explicit",
-        facts.hotelStated
-          ? "You mentioned accommodation."
-          : facts.conference
-            ? `A stay is often needed for a conference in ${where}. Proposed only — not something you requested.`
-            : `A stay is often needed for this trip. Proposed only — not something you requested.`,
-      ),
-    );
-  } else if (facts.tripLike && !facts.parkingStated) {
+  if (facts.hotelStated) {
+    tasks.push(makeTask("hotel", "explicit", true, "You mentioned accommodation."));
+  } else if (facts.conference || facts.nights) {
     tasks.push(
       makeTask(
         "hotel",
         "proposed",
         false,
-        `A stay is often needed in ${where}. Proposed only — not something you requested.`,
-      ),
-    );
-  }
-  if (tasks.length === 0) {
-    tasks.push(
-      makeTask(
-        "parking",
-        "proposed",
-        false,
-        "No domain was named. Airport parking is proposed so you can confirm or choose another task.",
+        facts.conference
+          ? `A stay is often needed for a conference in ${where}. Proposed only — not something you requested.`
+          : `A stay is often needed for this trip. Proposed only — not something you requested.`,
       ),
     );
   }
@@ -790,18 +905,23 @@ export function planContextChips(
     chips.push({
       id: "origin",
       label: origin,
-      source: answers.departureAirport.trim() !== "" ? "YOU SAID" : "YOU SAID",
+      source: "YOU SAID",
+    });
+  } else if (facts.originCity !== "") {
+    chips.push({
+      id: "originCity",
+      label: facts.originCity,
+      source: "YOU SAID",
     });
   }
   if (facts.destination !== "") {
     chips.push({ id: "destination", label: facts.destination, source: "YOU SAID" });
   }
-  const car = answers.carNeed || facts.carNeed;
-  if (car === "yes") {
+  if (facts.rentalStated) {
     chips.push({
       id: "car",
       label: "Car needed on arrival",
-      source: facts.carNeed === "yes" ? "YOU SAID" : "CONFIRMED",
+      source: "YOU SAID",
     });
   }
   if (facts.parkingAirport !== "" && facts.parkingAirport !== facts.destination) {
@@ -990,6 +1110,50 @@ function planSummary(
   return `${confirmed} ${confirmed === 1 ? "task is" : "tasks are"} confirmed by what you've told me.${proposedBit}`;
 }
 
+export function firstTurnCopy(facts: ExtractedFacts): string {
+  const named =
+    facts.parkingStated ||
+    facts.rentalStated ||
+    facts.hotelStated ||
+    facts.entsStated ||
+    facts.experienceStated ||
+    facts.flightStated ||
+    facts.carNeed !== "";
+  if (!facts.tripLike || named) {
+    return "";
+  }
+  return buyerInviteCopy(facts);
+}
+
+export function buyerInviteCopy(facts: ExtractedFacts): string {
+  const invite = "I can help with hotels, things to do, car rentals, and parking. Say the word.";
+  const origin = facts.originCity ? ` from ${facts.originCity}` : "";
+  if (facts.destination !== "" && facts.hasExactDates) {
+    return `I have ${facts.destination}${origin} and the dates. ${invite}`;
+  }
+  if (facts.destination !== "") {
+    return `I have ${facts.destination}${origin}. When are you travelling? ${invite}`;
+  }
+  if (facts.hasExactDates) {
+    return `I have the dates. Where are you travelling? ${invite}`;
+  }
+  return `Where and when are you travelling? ${invite}`;
+}
+
+export function sortPlanTasks(tasks: PlanTask[]): PlanTask[] {
+  return [...tasks].sort((left, right) => taskPlanRank(left) - taskPlanRank(right));
+}
+
+function taskPlanRank(task: PlanTask): number {
+  if (task.provenance === "explicit" || (task.accepted && task.provenance !== "proposed")) {
+    return 0;
+  }
+  if (task.provenance === "inferred") {
+    return 1;
+  }
+  return 2;
+}
+
 function unblocksFor(facts: ExtractedFacts, which: "dates" | "departure"): string[] {
   const names = ["Airport parking"];
   if (facts.rentalStated || facts.tripLike) {
@@ -1022,13 +1186,121 @@ function carDeclined(lower: string): boolean {
   );
 }
 
-function matchCity(lower: string): { city: string; airport: string } | null {
+function matchCity(text: string): { city: string; airport: string } | null {
+  const lower = text.trim().toLowerCase();
+  if (!lower) {
+    return null;
+  }
   for (const item of CITY_AIRPORTS) {
     if (item.pattern.test(lower)) {
       return { city: item.city, airport: item.airport };
     }
   }
   return null;
+}
+
+const CITY_STOP = new Set([
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "jun",
+  "jul",
+  "aug",
+  "sept",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+  "hotel",
+  "hotels",
+  "booking",
+  "airport",
+  "parking",
+  "rental",
+  "car",
+  "trip",
+  "going",
+  "travelling",
+  "traveling",
+  "need",
+  "needed",
+  "from",
+  "with",
+  "the",
+  "and",
+  "for",
+  "you",
+  "your",
+  "this",
+  "visit",
+  "visiting",
+  "please",
+  "covered",
+  "uncovered",
+]);
+
+function plausibleCity(token: string): boolean {
+  const cleaned = token.trim().toLowerCase().replace(/\s+/g, " ");
+  if (cleaned.length < 3 || CITY_STOP.has(cleaned)) {
+    return false;
+  }
+  if (cleaned.split(" ").some((part) => CITY_STOP.has(part))) {
+    return false;
+  }
+  if (isAirport(cleaned.toUpperCase())) {
+    return false;
+  }
+  return /^[a-z][a-z .'-]{1,40}$/.test(cleaned);
+}
+
+function guessCity(text: string): string {
+  const toPlace = text.match(
+    /\b(?:to|in)\s+([A-Za-z][A-Za-z .'-]{1,40}?)(?=\s+(?:\d|from\s+\d|,|;|$))/i,
+  );
+  if (toPlace?.[1] && plausibleCity(toPlace[1])) {
+    return titleCase(toPlace[1].trim());
+  }
+  const leading = text.trim().match(/^([A-Za-z][A-Za-z'-]{2,32})\b/);
+  if (leading?.[1] && plausibleCity(leading[1])) {
+    return titleCase(leading[1]);
+  }
+  return "";
+}
+
+function parseRoute(text: string): { destination: string; origin: string } {
+  const toFrom = text.match(
+    /\bto\s+([A-Za-z][A-Za-z .'-]+?)\s+from\s+([A-Za-z][A-Za-z .'-]+?)(?=\s+from\s+\d|\s+on\b|\s+\d{1,2}\b|\s*$)/i,
+  );
+  if (toFrom?.[1] && toFrom[2]) {
+    return { destination: toFrom[1].trim(), origin: toFrom[2].trim() };
+  }
+  const fromTo = text.match(
+    /\bfrom\s+([A-Za-z][A-Za-z .'-]+?)\s+to\s+([A-Za-z][A-Za-z .'-]+?)(?=\s+for\b|\s+from\s+\d|\s+on\b|\s*$)/i,
+  );
+  if (fromTo?.[1] && fromTo[2]) {
+    return { destination: fromTo[2].trim(), origin: fromTo[1].trim() };
+  }
+  return { destination: "", origin: "" };
 }
 
 function matchAirports(text: string): string[] {

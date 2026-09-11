@@ -755,10 +755,9 @@ body {
     opacity: 0.45;
 }
 
-.re-intent-compose-note {
-    margin: 12px 0 0;
-    font-size: 12.5px;
-    color: var(--ws-ink-2);
+.re-intent-compose-note.is-error {
+    color: var(--itaa-color-text-danger, #8b1e1e);
+    font-weight: 600;
 }
 
 .re-processing {
@@ -882,6 +881,47 @@ body {
     padding: 14px 16px;
     border: 1px solid var(--ws-border);
     background: var(--ws-surface);
+}
+
+.re-domain-lane {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--ws-border);
+    background: var(--ws-surface);
+    border-radius: 14px;
+}
+
+.re-domain-lane.is-stale {
+    border-color: var(--ws-ink-3);
+}
+
+.re-domain-lane .re-stay-search {
+    margin-top: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.re-domain-capability,
+.re-sim-label {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ws-ink-3);
+}
+
+.re-sim-label {
+    color: var(--ws-ink-2);
+}
+
+.re-workspace-context {
+    margin: 0 0 16px;
+}
+
+.re-domain-summary {
+    margin: 8px 0 10px;
+    color: var(--ws-ink-2);
+    font-size: 13px;
 }
 
 .re-domain-fields {
@@ -1369,6 +1409,155 @@ body {
 .re-clarify-support.is-demonstration,
 .re-clarify-support.is-unsupported {
     color: var(--ws-ink-2);
+}
+
+.re-clarify-support.is-sandbox_search {
+    color: var(--green);
+}
+
+.re-stay-search {
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--ws-border-2);
+    border-radius: 12px;
+    background: var(--ws-surface);
+}
+
+.re-stay-search-source {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--ws-ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.re-stay-search-lead,
+.re-stay-search-note {
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    color: var(--ws-ink-2);
+}
+
+.re-stay-search-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 8px 4px 12px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+}
+
+.re-stay-search-item {
+    flex: 0 0 min(240px, 78%);
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--ws-border-2);
+    border-radius: 12px;
+    background: var(--ws-surface-2, var(--ws-surface));
+    scroll-snap-align: start;
+    font-size: 13px;
+}
+
+.re-stay-search-photo {
+    width: 100%;
+    height: 128px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: var(--ws-surface-muted, #ece8e1);
+}
+
+.re-stay-search-hold {
+    color: var(--ws-ink-1, inherit);
+    font-weight: 600;
+}
+
+.re-stay-search-item span {
+    color: var(--ws-ink-2);
+    font-size: 12px;
+}
+
+.re-experience-lane .re-experience-search {
+    margin-top: 10px;
+}
+
+.re-experience-search {
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--ws-border-2);
+    border-radius: 12px;
+    background: var(--ws-surface);
+}
+
+.re-experience-search-source {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--ws-ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.re-experience-search-lead,
+.re-experience-search-note {
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    color: var(--ws-ink-2);
+}
+
+.re-experience-search-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 8px 4px 12px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+}
+
+.re-experience-search-item {
+    flex: 0 0 min(240px, 78%);
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px dashed var(--ws-border-2);
+    border-radius: 16px 8px 16px 8px;
+    background: color-mix(in srgb, var(--ws-surface-2, var(--ws-surface)) 86%, #d7efe4);
+    scroll-snap-align: start;
+    font-size: 13px;
+}
+
+.re-experience-search-photo {
+    width: 100%;
+    height: 128px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: var(--ws-surface-muted, #ece8e1);
+}
+
+.re-experience-category {
+    display: inline-block;
+    width: fit-content;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--green, #2f6f4e) 18%, transparent);
+    color: var(--green, #2f6f4e);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.re-experience-search-item span {
+    color: var(--ws-ink-2);
+    font-size: 12px;
 }
 
 .re-clarify-task-actions {

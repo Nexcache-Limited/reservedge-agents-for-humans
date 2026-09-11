@@ -7,6 +7,14 @@ from datetime import datetime
 from typing import Final
 
 from itaa_application.errors import ApplicationError
+from itaa_application.external_search_port import (
+    ExperienceSearchPort,
+    ExternalSearchPort,
+    ExternalSearchQuery,
+    PlaceRef,
+    public_experience_search_result,
+    public_search_result,
+)
 from itaa_application.golden_path import GoldenPathFacade, map_closed_error
 from itaa_application.session_models import (
     AcceptCommand,
@@ -35,6 +43,9 @@ PLAN_TOOLS: Final[tuple[str, ...]] = (
 )
 EXECUTE_TOOLS: Final[tuple[str, ...]] = (
     "prepare_parking_requirement",
+    "search_stay_offers",
+    "search_experience_offers",
+    "book_stay_sandbox",
     "get_buyer_snapshot",
     "solicit_parking_offers",
     "explain_ranked_offers",
@@ -47,6 +58,7 @@ MUTATING_EXECUTE_TOOLS: Final[frozenset[str]] = frozenset(
         "solicit_parking_offers",
         "accept_offer",
         "authorize_simulated_transaction",
+        "book_stay_sandbox",
     }
 )
 
@@ -142,8 +154,23 @@ def _assert_supplier_allowed(snapshot: BuyerSnapshot, token: str) -> None:
 
 
 class ClosedTools:
-    def __init__(self, facade: GoldenPathFacade | None = None) -> None:
+    def __init__(
+        self,
+        facade: GoldenPathFacade | None = None,
+        stay_search: ExternalSearchPort | None = None,
+        experience_search: ExperienceSearchPort | None = None,
+    ) -> None:
         self._facade = facade
+        if stay_search is None:
+            from itaa_liteapi_hotels.compose import compose_stay_search_port
+
+            stay_search = compose_stay_search_port()
+        if experience_search is None:
+            from itaa_prioticket_experiences.compose import compose_experience_search_port
+
+            experience_search = compose_experience_search_port()
+        self._stay_search = stay_search
+        self._experience_search = experience_search
 
     def get_supported_capabilities(self, payload: Mapping[str, object]) -> dict[str, object]:
         del payload
@@ -163,6 +190,79 @@ class ClosedTools:
         if "intentId" in fields or "buyerToken" in fields:
             raise ApplicationError("internal", "closed")
         return fields
+
+    def search_stay_offers(self, payload: Mapping[str, object]) -> dict[str, object]:
+        destination = str(payload.get("destination") or "").strip()
+        check_in = str(payload.get("checkIn") or "").strip()
+        check_out = str(payload.get("checkOut") or "").strip()
+        origin_raw = str(payload.get("origin") or "").strip()
+        guests_raw = payload.get("guests")
+        guests: int | None = None
+        if isinstance(guests_raw, int) and not isinstance(guests_raw, bool):
+            guests = guests_raw
+        query = ExternalSearchQuery(
+            domain="stay",
+            destination=PlaceRef("city", destination),
+            start=check_in,
+            end=check_out,
+            origin=PlaceRef("city", origin_raw) if origin_raw else None,
+            guests=guests,
+            correlation_id=str(payload.get("correlationId") or ""),
+        )
+        result = self._stay_search.search(query)
+        return public_search_result(result)
+
+    def search_experience_offers(self, payload: Mapping[str, object]) -> dict[str, object]:
+        destination = str(payload.get("destination") or "").strip()
+        start = str(payload.get("start") or payload.get("checkIn") or "").strip()
+        end = str(payload.get("end") or payload.get("checkOut") or "").strip()
+        prefs_raw = payload.get("preferences")
+        preferences: tuple[str, ...] = ()
+        if isinstance(prefs_raw, list):
+            preferences = tuple(str(item).strip() for item in prefs_raw if str(item).strip())
+        query = ExternalSearchQuery(
+            domain="experience",
+            destination=PlaceRef("city", destination),
+            start=start,
+            end=end,
+            preferences=preferences,
+            correlation_id=str(payload.get("correlationId") or ""),
+        )
+        result = self._experience_search.search(query)
+        public = public_experience_search_result(result)
+        encoded = str(public).lower()
+        if (
+            "itaa_prioticket_client_secret" in encoded
+            or "client_secret" in encoded
+            or "x-api-key" in encoded
+        ):
+            raise ApplicationError("experienceSearch", "closed")
+        return public
+
+    def book_stay_sandbox(self, payload: Mapping[str, object]) -> dict[str, object]:
+        rate_ref = str(payload.get("rateRef") or "").strip()
+        if not rate_ref:
+            raise ApplicationError("rateRef", "required")
+        book = getattr(self._stay_search, "book_sandbox", None)
+        if not callable(book):
+            raise ApplicationError("staySearch", "unavailable")
+        result = book(rate_ref)
+        if not isinstance(result, dict):
+            raise ApplicationError("staySearch", "unavailable")
+        public = {
+            "status": str(result.get("status") or "unavailable"),
+            "phase": str(result.get("phase") or "stopped"),
+            "source": str(result.get("source") or ""),
+            "simulatedPayment": result.get("simulatedPayment") is True,
+            "bookingId": str(result.get("bookingId") or "")[:80],
+            "buyerSafeMessage": str(
+                result.get("buyerSafeMessage") or "Sandbox booking stopped. No charge."
+            ),
+        }
+        encoded = str(public).lower()
+        if "x-api-key" in encoded or "itaa_liteapi_api_key" in encoded:
+            raise ApplicationError("staySearch", "closed")
+        return public
 
     def get_buyer_snapshot(self, payload: Mapping[str, object]) -> dict[str, object]:
         facade = self._require_facade()

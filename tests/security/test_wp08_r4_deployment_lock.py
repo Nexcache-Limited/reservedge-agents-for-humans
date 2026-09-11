@@ -8,7 +8,7 @@ REPO = Path(__file__).resolve().parents[2]
 ADAPTER_SRC = REPO / "adapters" / "google" / "src"
 INFRA = REPO / "infra" / "google"
 EVIDENCE = INFRA / "DEPLOYMENT.md"
-OWNER_PROJECT = "example-gcp-project"
+OWNER_PROJECT = "itaa-g1-dev"
 
 
 def _read(path: Path) -> str:
@@ -36,12 +36,12 @@ def test_deployment_evidence_locks_future_resource_names() -> None:
     assert "itaa-containers" in text
     assert "google-adapter" in text
     assert "itaa-google-adapter" in text
-    assert "runtime@example-gcp-project.iam.gserviceaccount.com" in text
+    assert "itaa-g1-runtime@itaa-g1-dev.iam.gserviceaccount.com" in text
     assert "gemini-2.5-flash" in text
     assert "private" in text.lower()
     assert "unauthenticated" in text.lower()
     assert "prohibited" in text.lower()
-    assert "unused-runtime@example-gcp-project.iam.gserviceaccount.com" in text
+    assert "itaa-google-runtime@itaa-g1-dev.iam.gserviceaccount.com" in text
     assert "not** use" in text.lower() or "do not use" in text.replace("*", "").lower()
     assert ":latest" in text
     assert "@sha256:" in text

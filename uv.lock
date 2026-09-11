@@ -11,8 +11,10 @@ members = [
     "itaa-contracts-generated",
     "itaa-domain",
     "itaa-google-adapter",
+    "itaa-liteapi-hotels",
     "itaa-observability",
     "itaa-policy",
+    "itaa-prioticket-experiences",
     "itaa-ranking",
     "itaa-redact-check",
     "itaa-supplier-simulator",
@@ -667,8 +669,10 @@ dev = [
     { name = "itaa-contracts-generated" },
     { name = "itaa-domain" },
     { name = "itaa-google-adapter", extra = ["live"] },
+    { name = "itaa-liteapi-hotels" },
     { name = "itaa-observability" },
     { name = "itaa-policy" },
+    { name = "itaa-prioticket-experiences" },
     { name = "itaa-ranking" },
     { name = "itaa-redact-check" },
     { name = "itaa-supplier-simulator" },
@@ -692,8 +696,10 @@ dev = [
     { name = "itaa-contracts-generated", editable = "packages/contracts/generated/python" },
     { name = "itaa-domain", editable = "packages/domain" },
     { name = "itaa-google-adapter", extras = ["live"], editable = "adapters/google" },
+    { name = "itaa-liteapi-hotels", editable = "adapters/liteapi-hotels" },
     { name = "itaa-observability", editable = "packages/observability" },
     { name = "itaa-policy", editable = "packages/policy" },
+    { name = "itaa-prioticket-experiences", editable = "adapters/prioticket-experiences" },
     { name = "itaa-ranking", editable = "packages/ranking" },
     { name = "itaa-redact-check", editable = "tools/redact-check" },
     { name = "itaa-supplier-simulator", editable = "apps/supplier-simulator" },
@@ -767,6 +773,8 @@ dependencies = [
     { name = "itaa-api" },
     { name = "itaa-application" },
     { name = "itaa-domain" },
+    { name = "itaa-liteapi-hotels" },
+    { name = "itaa-prioticket-experiences" },
     { name = "pydantic" },
 ]
 
@@ -781,6 +789,8 @@ requires-dist = [
     { name = "itaa-api", editable = "apps/api" },
     { name = "itaa-application", editable = "packages/application" },
     { name = "itaa-domain", editable = "packages/domain" },
+    { name = "itaa-liteapi-hotels", editable = "adapters/liteapi-hotels" },
+    { name = "itaa-prioticket-experiences", editable = "adapters/prioticket-experiences" },
     { name = "pydantic", specifier = "==2.12.5" },
     { name = "strands-agents", marker = "extra == 'live'", specifier = "==1.54.0" },
 ]
@@ -835,6 +845,21 @@ requires-dist = [
 provides-extras = ["live"]
 
 [[package]]
+name = "itaa-liteapi-hotels"
+version = "0.1.0"
+source = { editable = "adapters/liteapi-hotels" }
+dependencies = [
+    { name = "httpx" },
+    { name = "itaa-application" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "itaa-application", editable = "packages/application" },
+]
+
+[[package]]
 name = "itaa-observability"
 version = "0.0.0"
 source = { editable = "packages/observability" }
@@ -855,6 +880,21 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "itaa-domain", editable = "packages/domain" }]
+
+[[package]]
+name = "itaa-prioticket-experiences"
+version = "0.1.0"
+source = { editable = "adapters/prioticket-experiences" }
+dependencies = [
+    { name = "httpx" },
+    { name = "itaa-application" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "itaa-application", editable = "packages/application" },
+]
 
 [[package]]
 name = "itaa-ranking"

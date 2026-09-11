@@ -19,7 +19,7 @@ def test_cloudrun_sets_approved_live_timeout() -> None:
         'value: "30000"' in manifest or "value: '30000'" in manifest or "value: 30000" in manifest
     )
     assert "timeoutSeconds: 60" in manifest
-    assert "example-gcp-project" not in manifest
+    assert "itaa-g1-dev" not in manifest
     assert ":latest" not in manifest
 
 
@@ -27,5 +27,5 @@ def test_env_example_documents_timeout_without_project() -> None:
     example = _read(INFRA / "env.example")
     assert "ITAA_GOOGLE_TIMEOUT_MS" in example
     assert "30000" in example
-    assert "example-gcp-project" not in example
+    assert "itaa-g1-dev" not in example
     assert "AIza" not in example

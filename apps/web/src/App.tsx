@@ -63,11 +63,14 @@ export function AppRoutes({ api }: { api: ItaaApi }) {
 function IntentOrSeed({ api }: { api: ItaaApi }) {
   const { intentId } = useParams();
   const { selected } = useOutletContext<{ selected: IntentRow | null }>();
-  const { intents, selectedId } = usePortfolio();
+  const { intents, selectedId, planSession } = usePortfolio();
   const row =
     selected ?? intents.find((item) => item.id === intentId || item.id === selectedId) ?? null;
   if (intentId?.startsWith("pi_")) {
     return <LiveParkingWorkspace api={api} />;
+  }
+  if (row?.domain === "stay" && isLiveChatRow(planSession, row.id) && row.status !== "done") {
+    return <Navigate to="/intents/clarify" replace />;
   }
   return <SeedWorkspace selected={row} />;
 }

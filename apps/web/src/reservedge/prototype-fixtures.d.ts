@@ -36,7 +36,7 @@ export interface DomainSpec {
   sideNote: string;
 }
 
-export const DOMAINS: Record<DomainId, DomainSpec>;
+export const DOMAINS: Record<Exclude<DomainId, "stay">, DomainSpec>;
 
 export const REQ_KIND: Record<
   string,
@@ -88,4 +88,4 @@ export interface OfferFixture {
   reaskResult?: string;
 }
 
-export const OFFERS: Record<DomainId, OfferFixture>;
+export const OFFERS: Record<Exclude<DomainId, "stay">, OfferFixture>;

@@ -71,9 +71,9 @@ The approved public visual identity is ReservEdge: warm cream/canvas surfaces, c
 
 ## Traceability
 
-| Artifact                                                                    | Role                                         |
-| --------------------------------------------------------------------------- | -------------------------------------------- |
-| `docs/design/proposals/intent-first-2026-08-31/DEFINITION_GATE.md`          | Accepted freeze; not reopened                |
-| `docs/design/proposals/intent-first-2026-08-31/NORMATIVE_CHANGE_CONTROL.md` | Approved and registered replacement record   |
-| `docs/source-of-truth/ITAA_*.docx` (v1.1, 1 September 2026)                 | Registered replacements                      |
-| COMP-G1-06 issued work order (omitted from this public export)              | Execution record; not a higher-priority spec |
+| Artifact                                                                    | Role                                       |
+| --------------------------------------------------------------------------- | ------------------------------------------ |
+| `docs/design/proposals/intent-first-2026-08-31/DEFINITION_GATE.md`          | Accepted freeze; not reopened              |
+| `docs/design/proposals/intent-first-2026-08-31/NORMATIVE_CHANGE_CONTROL.md` | Approved and registered replacement record |
+| `docs/source-of-truth/ITAA_*.docx` (v1.1, 1 September 2026)                 | Registered replacements                    |
+| `docs/work-orders/ITAA_Cursor_Work_Order_COMP-G1-06.md`                     | Issued work order; still activation-gated  |

@@ -178,6 +178,9 @@ def test_closed_allowlist_matches_freeze() -> None:
     assert PLAN_TOOLS == ("get_supported_capabilities", "project_plan_from_facts")
     assert EXECUTE_TOOLS == (
         "prepare_parking_requirement",
+        "search_stay_offers",
+        "search_experience_offers",
+        "book_stay_sandbox",
         "get_buyer_snapshot",
         "solicit_parking_offers",
         "explain_ranked_offers",

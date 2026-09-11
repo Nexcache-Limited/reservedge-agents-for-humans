@@ -71,19 +71,24 @@ function task(
       ? "live_simulated"
       : kind === "rental" || kind === "ents"
         ? "demonstration"
-        : "unsupported";
+        : kind === "hotel" || kind === "experience"
+          ? "sandbox_search"
+          : "unsupported";
   const supportLabel =
     support === "live_simulated"
       ? "Live simulated path"
       : support === "demonstration"
         ? "Demonstration task"
-        : "Unsupported in this build";
+        : support === "sandbox_search"
+          ? "Sandbox search"
+          : "Unsupported in this build";
   const titles: Record<AgentPlanTask["kind"], string> = {
     parking: "Airport parking",
     rental: "Rental car",
     ents: "Entertainment",
     flight: "Flight",
     hotel: "Hotel",
+    experience: "Experience",
   };
   return {
     id: `task-${kind}`,
@@ -252,11 +257,11 @@ function fromLocalPlan(objective: string, extraNote = ""): AgentPlanProjection {
 function genericManchester(): AgentPlanProjection {
   return projection({
     facts: facts({ destination: "Manchester", destinationAirport: "MAN", tripLike: true }),
-    tasks: [task("hotel", "proposed")],
+    tasks: [],
     phase: "clarify",
     title: "Manchester",
     questions: [{ id: "dates", label: "Exact dates", why: "Sets parking duration." }],
-    proposedCount: 1,
+    proposedCount: 0,
   });
 }
 
@@ -726,7 +731,7 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
     await user.click(await screen.findByRole("button", { name: "Confirm plan" }));
     expect(
       await screen.findByText(
-        "Plan confirmed. Task execution is available on supported tasks only.",
+        /Plan confirmed. Stay and experience results appear below when those tasks are on the plan. Keep talking to add parking or a rental./,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Send to Reservedge" })).toBeNull();
@@ -768,7 +773,7 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
       { target: { value: GENERIC } },
     );
     await user.click(screen.getByRole("button", { name: "Start booking" }));
-    expect(await screen.findByRole("status")).toHaveTextContent(/Could not complete this step/);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Could not complete this step/);
     expect(screen.queryByText("JFK")).toBeNull();
     expect(screen.queryByText("Clarify & plan")).toBeNull();
     expect(within(document.body).queryByText(/SkyShield/)).toBeNull();
@@ -793,9 +798,7 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
       "true",
     );
     expect(document.querySelector(".re-processing-spinner")).not.toBeNull();
-    expect(
-      screen.queryByText(/global\.anthropic|example-aws-profile|eu-west-2|Bedrock/i),
-    ).toBeNull();
+    expect(screen.queryByText(/global\.anthropic|itaa-comp-aws|eu-west-2|Bedrock/i)).toBeNull();
     expect(screen.queryByText("Clarify & plan")).toBeNull();
   });
 
@@ -804,19 +807,13 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
       postAgentTurn: () => new Promise(() => undefined),
     });
     const user = await startObjective(DEMO_C, hanging);
-    expect(await screen.findByRole("group", { name: "Exact dates" })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-10-14" } });
-    fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-10-19" } });
-    await user.click(screen.getByRole("button", { name: "Answer and update plan" }));
+    const chat = await screen.findByRole("textbox", { name: "Add anything else about this trip" });
+    fireEvent.change(chat, { target: { value: "14 to 19 October 2026" } });
+    await user.click(screen.getByRole("button", { name: "Add note" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Updating your plan");
-    expect(screen.getByRole("button", { name: "Answer and update plan" })).toHaveAttribute(
-      "aria-busy",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: "Add note" })).toHaveAttribute("aria-busy", "true");
     expect(document.querySelector(".re-processing-spinner")).not.toBeNull();
-    expect(
-      screen.queryByText(/global\.anthropic|example-aws-profile|eu-west-2|Bedrock/i),
-    ).toBeNull();
+    expect(screen.queryByText(/global\.anthropic|itaa-comp-aws|eu-west-2|Bedrock/i)).toBeNull();
   });
 
   it("does not invent JFK or label unconfirmed parking as Not needed on a New York trip", async () => {
@@ -899,8 +896,8 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
     expect(screen.queryByRole("button", { name: "Accept recommended offer" })).toBeNull();
     await user.click(await screen.findByRole("button", { name: /Authorize USD 148\.00/ }));
     expect(
-      await screen.findByText(/Authorization recorded|This booking is complete/),
-    ).toBeInTheDocument();
+      (await screen.findByText(/Authorization recorded|This booking is complete/)).textContent,
+    ).toMatch(/Authorization recorded|This booking is complete/);
     expect(screen.getByRole("tab", { name: "History" })).toHaveAttribute("aria-selected", "true");
     expect(document.querySelector(".re-list-chat")).toBeNull();
   });

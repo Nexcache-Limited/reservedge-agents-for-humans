@@ -19,6 +19,7 @@ export function IntentComposer({ api }: { api: ItaaApi }) {
     usePortfolio();
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
   const headingId = useId();
   const ready = objective.trim() !== "";
@@ -37,6 +38,7 @@ export function IntentComposer({ api }: { api: ItaaApi }) {
     const text = objective.trim();
     flushSync(() => {
       setBusy(true);
+      setFailed(false);
       setNote(AGENT_OBJECTIVE_COPY);
     });
     try {
@@ -53,11 +55,15 @@ export function IntentComposer({ api }: { api: ItaaApi }) {
     } catch (error) {
       const closed = error instanceof ClosedApiError;
       flushSync(() => {
+        setFailed(true);
         setNote(
-          closed ? `${AGENT_FAILURE_COPY}. Nothing was sent to any supplier.` : AGENT_FAILURE_COPY,
+          closed
+            ? `${AGENT_FAILURE_COPY}. ${error.message} Nothing was sent to any supplier.`
+            : `${AGENT_FAILURE_COPY}. Nothing was sent to any supplier.`,
         );
-        setBusy(false);
       });
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -118,9 +124,15 @@ export function IntentComposer({ api }: { api: ItaaApi }) {
       </div>
       {note !== null ? (
         <p
-          className={busy ? "re-intent-compose-note re-processing" : "re-intent-compose-note"}
-          role="status"
-          aria-live="polite"
+          className={
+            busy
+              ? "re-intent-compose-note re-processing"
+              : failed
+                ? "re-intent-compose-note is-error"
+                : "re-intent-compose-note"
+          }
+          role={failed ? "alert" : "status"}
+          aria-live={failed ? "assertive" : "polite"}
         >
           {busy ? <span className="re-processing-spinner" aria-hidden /> : null}
           {note}

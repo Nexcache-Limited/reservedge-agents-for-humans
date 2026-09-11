@@ -5,7 +5,7 @@
 **Version:** 1.1, revision 2  
 **Baseline:** branch `work/comp-g1-05-reservedge-ui`, SHA `85c24d09d3aa18dda95ca6031e5623b4baaa217c`  
 **Freeze:** `docs/design/proposals/intent-first-2026-08-31/DEFINITION_GATE.md` (accepted 31 August 2026; **unchanged**)  
-**ADR:** [ADR-0006](../../../adr/ADR-0006-intent-first-orchestration.md) — **Accepted** 1 September 2026  
+**ADR:** [ADR-0006](../../adr/ADR-0006-intent-first-orchestration.md) — **Accepted** 1 September 2026  
 **Registration commit SHA:** `7d646abab1a925fd5386ccaee346c60857c13c37`
 
 `G0-CHANGE-CONTROL` is **satisfied**. The revision-2 v1.1 candidates are the registered source-of-truth documents. `DEFINITION_GATE.md` remains frozen. COMP-G1-06 remains **unactivated**. Remaining gates: `G0-LEASES` and explicit `G0-ACTIVATE`.
@@ -42,9 +42,9 @@ The Intent-first product model remains accepted and frozen. The six first-pass j
 
 | Candidate filename | Version / date | SHA-256 | Source path | Intended registered destination | Sections changed in revision 2 | Reason |
 | --- | --- | --- | --- | --- | --- | --- |
-| `ITAA_v1_Product_and_Technical_Specification_v1.1.docx` | Version 1.1, 1 September 2026, rev. 2 | `4fd24641963a19f93fdead7aab3fc38ee5c6a891c5cc31d3246570da21d59900` | `(local review-candidate path omitted)` | `docs/source-of-truth/ITAA_v1_Product_and_Technical_Specification.docx` | JTBD share bullet; FR-002; §12.3; success table R3/R6; golden-path receive; Share Confirmation CTA; Free/Pro offering names; G3/NFR/delivery tables 30–32 incl. Sep store rows; ADR-010; document-control amendment row | Quarantine G3/native as non-acceptance; public ReservEdge terminology; filenames stay `ITAA_*.docx` |
-| `ITAA_Unified_UI_UX_Design_Specification_v1.1.docx` | Version 1.1, 1 September 2026, rev. 2 | `aeba64e717eb07446a90e95b1f47b633c143000d7138d4abcee0aeee7e955e7f` | `(local review-candidate path omitted)` | `docs/source-of-truth/ITAA_Unified_UI_UX_Design_Specification.docx` | Document map; §3.1–3.3 + TABLE 9; UX-02/03/05/13–16 copy; **new §5.18–5.31 UX-17–UX-29**; **new §6.5**; §6.2 compact/touch; §9.1–9.2; §12.1/12.5; §14 banner; C-20 split + C-25–27; VMs; API map; capability/AC/delivery tables; public ReservEdge copy | Complete Intent-first UI contracts; separate Plan vs subscription; never-A2 preferences; validity/inventory/transaction split; responsive web is current mobile |
-| `ITAA_Engineering_Kickoff_Pack_v1.1.docx` | Version 1.1, 1 September 2026, rev. 2 | `611c8f87925a81771870cc0eb1a57a56556845f96d49b828d2109fe1fbef13d4` | `(local review-candidate path omitted)` | `docs/source-of-truth/ITAA_Engineering_Kickoff_Pack.docx` | G0 SUCCESS historical 17 August note; G3 Mobile / WP-13 public Share-to-ReservEdge wording | Preserve WO-001 verbatim; add dated G0 historical context only |
+| `ITAA_v1_Product_and_Technical_Specification_v1.1.docx` | Version 1.1, 1 September 2026, rev. 2 | `4fd24641963a19f93fdead7aab3fc38ee5c6a891c5cc31d3246570da21d59900` | `[local-path]/Documents/Reservedge-ITAA project/review-candidates/intent-first-v1.1-2026-09-01/ITAA_v1_Product_and_Technical_Specification_v1.1.docx` | `docs/source-of-truth/ITAA_v1_Product_and_Technical_Specification.docx` | JTBD share bullet; FR-002; §12.3; success table R3/R6; golden-path receive; Share Confirmation CTA; Free/Pro offering names; G3/NFR/delivery tables 30–32 incl. Sep store rows; ADR-010; document-control amendment row | Quarantine G3/native as non-acceptance; public ReservEdge terminology; filenames stay `ITAA_*.docx` |
+| `ITAA_Unified_UI_UX_Design_Specification_v1.1.docx` | Version 1.1, 1 September 2026, rev. 2 | `aeba64e717eb07446a90e95b1f47b633c143000d7138d4abcee0aeee7e955e7f` | `[local-path]/Documents/Reservedge-ITAA project/review-candidates/intent-first-v1.1-2026-09-01/ITAA_Unified_UI_UX_Design_Specification_v1.1.docx` | `docs/source-of-truth/ITAA_Unified_UI_UX_Design_Specification.docx` | Document map; §3.1–3.3 + TABLE 9; UX-02/03/05/13–16 copy; **new §5.18–5.31 UX-17–UX-29**; **new §6.5**; §6.2 compact/touch; §9.1–9.2; §12.1/12.5; §14 banner; C-20 split + C-25–27; VMs; API map; capability/AC/delivery tables; public ReservEdge copy | Complete Intent-first UI contracts; separate Plan vs subscription; never-A2 preferences; validity/inventory/transaction split; responsive web is current mobile |
+| `ITAA_Engineering_Kickoff_Pack_v1.1.docx` | Version 1.1, 1 September 2026, rev. 2 | `611c8f87925a81771870cc0eb1a57a56556845f96d49b828d2109fe1fbef13d4` | `[local-path]/Documents/Reservedge-ITAA project/review-candidates/intent-first-v1.1-2026-09-01/ITAA_Engineering_Kickoff_Pack_v1.1.docx` | `docs/source-of-truth/ITAA_Engineering_Kickoff_Pack.docx` | G0 SUCCESS historical 17 August note; G3 Mobile / WP-13 public Share-to-ReservEdge wording | Preserve WO-001 verbatim; add dated G0 historical context only |
 
 Superseded revision-1 hashes (not this candidate): Product `0d54753a…15fb13`, UI `d5a7b2a4…d7b498`, Kickoff `9095a9dd…825d82b2`.
 
@@ -147,7 +147,7 @@ No cross-export recurrence. Headers/footers show ReservEdge, v1.1, 1 September 2
 
 Rendered evidence (local, not for repository registration):
 
-`(local rendered-pages path omitted)`
+`[local-path]/Documents/Reservedge-ITAA project/review-candidates/intent-first-v1.1-2026-09-01/rendered-pages/`
 
 ## Contradiction search (revision 2)
 

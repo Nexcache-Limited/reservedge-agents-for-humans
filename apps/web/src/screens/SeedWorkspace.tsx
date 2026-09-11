@@ -1,7 +1,7 @@
 import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { STATUS_STYLE, type IntentRow } from "../reservedge/inbox.js";
+import { STATUS_STYLE, type DomainId, type IntentRow } from "../reservedge/inbox.js";
 import { landingTab, usePortfolio } from "../reservedge/portfolio.js";
 import { DOMAINS, OFFERS, REQ_KIND } from "../reservedge/prototype-fixtures.js";
 
@@ -17,6 +17,12 @@ const OVS = [
   { key: "reco", label: "Recommendation" },
   { key: "compare", label: "Compare offers" },
 ] as const;
+
+type PrototypeDomainId = Exclude<DomainId, "stay">;
+
+function isPrototypeDomain(id: DomainId): id is PrototypeDomainId {
+  return id === "parking" || id === "rental" || id === "ents";
+}
 
 export function SeedWorkspace({ selected }: { selected: IntentRow | null }) {
   const navigate = useNavigate();
@@ -52,8 +58,28 @@ export function SeedWorkspace({ selected }: { selected: IntentRow | null }) {
     );
   }
 
-  const domain = DOMAINS[selected.domain];
-  const offers = OFFERS[selected.domain];
+  const domainId = selected.domain;
+  if (!isPrototypeDomain(domainId)) {
+    return (
+      <div className="re-welcome">
+        <div className="re-eyebrow">CONVERSATION</div>
+        <h2 className="re-h2">Continue in the running workspace</h2>
+        <p>
+          Stay, parking, and rental cards live in the conversational workspace, not this seed view.
+        </p>
+        <button
+          type="button"
+          className="re-primary itaa-focus-ring"
+          onClick={() => navigate("/intents/clarify")}
+        >
+          Open conversation
+        </button>
+      </div>
+    );
+  }
+
+  const domain = DOMAINS[domainId];
+  const offers = OFFERS[domainId];
   const style = STATUS_STYLE[selected.status];
   const live = selected.status !== "done" && selected.status !== "cancelled";
   const pending = selected.status === "pending" || selected.status === "draft";
@@ -163,7 +189,7 @@ export function SeedWorkspace({ selected }: { selected: IntentRow | null }) {
         ))}
       </div>
 
-      {tab === "request" ? <RequestPane domain={selected.domain} /> : null}
+      {tab === "request" ? <RequestPane domain={domainId} /> : null}
       {tab === "research" ? (
         <ResearchPane
           offers={offers}
@@ -470,7 +496,7 @@ const DEFAULT_KIND = {
   row: "transparent",
 };
 
-function RequestPane({ domain }: { domain: IntentRow["domain"] }) {
+function RequestPane({ domain }: { domain: PrototypeDomainId }) {
   const spec = DOMAINS[domain];
   return (
     <div className="re-req-grid">

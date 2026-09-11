@@ -6,6 +6,7 @@ import re
 from typing import Literal
 
 from itaa_aws_adapter.projector import (
+    buyer_invite_copy,
     evidence_for_kind,
     extract_facts,
     parse_exact_calendar,
@@ -142,9 +143,42 @@ def _generic(objective: str, answers: PlanAnswers | None) -> PlanTurn:
         suggested.append(SuggestedTask(kind="parking", provenance="explicit"))
     if facts.rentalStated:
         suggested.append(SuggestedTask(kind="rental", provenance="explicit"))
-    if facts.tripLike and not facts.parkingStated and not facts.rentalStated:
-        message = "Will you need airport parking, a rental car, both, or neither?"
-    elif (facts.rentalStated or facts.entsStated) and not facts.parkingStated:
+    if facts.experienceStated:
+        suggested.append(SuggestedTask(kind="experience", provenance="explicit"))
+    named_component = (
+        facts.parkingStated
+        or facts.rentalStated
+        or facts.hotelStated
+        or facts.entsStated
+        or facts.experienceStated
+        or facts.flightStated
+        or facts.carNeed != ""
+    )
+    if facts.hotelStated or facts.experienceStated:
+        bits: list[str] = []
+        if facts.hotelStated:
+            if facts.destination and facts.hasExactDates:
+                bits.append(
+                    "Stay is on the plan. Hotel search is research only — nothing is booked."
+                )
+            else:
+                bits.append(
+                    "Stay is on the plan. I can look up hotels once destination and dates are set."
+                )
+        if facts.experienceStated:
+            bits.append(
+                "Experience search is research only — attractions and activities, not a booking."
+            )
+        if facts.rentalStated:
+            bits.append("Rental is a requirement only — no rental inventory adapter is integrated.")
+        message = " ".join(bits)
+    elif facts.tripLike and not named_component:
+        message = buyer_invite_copy(facts)
+    elif facts.rentalStated and not facts.parkingStated:
+        from itaa_api.agent_requirements import RENTAL_NO_ADAPTER_COPY
+
+        message = RENTAL_NO_ADAPTER_COPY
+    elif facts.entsStated and not facts.parkingStated:
         from itaa_api.agent_requirements import COMPETITION_PARKING_ONLY_COPY
 
         message = COMPETITION_PARKING_ONLY_COPY

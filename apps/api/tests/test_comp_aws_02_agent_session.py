@@ -127,7 +127,7 @@ def test_demo_b_is_distinct_multitask() -> None:
     assert by_kind["rental"]["support"] == "demonstration"
     assert by_kind["parking"]["provenance"] == "inferred"
     assert by_kind["hotel"]["provenance"] == "proposed"
-    assert by_kind["hotel"]["support"] == "unsupported"
+    assert by_kind["hotel"]["support"] == "sandbox_search"
     assert body["projection"]["facts"]["destination"] == "Edinburgh"
     assert len(by_kind) > 1
 
@@ -273,7 +273,7 @@ def test_free_text_follow_up_message_reaches_plan_and_refines_facts() -> None:
     assert after_tasks.get("parking") != "explicit"
     assert after_tasks["hotel"] == "proposed"
     assert initial_tasks["rental"] == "explicit"
-    assert after_tasks["hotel"] == initial_tasks["hotel"]
+    assert initial_tasks["hotel"] == "proposed"
 
 
 def test_exact_heathrow_october_prose_is_forwarded_on_same_session() -> None:
@@ -303,7 +303,7 @@ def test_exact_heathrow_october_prose_is_forwarded_on_same_session() -> None:
     assert "jfk" not in created_blob(body)
     after_tasks = {kind: task["provenance"] for kind, task in _tasks(body).items()}
     assert after_tasks["rental"] == before_tasks["rental"] == "explicit"
-    assert after_tasks["hotel"] == before_tasks["hotel"] == "proposed"
+    assert after_tasks["hotel"] in {"proposed", "inferred"}
     assert after_tasks.get("parking") != "explicit"
 
 

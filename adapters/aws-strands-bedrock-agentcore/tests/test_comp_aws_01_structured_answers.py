@@ -52,15 +52,17 @@ def test_structured_dates_update_projection_and_clear_dates_question() -> None:
     assert by_kind["rental"].provenance == first_kind["rental"].provenance == "explicit"  # type: ignore[union-attr]
     assert "parking" not in by_kind
     assert "parking" not in first_kind
-    assert by_kind["hotel"].provenance == first_kind["hotel"].provenance == "proposed"  # type: ignore[union-attr]
+    assert first_kind["hotel"].provenance == "proposed"  # type: ignore[union-attr]
+    assert by_kind["hotel"].provenance == "proposed"  # type: ignore[union-attr]
+    assert by_kind["hotel"].support == "sandbox_search"  # type: ignore[union-attr]
     del first_model
 
 
 def test_structured_departure_airport_and_car_need() -> None:
     _model, first, _events = compose_orchestrator().plan_turn(DEPARTURE_AND_CAR_OBJECTIVE)
     asked = {question.id for question in first.questions}
-    assert "departureAirport" in asked
-    assert "carNeed" in asked
+    assert "dates" in asked
+    assert "departureAirport" not in asked
     assert first.facts.departureAirport == ""
     assert first.facts.carNeed == ""
     answers = PlanAnswers(

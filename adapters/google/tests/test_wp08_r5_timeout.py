@@ -83,5 +83,5 @@ def test_readyz_does_not_expose_timeout_or_project(monkeypatch: pytest.MonkeyPat
     assert "30000" not in dumped
     assert "timeout" not in dumped
     assert "owner-project" not in dumped
-    assert "example-gcp-project" not in dumped
+    assert "itaa-g1-dev" not in dumped
     assert "begin private key" not in dumped

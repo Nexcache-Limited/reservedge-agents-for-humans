@@ -5,11 +5,13 @@ import {
   compactSharedContext,
   createPlanSession,
   extractFacts,
+  firstTurnCopy,
   parkingPrefill,
   projectPlan,
   provenanceLabel,
   removeTaskOverride,
   selectClarifications,
+  sortPlanTasks,
   supportedAddableKinds,
   taskStatusLabel,
 } from "./plan.js";
@@ -55,10 +57,70 @@ describe("intent-first plan simulation", () => {
     expect(projection.tasks[0]?.provenance).toBe("explicit");
   });
 
-  it("asks for a car on a New York trip and treats Yes as an inferred rental", () => {
+  it("opens a dated city trip by asking what to help book, without parking or hotel search", () => {
+    const objective = "I'm travelling to Edinburgh from 14 to 19 October 2026.";
+    const facts = extractFacts(objective);
+    expect(facts.destination).toBe("Edinburgh");
+    expect(facts.hasExactDates).toBe(true);
+    expect(facts.parkingStated).toBe(false);
+    expect(facts.landing).toBe(false);
+    expect(selectClarifications(facts).map((item) => item.id)).toEqual([]);
+    const session = createPlanSession(objective);
+    expect(session.phase).toBe("forming");
+    const projection = projectPlan(session);
+    expect(projection.tasks.map((task) => task.kind)).not.toContain("parking");
+    expect(projection.tasks.map((task) => task.kind)).not.toContain("hotel");
+    expect(projection.tasks.map((task) => task.kind)).not.toContain("rental");
+  });
+
+  it("keeps Milan and Mumbai on a dated stay trip and does not invent JFK", () => {
+    const facts = extractFacts("I'm travelling to Milan from Mumbai from 20 to 30 October");
+    expect(facts.destination).toBe("Milan");
+    expect(facts.originCity).toBe("Mumbai");
+    expect(facts.startDate).toBe("2026-10-20");
+    expect(facts.endDate).toBe("2026-10-30");
+    const miami = extractFacts("Miami 15th October to 20th October, hotel");
+    expect(miami.destination).toBe("Miami");
+    expect(miami.hotelStated).toBe(true);
+    expect(miami.startDate).toBe("2026-10-15");
+    expect(miami.endDate).toBe("2026-10-20");
+    const inverted = extractFacts("Miami 20th October to 15th October, hotel");
+    expect(inverted.destination).toBe("Miami");
+    expect(inverted.hasExactDates).toBe(false);
+    expect(facts.parkingAirport).toBe("");
+    expect(facts.parkingStated).toBe(false);
+    expect(JSON.stringify(facts).toLowerCase()).not.toContain("jfk");
+    const projection = projectPlan(
+      createPlanSession("I'm travelling to Milan from Mumbai from 20 to 30 October"),
+    );
+    expect(projection.questions.map((item) => item.id)).not.toContain("helpWith");
+    expect(projection.tasks.map((task) => task.kind)).not.toContain("hotel");
+    expect(projection.tasks.map((task) => task.kind)).not.toContain("parking");
+  });
+
+  it("acknowledges a named city and only asks when dates are missing", () => {
+    const facts = extractFacts("travelling to London");
+    expect(facts.destination).toBe("London");
+    expect(facts.hasExactDates).toBe(false);
+    expect(firstTurnCopy(facts)).toBe(
+      "I have London. When are you travelling? I can help with hotels, things to do, car rentals, and parking. Say the word.",
+    );
+    expect(firstTurnCopy(facts).toLowerCase()).not.toContain("where and when");
+  });
+
+  it("puts explicit hotel first on a named stay trip", () => {
+    const session = createPlanSession(
+      "I'm travelling to London from 20 to 25 October. I need a hotel.",
+    );
+    const kinds = projectPlan(session).tasks.map((task) => task.kind);
+    expect(kinds[0]).toBe("hotel");
+    expect(kinds).not.toContain("parking");
+    expect(sortPlanTasks(projectPlan(session).tasks)[0]?.kind).toBe("hotel");
+  });
+
+  it("does not force parking IATA or car questions for a New York stay trip", () => {
     const questions = selectClarifications(extractFacts(NY));
-    expect(questions.map((item) => item.id)).toContain("carNeed");
-    expect(questions.map((item) => item.id)).toContain("dates");
+    expect(questions.map((item) => item.id)).toEqual(["dates"]);
     const session = createPlanSession(NY);
     session.answers.carNeed = "yes";
     const rental = projectPlan(session).tasks.find((task) => task.kind === "rental");
@@ -255,6 +317,7 @@ describe("intent-first plan simulation", () => {
     const line = compactSharedContext(
       {
         destination: "Manchester",
+        originCity: "",
         destinationAirport: "",
         parkingAirport: "MAN",
         departureAirport: "",
@@ -268,7 +331,11 @@ describe("intent-first plan simulation", () => {
         rentalStated: false,
         entsStated: false,
         hotelStated: false,
+        experienceStated: false,
+        experiencePreferences: [],
         flightStated: false,
+        flightSatisfied: false,
+        helpWith: "",
         landing: false,
         travel: true,
         conference: false,

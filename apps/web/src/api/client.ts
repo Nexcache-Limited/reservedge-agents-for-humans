@@ -20,6 +20,8 @@ export interface ApiClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+export const AGENT_REQUEST_TIMEOUT_MS = 45_000;
+
 function intentPath(intentId: string, suffix = ""): string {
   return `${API_PREFIX}/intents/${encodeURIComponent(intentId)}${suffix}`;
 }
@@ -47,22 +49,30 @@ export function createItaaApi(options: ApiClientOptions = {}): ItaaApi {
     if (init.idempotencyKey !== undefined) {
       headers.set("Idempotency-Key", init.idempotencyKey);
     }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AGENT_REQUEST_TIMEOUT_MS);
     let response: Response;
     try {
       response = await fetchImpl(`${baseUrl}${path}`, {
         ...init,
         headers,
         credentials: "same-origin",
+        signal: init.signal ?? controller.signal,
       });
-    } catch {
+    } catch (error) {
+      const aborted =
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && error.name === "AbortError");
       throw new ClosedApiError({
         status: 0,
-        code: "network_failure",
+        code: aborted ? "timeout" : "network_failure",
         field: "request",
         correlationId: "unavailable",
         retryable: true,
         ambiguous: true,
       });
+    } finally {
+      clearTimeout(timer);
     }
 
     let payload: unknown = null;

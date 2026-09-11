@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createItaaApi } from "./client.js";
+import { AGENT_REQUEST_TIMEOUT_MS, createItaaApi } from "./client.js";
 import { API_PREFIX } from "./types.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -67,5 +68,25 @@ describe("COMP-G1-05 intake client", () => {
     expect(opened).not.toContain("ap_");
     subscription.close();
     expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("times out a hung agent session create instead of hanging forever", async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      return new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal;
+        if (signal) {
+          signal.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        }
+      });
+    });
+    const api = createItaaApi({ baseUrl: "http://example.test", fetchImpl });
+    const pending = api.createAgentSession({ objective: "I'm travelling to Milan from Mumbai" });
+    const rejection = expect(pending).rejects.toMatchObject({ code: "timeout", status: 0 });
+    await vi.advanceTimersByTimeAsync(AGENT_REQUEST_TIMEOUT_MS);
+    await rejection;
+    vi.useRealTimers();
   });
 });

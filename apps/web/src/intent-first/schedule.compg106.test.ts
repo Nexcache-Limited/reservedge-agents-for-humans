@@ -27,7 +27,23 @@ describe("intent-first schedule helpers", () => {
   it("does not collapse a malformed range into a single endpoint", () => {
     expect(parseExactCalendar("14 to October")).toBeNull();
     expect(parseExactCalendar("from 14 to sometime in October")).toBeNull();
-    expect(parseExactCalendar("14 to 19 October")).toBeNull();
+    expect(parseExactCalendar("14 to 19 October")).toEqual({
+      start: "2026-10-14",
+      end: "2026-10-19",
+    });
+    expect(parseExactCalendar("from 20 to 30 October")).toEqual({
+      start: "2026-10-20",
+      end: "2026-10-30",
+    });
+    expect(parseExactCalendar("20th October to 25th")).toEqual({
+      start: "2026-10-20",
+      end: "2026-10-25",
+    });
+    expect(parseExactCalendar("20 October to 25")).toEqual({
+      start: "2026-10-20",
+      end: "2026-10-25",
+    });
+    expect(parseExactCalendar("20th October to 15th October")).toBeNull();
     expect(looksLikeDateRange("14 to October")).toBe(true);
     expect(looksLikeDateRange("from 14 to sometime in October")).toBe(true);
   });
@@ -47,7 +63,10 @@ describe("intent-first schedule helpers", () => {
     expect(parseExactCalendar("next Thursday")).toBeNull();
     expect(parseExactCalendar("tomorrow afternoon")).toBeNull();
     expect(parseExactCalendar("in October")).toBeNull();
-    expect(parseExactCalendar("14–19 October")).toBeNull();
+    expect(parseExactCalendar("14–19 October")).toEqual({
+      start: "2026-10-14",
+      end: "2026-10-19",
+    });
     expect(isRelativeDate("next Thursday")).toBe(true);
     expect(isRelativeDate("14–19 October 2026")).toBe(false);
   });

@@ -18,6 +18,7 @@ import {
   overlayParkingDomainFacts,
   planContextChips,
   applyTaskOverrides,
+  sortPlanTasks,
   type CarNeed,
   type ClarificationQuestion,
   type ClarifyPhase,
@@ -41,6 +42,7 @@ const CAR_CHOICES: ReadonlyArray<{ id: CarNeed; label: string }> = [
 
 const EMPTY_FACTS: ExtractedFacts = {
   destination: "",
+  originCity: "",
   destinationAirport: "",
   parkingAirport: "",
   departureAirport: "",
@@ -54,7 +56,11 @@ const EMPTY_FACTS: ExtractedFacts = {
   rentalStated: false,
   entsStated: false,
   hotelStated: false,
+  experienceStated: false,
+  experiencePreferences: [],
   flightStated: false,
+  flightSatisfied: false,
+  helpWith: "",
   landing: false,
   travel: false,
   conference: false,
@@ -83,6 +89,14 @@ export function answersFromAgentFacts(facts: AgentFacts): PlanAnswers {
     ...EMPTY_ANSWERS,
     departureAirport: facts.departureAirport,
     carNeed: car === "yes" || car === "no" || car === "unsure" ? car : "",
+    helpWith:
+      facts.helpWith === "stay" ||
+      facts.helpWith === "rental" ||
+      facts.helpWith === "parking" ||
+      facts.helpWith === "flights_sorted" ||
+      facts.helpWith === "unsure"
+        ? facts.helpWith
+        : "",
     dates: facts.dates,
     startDate: canonicalStart || iso?.[1] || "",
     endDate: canonicalEnd || iso?.[2] || "",
@@ -125,6 +139,7 @@ export function mergeAgentView(session: PlanSession, view: AgentSessionView): Pl
       ...session.answers,
       departureAirport: session.answers.departureAirport || fromFacts.departureAirport,
       carNeed: session.answers.carNeed || fromFacts.carNeed,
+      helpWith: session.answers.helpWith || fromFacts.helpWith,
       dates: session.answers.dates || fromFacts.dates,
       startDate: session.answers.startDate || fromFacts.startDate,
       endDate: session.answers.endDate || fromFacts.endDate,
@@ -139,6 +154,10 @@ export function mergeAgentView(session: PlanSession, view: AgentSessionView): Pl
       transcript: mergeTranscripts(previous?.transcript ?? [], bound.transcript),
       domains: mergeParkingDomains(previous?.domains, bound.domains),
       pendingAuthorization: bound.pendingAuthorization ?? previous?.pendingAuthorization ?? null,
+      staySearch: view.staySearch ?? previous?.staySearch ?? null,
+      experienceSearch: view.experienceSearch ?? previous?.experienceSearch ?? null,
+      sharedBookingContext: view.sharedBookingContext ?? previous?.sharedBookingContext ?? null,
+      workspace: view.workspace ?? previous?.workspace ?? null,
     },
   };
 }
@@ -241,7 +260,7 @@ export function projectAgentSession(session: PlanSession): PlanProjection {
   }
   const facts = overlayParkingDomainFacts(remote.facts, session.agent?.domains?.parking);
   const questions = presentQuestions(remote.questions, facts);
-  const tasks = applyTaskOverrides(remote.tasks, session.overrides);
+  const tasks = sortPlanTasks(applyTaskOverrides(remote.tasks, session.overrides));
   const chips = planContextChips(facts, session.answers, session.extraNote);
   return {
     facts,
@@ -258,6 +277,7 @@ export function projectAgentSession(session: PlanSession): PlanProjection {
 export function turnAnswersFromSession(session: PlanSession): {
   departureAirport?: string;
   carNeed?: "yes" | "no" | "unsure";
+  helpWith?: "stay" | "rental" | "parking" | "flights_sorted" | "experience" | "unsure";
   dates?: string;
   startDate?: string;
   endDate?: string;
@@ -266,6 +286,7 @@ export function turnAnswersFromSession(session: PlanSession): {
   const body: {
     departureAirport?: string;
     carNeed?: "yes" | "no" | "unsure";
+    helpWith?: "stay" | "rental" | "parking" | "flights_sorted" | "experience" | "unsure";
     dates?: string;
     startDate?: string;
     endDate?: string;
@@ -275,6 +296,9 @@ export function turnAnswersFromSession(session: PlanSession): {
   }
   if (answers.carNeed !== "") {
     body.carNeed = answers.carNeed;
+  }
+  if (answers.helpWith !== "") {
+    body.helpWith = answers.helpWith;
   }
   if (answers.dates.trim() !== "") {
     body.dates = answers.dates.trim();
@@ -317,26 +341,29 @@ export function presentQuestions(
   questions: AgentQuestion[],
   facts: ExtractedFacts,
 ): ClarificationQuestion[] {
-  return questions.slice(0, 3).map((question) => {
-    const id = asQuestionId(question.id);
-    if (id === "carNeed") {
+  return questions
+    .filter((question) => question.id !== "helpWith")
+    .slice(0, 3)
+    .map((question) => {
+      const id = asQuestionId(question.id);
+      if (id === "carNeed") {
+        return {
+          id,
+          label: question.label,
+          why: question.why,
+          kind: "choice",
+          choices: CAR_CHOICES,
+          unblocks: ["Rental car"],
+        };
+      }
       return {
         id,
         label: question.label,
         why: question.why,
-        kind: "choice",
-        choices: CAR_CHOICES,
-        unblocks: ["Rental car"],
+        kind: "text",
+        unblocks: id === "departureAirport" ? ["Flight"] : unblocksFromFacts(facts),
       };
-    }
-    return {
-      id,
-      label: question.label,
-      why: question.why,
-      kind: "text",
-      unblocks: id === "departureAirport" ? ["Flight"] : unblocksFromFacts(facts),
-    };
-  });
+    });
 }
 
 function reconcileOverrides(
@@ -386,6 +413,10 @@ function bindingFromView(
     domains: view.domains ?? {},
     pendingAuthorization: view.pendingAuthorization ?? null,
     buyerSafeMessage: view.buyerSafeMessage ?? "",
+    staySearch: view.staySearch ?? null,
+    experienceSearch: view.experienceSearch ?? null,
+    sharedBookingContext: view.sharedBookingContext ?? null,
+    workspace: view.workspace ?? null,
   };
 }
 
@@ -397,7 +428,7 @@ function normalizePhase(phase: AgentPlanProjection["phase"]): ClarifyPhase {
 }
 
 function asQuestionId(id: string): QuestionId {
-  if (id === "dates" || id === "departureAirport" || id === "carNeed") {
+  if (id === "dates" || id === "departureAirport" || id === "carNeed" || id === "helpWith") {
     return id;
   }
   return "dates";
@@ -429,6 +460,20 @@ function normalizeFacts(raw: AgentFacts): ExtractedFacts {
     dayPart: part,
     carNeed:
       raw.carNeed === "yes" || raw.carNeed === "no" || raw.carNeed === "unsure" ? raw.carNeed : "",
+    helpWith:
+      raw.helpWith === "stay" ||
+      raw.helpWith === "rental" ||
+      raw.helpWith === "parking" ||
+      raw.helpWith === "flights_sorted" ||
+      raw.helpWith === "experience" ||
+      raw.helpWith === "unsure"
+        ? raw.helpWith
+        : "",
+    experienceStated: raw.experienceStated === true,
+    experiencePreferences: Array.isArray(raw.experiencePreferences)
+      ? raw.experiencePreferences.filter((item): item is string => typeof item === "string")
+      : [],
+    flightSatisfied: raw.flightSatisfied === true,
   };
 }
 

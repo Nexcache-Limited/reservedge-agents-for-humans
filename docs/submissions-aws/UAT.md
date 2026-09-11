@@ -61,4 +61,4 @@ Say on camera: supplier execution and payment are simulated.
 
 Agreement is `AVAILABLE`. Dedicated-role smoke test and local product-path Plan UAT succeeded 7 September 2026. One Bedrock cycle per planning turn (~6–8 s HTTP); the earlier two-cycle ~10–16 s figures are superseded. Default live mode without `ITAA_AWS_LIVE_INVOKE=1` still fails closed. The live Plan path is frozen for the competition unless a demonstrated defect appears.
 
-See [LIVE_UAT.md](LIVE_UAT.md) for configuration and results. Authorized live recording shot list: [LIVE_RECORDING.md](../demo-aws/LIVE_RECORDING.md) (do not record until Product Owner authorizes). Remaining gates: AgentCore, live-demo recording, Devpost submit.
+See [LIVE_UAT.md](LIVE_UAT.md) for configuration and results. Authorized live recording shot list: [LIVE_RECORDING.md](../demo-aws/LIVE_RECORDING.md) (do not record until Product Owner authorizes). Remaining gates: AgentCore, live-demo recording, public publish.

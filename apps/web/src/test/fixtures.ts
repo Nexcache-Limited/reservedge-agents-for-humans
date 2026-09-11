@@ -9,6 +9,7 @@ import { ClosedApiError } from "../api/errors.js";
 import { LOCKED_OFFER_IDS, LOCKED_SUPPLIER_TOKENS } from "../fixtures/golden.js";
 import {
   createPlanSession,
+  firstTurnCopy,
   mergeSchedule,
   parkingPrefill,
   projectPlan,
@@ -291,10 +292,10 @@ function localAgentMethods(): Pick<
       correlationId: "cr_01k2m3n4p5q6r7s8t9v0w1x2k2",
       transcript: [
         { role: "user", text: session.objective },
-        { role: "agent", text: projection.summary },
+        { role: "agent", text: firstTurnCopy(projection.facts) || projection.summary },
       ],
       domains: {},
-      buyerSafeMessage: projection.summary,
+      buyerSafeMessage: firstTurnCopy(projection.facts) || projection.summary,
     };
   }
 

@@ -9,7 +9,7 @@ These files are the approved product and engineering specifications for ITAA v1.
 3. `ITAA_Engineering_Kickoff_Pack.docx`
 4. The active Cursor work order's implementation choices
 
-If documents conflict, a higher document wins. Internal Cursor work orders are execution records, not a higher-priority specification, and are omitted from this public export.
+If documents conflict, a higher document wins. Work orders in `docs/work-orders/` are execution records, not a higher-priority specification.
 
 Design-source HTML exports, screenshots, and Python generators are references. They are not substitutes for the approved `.docx` outputs in this directory.
 
@@ -21,7 +21,7 @@ Design-source HTML exports, screenshots, and Python generators are references. T
 | `ITAA_Engineering_Kickoff_Pack.docx` | ReservEdge / ITAA Engineering Kickoff Pack | Version 1.1, 1 September 2026 | `611c8f87925a81771870cc0eb1a57a56556845f96d49b828d2109fe1fbef13d4` |
 | `ITAA_Unified_UI_UX_Design_Specification.docx` | ReservEdge Unified UI/UX Design Specification | Version 1.1, 1 September 2026 | `aeba64e717eb07446a90e95b1f47b633c143000d7138d4abcee0aeee7e955e7f` |
 
-Product Owner approved these revision-2 candidates for normative replacement on 1 September 2026. Registered destination filenames remain `ITAA_*.docx`. Traceability: [ADR-0006](../adr/ADR-0006-intent-first-orchestration.md) (Accepted) and [NORMATIVE_CHANGE_CONTROL.md](../design/proposals/intent-first-2026-08-31/NORMATIVE_CHANGE_CONTROL.md) (local review-candidate paths omitted). Previous v1.0 checksums are superseded and must not be restored without a later Product Owner replacement approval.
+Product Owner approved these revision-2 candidates for normative replacement on 1 September 2026. Registered destination filenames remain `ITAA_*.docx`. Traceability: [ADR-0006](../adr/ADR-0006-intent-first-orchestration.md) (Accepted) and [NORMATIVE_CHANGE_CONTROL.md](../design/proposals/intent-first-2026-08-31/NORMATIVE_CHANGE_CONTROL.md). Previous v1.0 checksums are superseded and must not be restored without a later Product Owner replacement approval.
 
 ## Replacing a normative document
 

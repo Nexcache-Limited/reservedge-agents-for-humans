@@ -98,8 +98,10 @@ export function normalizeSchedule(value: Partial<ScheduleAnswers> | undefined): 
   };
 }
 
+const COMPETITION_YEAR = "2026";
+
 const SAME_MONTH_RANGE = new RegExp(
-  `\\b(?:from\\s+)?(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:to|[–-])\\s*(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})(?:\\.?\\s+|\\s+)(\\d{4})\\b`,
+  `\\b(?:from\\s+)?(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:to|[–-])\\s*(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})(?:\\.?\\s+(\\d{4}))?\\b`,
   "i",
 );
 const NAMED_MONTH_RANGE = new RegExp(
@@ -108,6 +110,10 @@ const NAMED_MONTH_RANGE = new RegExp(
 );
 const DUAL_DATE_RANGE = new RegExp(
   `\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})\\s+(\\d{4})\\s*(?:to|[–-])\\s*(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})\\s+(\\d{4})\\b`,
+  "i",
+);
+const DAY_MONTH_TO_DAY = new RegExp(
+  `\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})(?:\\.?\\s+(\\d{4}))?\\s*(?:to|[–-]|until|through)\\s*(?:the\\s+)?(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+(${MONTH_NAMES}))?(?:\\.?\\s+(\\d{4}))?\\b`,
   "i",
 );
 
@@ -156,7 +162,8 @@ export function looksLikeDateRange(text: string): boolean {
   if (
     SAME_MONTH_RANGE.test(trimmed) ||
     NAMED_MONTH_RANGE.test(trimmed) ||
-    DUAL_DATE_RANGE.test(trimmed)
+    DUAL_DATE_RANGE.test(trimmed) ||
+    DAY_MONTH_TO_DAY.test(trimmed)
   ) {
     return true;
   }
@@ -184,6 +191,13 @@ export function looksLikeDateRange(text: string): boolean {
   return false;
 }
 
+function orderedRange(start: string, end: string): { start: string; end: string } | null {
+  if (start > end) {
+    return null;
+  }
+  return { start, end };
+}
+
 function parseExactRange(text: string): { start: string; end: string } | null {
   const isoRange = text.match(/\b(\d{4}-\d{2}-\d{2})\s*(?:to|[–-])\s*(\d{4}-\d{2}-\d{2})\b/);
   if (
@@ -192,16 +206,16 @@ function parseExactRange(text: string): { start: string; end: string } | null {
     validYmd(isoRange[1]) &&
     validYmd(isoRange[2])
   ) {
-    return { start: isoRange[1], end: isoRange[2] };
+    return orderedRange(isoRange[1], isoRange[2]);
   }
   const range = text.match(SAME_MONTH_RANGE);
   if (range) {
     const month = monthNumber(range[3] ?? "");
-    const year = range[4] ?? "";
+    const year = range[4] || COMPETITION_YEAR;
     const start = ymd(year, month, range[1] ?? "");
     const end = ymd(year, month, range[2] ?? "");
     if (start !== null && end !== null) {
-      return { start, end };
+      return orderedRange(start, end);
     }
   }
   const namedRange = text.match(NAMED_MONTH_RANGE);
@@ -211,7 +225,7 @@ function parseExactRange(text: string): { start: string; end: string } | null {
     const start = ymd(year, month, namedRange[2] ?? "");
     const end = ymd(year, month, namedRange[3] ?? "");
     if (start !== null && end !== null) {
-      return { start, end };
+      return orderedRange(start, end);
     }
   }
   const dual = text.match(DUAL_DATE_RANGE);
@@ -219,7 +233,18 @@ function parseExactRange(text: string): { start: string; end: string } | null {
     const start = ymd(dual[3] ?? "", monthNumber(dual[2] ?? ""), dual[1] ?? "");
     const end = ymd(dual[6] ?? "", monthNumber(dual[5] ?? ""), dual[4] ?? "");
     if (start !== null && end !== null) {
-      return { start, end };
+      return orderedRange(start, end);
+    }
+  }
+  const leadingMonth = text.match(DAY_MONTH_TO_DAY);
+  if (leadingMonth) {
+    const startMonth = monthNumber(leadingMonth[2] ?? "");
+    const endMonth = monthNumber(leadingMonth[5] || leadingMonth[2] || "");
+    const year = leadingMonth[6] || leadingMonth[3] || COMPETITION_YEAR;
+    const start = ymd(year, startMonth, leadingMonth[1] ?? "");
+    const end = ymd(year, endMonth, leadingMonth[4] ?? "");
+    if (start !== null && end !== null) {
+      return orderedRange(start, end);
     }
   }
   return null;
