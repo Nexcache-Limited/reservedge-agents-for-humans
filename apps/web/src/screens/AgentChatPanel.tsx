@@ -24,6 +24,7 @@ import {
   withUpdatingActivity,
 } from "../intent-first/agent.js";
 import { firstTurnCopy, projectPlan, type PlanSession } from "../intent-first/plan.js";
+import { formatMoney, supplierDisplayName } from "../fixtures/golden.js";
 
 export function AgentChatPanel({
   api,
@@ -63,7 +64,12 @@ export function AgentChatPanel({
   const blockedA3 =
     pendingGrant?.gate === "A3" &&
     (parkingOffers.length === 0 || completeness === "accepted" || completeness === "authorized");
-  const showGrant = pendingGrant != null && completeness !== "authorized" && !blockedA3;
+  const showGrant =
+    pendingGrant != null &&
+    completeness !== "authorized" &&
+    !blockedA3 &&
+    pendingGrant.gate !== "A2" &&
+    pendingGrant.gate !== "A1";
   const inputId = compact ? "running-note" : "clarify-note";
 
   useEffect(() => {
@@ -165,7 +171,13 @@ export function AgentChatPanel({
     const message = draftNote.trim();
     setDraftNote("");
     const pending = session.agent?.pendingAuthorization;
-    if (session.agent && !failed && pending && isAffirmativeGrant(message)) {
+    if (
+      session.agent &&
+      !failed &&
+      pending &&
+      (pending.gate === "A3" || pending.gate === "A4") &&
+      isAffirmativeGrant(message)
+    ) {
       await sendGrant({
         gate: pending.gate as AgentGrantBody["gate"],
         domain: "parking",
@@ -254,9 +266,7 @@ export function AgentChatPanel({
               </p>
             );
           })}
-          {parkingOffers.length > 0 && !compact ? (
-            <ConversationOffers offers={parkingOffers} />
-          ) : null}
+          {parkingOffers.length > 0 ? <ConversationOffers offers={parkingOffers} /> : null}
           {showGrant && session.agent?.pendingAuthorization ? (
             <button
               type="button"
@@ -274,7 +284,7 @@ export function AgentChatPanel({
               }
             >
               {busy ? <span className="re-processing-spinner" aria-hidden /> : null}
-              {grantLabel(session.agent.pendingAuthorization.gate)}
+              {grantLabel(session.agent.pendingAuthorization.gate, parkingOffers)}
             </button>
           ) : null}
           {fallback ? (
@@ -323,7 +333,7 @@ function isAffirmativeGrant(text: string): boolean {
   );
 }
 
-function grantLabel(gate: string): string {
+function grantLabel(gate: string, offers: RankedOffer[] = []): string {
   if (gate === "A1") {
     return "Confirm parking requirement";
   }
@@ -333,6 +343,16 @@ function grantLabel(gate: string): string {
   if (gate === "A3") {
     return "Accept recommended offer";
   }
+  const selected =
+    offers.find((item) => item.recommended) ?? offers.find((item) => item.totalMinor !== undefined);
+  if (
+    selected !== undefined &&
+    selected.totalMinor !== undefined &&
+    typeof selected.currency === "string" &&
+    selected.currency !== ""
+  ) {
+    return `Authorize ${formatMoney(selected.totalMinor, selected.currency)}`;
+  }
   return "Authorize simulated reservation";
 }
 
@@ -341,7 +361,7 @@ function ConversationOffers({ offers }: { offers: RankedOffer[] }) {
     <ol className="re-clarify-offers" aria-label="Simulated parking offers">
       {offers.map((offer) => (
         <li key={offer.offerId}>
-          Rank {offer.rank}
+          {supplierDisplayName(offer.supplierToken)}
           {offer.recommended ? " · recommended" : ""}
           {offer.currency && offer.totalMinor !== undefined
             ? ` · ${offer.currency} ${(offer.totalMinor / 100).toFixed(2)}`

@@ -8,20 +8,22 @@ import {
   type SetStateAction,
 } from "react";
 import { flushSync } from "react-dom";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ClosedApiError } from "../api/errors.js";
 import type {
   AgentDomainState,
   AgentExperienceSearch,
+  AgentFlightSearch,
   AgentStaySearch,
   ItaaApi,
 } from "../api/types.js";
-import { formatMoney } from "../fixtures/golden.js";
+import { formatMoney, supplierDisplayName } from "../fixtures/golden.js";
 import {
   AGENT_FAILURE_COPY,
   failAgentSession,
   mergeAgentView,
   projectAgentSession,
+  syncPlanSessionWithSnapshot,
   turnAnswersFromSession,
   withUpdatingActivity,
 } from "../intent-first/agent.js";
@@ -30,7 +32,6 @@ import {
   addTaskOverride,
   mergeSchedule,
   normalizeAnswers,
-  parkingBookingStarted,
   parkingNeedsTimes,
   parkingPrefill,
   projectPlan,
@@ -48,6 +49,7 @@ import {
   type TaskKind,
 } from "../intent-first/plan.js";
 import { rangeError } from "../intent-first/schedule.js";
+import { hideDesktopWorkspaceChat } from "../reservedge/plan-inbox.js";
 import { usePortfolio } from "../reservedge/portfolio.js";
 import { AgentChatPanel } from "./AgentChatPanel.js";
 import { ClarifyScheduleFields } from "./ClarifyScheduleFields.js";
@@ -65,14 +67,6 @@ export function ClarifyPlanScreen({ api }: { api: ItaaApi }) {
   }, [planSession, routed, setPlanSession]);
   if (session === null) {
     return <MissingPlan onCompose={() => navigate("/")} />;
-  }
-  const parkingId = session.agent?.domains?.parking?.intentId;
-  if (
-    parkingBookingStarted(session.agent?.domains?.parking) &&
-    typeof parkingId === "string" &&
-    parkingId.startsWith("pi_")
-  ) {
-    return <Navigate to={`/intents/${parkingId}`} replace />;
   }
   return (
     <ClarifyPlanBody
@@ -296,8 +290,20 @@ function ClarifyPlanBody({
     });
   }
 
-  const addable = supportedAddableKinds(projection.tasks);
-  const parkingWorkspace = session.agent?.domains?.parking != null;
+  const parkingDomain = session.agent?.domains?.parking;
+  const rentalDomain = session.agent?.domains?.rental;
+  const localConfirmChrome =
+    !agentBacked ||
+    session.agent?.fallback === true ||
+    (session.agent?.pendingSearchAuthorization == null &&
+      session.agent?.staySearch == null &&
+      session.agent?.experienceSearch == null &&
+      session.agent?.flightSearch == null &&
+      parkingDomain == null);
+  const addable = supportedAddableKinds(projection.tasks, {
+    liveAgent: agentBacked && session.agent?.fallback !== true && !localConfirmChrome,
+  });
+  const parkingWorkspace = parkingDomain != null;
   const composerHandoff = !agentBacked || !parkingWorkspace;
   const executableParking =
     ready && composerHandoff && projection.tasks.some((task) => task.kind === "parking");
@@ -305,8 +311,6 @@ function ClarifyPlanBody({
     ready && composerHandoff && projection.tasks.some((task) => task.kind === "rental");
   const executableEnts =
     ready && composerHandoff && projection.tasks.some((task) => task.kind === "ents");
-  const parkingDomain = session.agent?.domains?.parking;
-  const rentalDomain = session.agent?.domains?.rental;
 
   return (
     <div className="re-fade re-clarify">
@@ -335,31 +339,33 @@ function ClarifyPlanBody({
         </div>
       ) : null}
 
-      <AgentChatPanel
-        api={api}
-        session={session}
-        setPlanSession={setPlanSession}
-        fallbackObjective={fallbackObjective}
-        hidden={narrow && session.pane !== "conversation"}
-        headingId={headingId}
-      >
-        {gathering && cardQuestions.length > 0 && parkingDomain == null ? (
-          <ClarificationCard
-            questions={cardQuestions}
-            answers={session.answers}
-            facts={projection.facts}
-            onAnswer={setAnswer}
-            onSchedule={setSchedule}
-            onUpdate={() => updatePlan()}
-            phase={session.phase}
-            busy={busy}
-          />
-        ) : (
-          <p className="re-clarify-enough">
-            Already supplied facts were kept and are not asked again.
-          </p>
-        )}
-      </AgentChatPanel>
+      {narrow || !hideDesktopWorkspaceChat(session) ? (
+        <AgentChatPanel
+          api={api}
+          session={session}
+          setPlanSession={setPlanSession}
+          fallbackObjective={fallbackObjective}
+          hidden={narrow && session.pane !== "conversation"}
+          headingId={headingId}
+        >
+          {gathering && cardQuestions.length > 0 && parkingDomain == null ? (
+            <ClarificationCard
+              questions={cardQuestions}
+              answers={session.answers}
+              facts={projection.facts}
+              onAnswer={setAnswer}
+              onSchedule={setSchedule}
+              onUpdate={() => updatePlan()}
+              phase={session.phase}
+              busy={busy}
+            />
+          ) : (
+            <p className="re-clarify-enough">
+              Already supplied facts were kept and are not asked again.
+            </p>
+          )}
+        </AgentChatPanel>
+      ) : null}
 
       <section
         className="re-clarify-plan"
@@ -371,13 +377,24 @@ function ClarifyPlanBody({
           <span
             className={`re-clarify-status${ready ? " is-ready" : gathering ? " is-gathering" : ""}`}
           >
-            {ready ? "Confirmed" : gathering ? "Gathering" : "Forming"}
+            {session.agent?.pendingSearchAuthorization
+              ? "Ready to search"
+              : ready
+                ? "Confirmed"
+                : gathering
+                  ? "Gathering"
+                  : "Forming"}
           </span>
         </div>
         <h2 className="re-h2 re-clarify-plan-title" id="clarify-plan-heading">
           {projection.title}
         </h2>
-        <SharedContextStrip chips={projection.chips} />
+        {agentBacked ? (
+          <p className="re-clarify-persist">
+            Session state is process-local and non-durable; it is not persisted to durable storage.
+          </p>
+        ) : null}
+        <SharedContextStrip chips={hideDesktopWorkspaceChat(session) ? [] : projection.chips} />
         <p className="re-lead re-clarify-plan-lead">
           {gathering && parkingDomain == null
             ? "I'll assemble booking tasks after these answers. No domain is selected yet."
@@ -412,13 +429,16 @@ function ClarifyPlanBody({
                 task.kind === "experience" &&
                 agentBacked &&
                 (task.provenance === "explicit" || session.agent?.experienceSearch != null);
+              const flightLane =
+                task.kind === "flight" &&
+                agentBacked &&
+                (task.provenance === "explicit" || session.agent?.flightSearch != null);
               return (
                 <Fragment key={task.id}>
                   {stayLane ? (
                     <StayDomainLane
                       task={task}
                       search={session.agent?.staySearch ?? null}
-                      confirmed={session.agent?.confirmed === true}
                       busy={busy}
                       onSandboxHold={holdStay}
                     />
@@ -427,6 +447,8 @@ function ClarifyPlanBody({
                       task={task}
                       search={session.agent?.experienceSearch ?? null}
                     />
+                  ) : flightLane ? (
+                    <FlightDomainLane task={task} search={session.agent?.flightSearch ?? null} />
                   ) : (
                     <TaskCard
                       task={task}
@@ -467,6 +489,31 @@ function ClarifyPlanBody({
                 .then((view) => setPlanSession(mergeAgentView(session, view)))
                 .catch(() => setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)));
             }}
+            onTake={(offerId) => {
+              if (!session.agent) {
+                return;
+              }
+              const intentId =
+                typeof parkingDomain.intentId === "string" ? parkingDomain.intentId : "";
+              const offer = (parkingDomain.offerSet.snapshot?.offers ?? []).find(
+                (item) => item.offerId === offerId,
+              );
+              if (intentId.startsWith("pi_") && offer !== undefined) {
+                void api
+                  .intakeAccept(intentId, { offerId, offerVersion: offer.version })
+                  .then((next) => setPlanSession(syncPlanSessionWithSnapshot(session, next)))
+                  .catch(() => setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)));
+                return;
+              }
+              void api
+                .grantAgentSession(session.agent.sessionId, {
+                  gate: "A3",
+                  domain: "parking",
+                  offerId,
+                })
+                .then((view) => setPlanSession(mergeAgentView(session, view)))
+                .catch(() => setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)));
+            }}
           />
         ) : null}
         {rentalDomain != null &&
@@ -489,7 +536,6 @@ function ClarifyPlanBody({
               }
             }
             search={session.agent.staySearch}
-            confirmed={session.agent.confirmed}
             busy={busy}
             onSandboxHold={holdStay}
           />
@@ -511,6 +557,22 @@ function ClarifyPlanBody({
             search={session.agent.experienceSearch}
           />
         ) : null}
+        {session.agent?.flightSearch && !visibleTasks.some((task) => task.kind === "flight") ? (
+          <FlightDomainLane
+            task={{
+              id: "task-flight",
+              kind: "flight",
+              code: "Fl",
+              title: "Flight",
+              detail: "Flight search",
+              provenance: "explicit",
+              support: "sandbox_search",
+              supportLabel: "Sandbox flight search",
+              accepted: true,
+            }}
+            search={session.agent.flightSearch}
+          />
+        ) : null}
         {addable.length > 0 && !ready && !gathering ? (
           <div className="re-clarify-add">
             <div className="re-clarify-add-label">Add a supported task</div>
@@ -526,14 +588,6 @@ function ClarifyPlanBody({
             ))}
           </div>
         ) : null}
-        <p className="re-clarify-honesty">
-          Stay results are labelled LiteAPI sandbox or fake research. Experience results are
-          labelled Prioticket sandbox or fake research. Parking booking is simulated and still waits
-          for A1–A4. Rental has no inventory adapter in this build. Selecting an offer is not a
-          reservation. Session state is process-local and non-durable — not persisted to durable
-          storage. Running holds this chat; other conversations sit under Pending until you open
-          them. API restart drops agent sessions.
-        </p>
         {ready ? (
           <p className="re-clarify-confirmed" role="status">
             Plan confirmed. Stay and experience results appear below when those tasks are on the
@@ -541,7 +595,9 @@ function ClarifyPlanBody({
           </p>
         ) : failed ? (
           <p className="re-clarify-waiting">Could not confirm this plan from a failed step.</p>
-        ) : (session.phase === "forming" || blocking.length === 0) && !narrow ? (
+        ) : localConfirmChrome &&
+          (session.phase === "forming" || blocking.length === 0) &&
+          !narrow ? (
           <button
             type="button"
             className="re-primary itaa-focus-ring re-clarify-confirm"
@@ -552,7 +608,7 @@ function ClarifyPlanBody({
             {busy ? <span className="re-processing-spinner" aria-hidden /> : null}
             Confirm plan
           </button>
-        ) : session.phase === "clarify" && blocking.length > 0 ? (
+        ) : localConfirmChrome && session.phase === "clarify" && blocking.length > 0 ? (
           <p className="re-clarify-waiting">
             {dateCardOnly
               ? "Reply with your dates in the chat. Confirm becomes available after that."
@@ -560,7 +616,11 @@ function ClarifyPlanBody({
           </p>
         ) : null}
       </section>
-      {narrow && !ready && !failed && (session.phase === "forming" || blocking.length === 0) ? (
+      {narrow &&
+      localConfirmChrome &&
+      !ready &&
+      !failed &&
+      (session.phase === "forming" || blocking.length === 0) ? (
         <div className="re-clarify-mobile-actions">
           <button
             type="button"
@@ -608,13 +668,11 @@ function SharedContextStrip({ chips }: { chips: ContextChip[] }) {
 function StayDomainLane({
   task,
   search,
-  confirmed,
   busy,
   onSandboxHold,
 }: {
   task: PlanTask;
   search: AgentStaySearch | null;
-  confirmed: boolean;
   busy: boolean;
   onSandboxHold: (offerId: string) => Promise<void>;
 }) {
@@ -638,12 +696,7 @@ function StayDomainLane({
         </p>
       ) : null}
       {search ? (
-        <StaySearchPanel
-          search={search}
-          confirmed={confirmed}
-          busy={busy}
-          onSandboxHold={onSandboxHold}
-        />
+        <StaySearchPanel search={search} busy={busy} onSandboxHold={onSandboxHold} />
       ) : (
         <>
           <p className="re-clarify-task-detail">{task.detail}</p>
@@ -665,6 +718,91 @@ function searchSourceLabel(search: AgentStaySearch): string {
     return "labelled fake";
   }
   return search.source;
+}
+
+function FlightDomainLane({ task, search }: { task: PlanTask; search: AgentFlightSearch | null }) {
+  return (
+    <section
+      className={`re-domain-lane re-flight-lane${search?.stale === true ? " is-stale" : ""}`}
+    >
+      <div className="re-clarify-plan-head">
+        <span className="re-clarify-kicker">FLIGHT</span>
+        <span className={`re-clarify-provenance is-${task.provenance}`}>
+          {provenanceLabel(task.provenance)}
+        </span>
+        <span className="re-domain-capability">flight.search</span>
+        {search ? (
+          <span className="re-stay-search-source">{search.source}</span>
+        ) : (
+          <span className="re-clarify-status">waiting</span>
+        )}
+      </div>
+      {search?.stale === true ? (
+        <p className="re-clarify-hold" role="status">
+          Flight results are stale after a route or date change. Other domains are unchanged.
+        </p>
+      ) : null}
+      {search ? (
+        <FlightSearchPanel search={search} />
+      ) : (
+        <>
+          <p className="re-clarify-task-detail">{task.detail}</p>
+          <p className="re-clarify-task-why">{provenanceNote(task.provenance)}</p>
+          <p className="re-clarify-hold">
+            Flight search waits until origin, destination, and date are known, then a chat
+            confirmation.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+function FlightSearchPanel({ search }: { search: AgentFlightSearch }) {
+  return (
+    <article className="re-stay-search re-offer-rail" aria-label={search.label}>
+      <div className="re-clarify-plan-head">
+        <span className="re-clarify-kicker">{search.label.toUpperCase()}</span>
+        <span className="re-stay-search-source">{search.source}</span>
+      </div>
+      <p className="re-stay-search-lead">{search.buyerSafeMessage}</p>
+      {search.status !== "ok" ? (
+        <p className="re-clarify-hold" role="status">
+          {search.buyerSafeMessage}
+        </p>
+      ) : (
+        <ul className="re-stay-search-list" aria-label="Flight offers, scroll sideways">
+          {search.offers.map((offer) => {
+            const price = offer.price;
+            const amount =
+              typeof price?.amountMinor === "number" && price.currency
+                ? formatMoney(price.amountMinor, price.currency)
+                : (price?.currency ?? "");
+            const stops =
+              offer.stops === 0 ? "direct" : `${offer.stops} stop${offer.stops === 1 ? "" : "s"}`;
+            return (
+              <li key={offer.id} className="re-stay-search-item">
+                <strong>
+                  {offer.origin} → {offer.destination}
+                </strong>
+                <span>{offer.airline}</span>
+                <span>
+                  {offer.departure} → {offer.arrival}
+                </span>
+                <span>
+                  {stops}
+                  {amount ? ` · ${amount}` : ""}
+                  {offer.cabin ? ` · ${offer.cabin}` : ""}
+                </span>
+                {offer.baggage ? <span>{offer.baggage}</span> : null}
+                <span>Sandbox search. Not a ticket.</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </article>
+  );
 }
 
 function experienceSourceLabel(search: AgentExperienceSearch): string {
@@ -987,6 +1125,41 @@ function useNarrow(): boolean {
   return narrow;
 }
 
+function formatBuyerInstant(raw: string): string {
+  const match = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (match === null) {
+    return raw;
+  }
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const month = months[Number(match[2]) - 1] ?? match[2];
+  const day = String(Number(match[3]));
+  if (match[4] === undefined) {
+    return `${day} ${month} ${match[1]}`;
+  }
+  return `${day} ${month} ${match[1]}, ${match[4]}:${match[5]}`;
+}
+
+function fieldDisplay(domain: AgentDomainState, id: string): string {
+  const raw = fieldValue(domain, id);
+  if ((id === "start" || id === "end") && raw !== "") {
+    return formatBuyerInstant(raw);
+  }
+  return raw;
+}
+
 function fieldValue(domain: AgentDomainState, id: string): string {
   const held = domain.fields[id];
   if (held === undefined || held.value === undefined || held.value === null) {
@@ -1002,10 +1175,12 @@ function ParkingDomainPane({
   domain,
   busy,
   onEdit,
+  onTake,
 }: {
   domain: AgentDomainState;
   busy: boolean;
   onEdit: (fieldId: string, value: string) => void;
+  onTake: (offerId: string) => void;
 }) {
   const offers = domain.offerSet.snapshot?.offers ?? [];
   const stale = domain.offerSet.stale;
@@ -1015,8 +1190,14 @@ function ParkingDomainPane({
         <span className="re-clarify-kicker">PARKING</span>
         <span className="re-domain-capability">parking.search</span>
         <span className="re-sim-label">simulated</span>
-        <span className={`re-clarify-status${domain.completeness === "offers" ? " is-ready" : ""}`}>
-          {stale ? "Stale offers" : domain.completeness}
+        <span
+          className={`re-clarify-status${domain.completeness === "offers" || domain.completeness === "ready" ? " is-ready" : ""}`}
+        >
+          {stale
+            ? "Stale offers"
+            : domain.completeness === "ready"
+              ? "Ready to search"
+              : domain.completeness}
         </span>
       </div>
       <p className="re-clarify-task-why">
@@ -1024,8 +1205,9 @@ function ParkingDomainPane({
         way. Selection is not a booking.
       </p>
       <p className="re-domain-summary">
-        {fieldValue(domain, "airportCode") || "airport unset"} ·{" "}
-        {fieldValue(domain, "start") || "start unset"} → {fieldValue(domain, "end") || "end unset"}
+        {fieldDisplay(domain, "airportCode") || "airport unset"} ·{" "}
+        {fieldDisplay(domain, "start") || "start unset"} →{" "}
+        {fieldDisplay(domain, "end") || "end unset"}
       </p>
       <dl className="re-domain-fields">
         {["airportCode", "start", "end", "vehicleClass", "covered"].map((id) => (
@@ -1065,13 +1247,23 @@ function ParkingDomainPane({
         <ol className="re-domain-offers">
           {offers.map((offer) => (
             <li key={offer.offerId}>
-              Rank {offer.rank}
+              {supplierDisplayName(offer.supplierToken)}
               {offer.recommended ? " · recommended" : ""}
               {offer.simulation ? " · simulated" : ""}
               {offer.currency && offer.totalMinor !== undefined
                 ? ` · ${offer.currency} ${(offer.totalMinor / 100).toFixed(2)}`
                 : ""}
               {stale ? " · not selectable" : ""}
+              {offer.recommended && !stale ? (
+                <button
+                  type="button"
+                  className="re-primary itaa-focus-ring"
+                  disabled={busy}
+                  onClick={() => onTake(offer.offerId)}
+                >
+                  Take this one
+                </button>
+              ) : null}
             </li>
           ))}
         </ol>
@@ -1102,12 +1294,10 @@ function RentalDomainPane({ domain }: { domain: AgentDomainState | undefined }) 
 
 function StaySearchPanel({
   search,
-  confirmed,
   busy,
   onSandboxHold,
 }: {
   search: AgentStaySearch;
-  confirmed: boolean;
   busy: boolean;
   onSandboxHold: (offerId: string) => Promise<void>;
 }) {
@@ -1168,12 +1358,12 @@ function StaySearchPanel({
                   <button
                     type="button"
                     className="re-chip-btn itaa-focus-ring"
-                    disabled={!confirmed || busy}
+                    disabled={busy}
                     onClick={() => {
                       void onSandboxHold(offer.id);
                     }}
                   >
-                    {confirmed ? "Sandbox hold (simulated)" : "Confirm plan to sandbox-hold"}
+                    Request sandbox hold
                   </button>
                 )}
               </li>

@@ -34,7 +34,7 @@ describe("COMP-G1-05 inbox, routing, and recovery handlers", () => {
   it("opens the domain picker from the inbox header, empty filter, and mobile new-intent actions", async () => {
     const user = userEvent.setup();
     renderApp("/");
-    await screen.findByRole("heading", { name: "Bookings" });
+    await screen.findByRole("heading", { name: "Booking Chats" });
     await user.click(headerNewIntent());
     expect(
       await screen.findByRole("heading", { name: "What are you planning or trying to get done?" }),
@@ -43,7 +43,7 @@ describe("COMP-G1-05 inbox, routing, and recovery handlers", () => {
 
     cleanup();
     renderApp("/");
-    await screen.findByRole("heading", { name: "Bookings" });
+    await screen.findByRole("heading", { name: "Booking Chats" });
     await user.click(screen.getByRole("tab", { name: "Running" }));
     await user.click(screen.getByRole("button", { name: "Delete LGA parking · Oct 2–4" }));
     expect(screen.getByText("Nothing here.")).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe("COMP-G1-05 inbox, routing, and recovery handlers", () => {
     renderApp("/activity");
     expect(await screen.findByRole("heading", { name: "Activity" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Back to intents" }));
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
   });
 
   it("opens a seed intent on the mobile route when the viewport is narrow", async () => {
@@ -157,7 +157,7 @@ describe("COMP-G1-05 inbox, routing, and recovery handlers", () => {
       expect(await screen.findByText("JetPark JFK")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Back to intents" })).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Back to intents" }));
-      expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     } finally {
       window.matchMedia = matchMedia;
     }

@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Literal, Protocol
 
-SearchDomain = Literal["stay", "experience"]
+SearchDomain = Literal["stay", "experience", "flight"]
 PlaceKind = Literal["city", "iata", "text"]
 BookingAuthority = Literal["none"]
 
@@ -53,6 +53,23 @@ FAILURE_COPY: Mapping[SearchFailureCode, str] = {
     SearchFailureCode.INVALID_QUERY: "Hotel search needs a destination and stay dates.",
     SearchFailureCode.INVALID_RESPONSE: "Hotel search returned an unreadable result.",
     SearchFailureCode.UNAUTHORIZED: "Hotel search is not configured on the server.",
+}
+
+FLIGHT_BUYER_LABELS: Mapping[SearchProvenance, str] = {
+    SearchProvenance.FAKE: "Labelled fake flight search",
+    SearchProvenance.SANDBOX: "Sandbox flight search",
+    SearchProvenance.LIVE: "Live flight search",
+}
+
+FLIGHT_FAILURE_COPY: Mapping[SearchFailureCode, str] = {
+    SearchFailureCode.EMPTY: "No flight matches for that route and date.",
+    SearchFailureCode.UNAVAILABLE: "Flight search is unavailable right now.",
+    SearchFailureCode.TIMEOUT: (
+        "Flight search timed out. No hotel or parking inventory was substituted."
+    ),
+    SearchFailureCode.INVALID_QUERY: "Flight search needs origin, destination, and a date.",
+    SearchFailureCode.INVALID_RESPONSE: "Flight search returned an unreadable result.",
+    SearchFailureCode.UNAUTHORIZED: "Flight search is not configured on the server.",
 }
 
 EXPERIENCE_FAILURE_COPY: Mapping[SearchFailureCode, str] = {
@@ -142,6 +159,62 @@ class ExperienceSearchPage:
 
 
 @dataclass(frozen=True, slots=True)
+class FlightSearchQuery:
+    origin: str
+    destination: str
+    date: str
+    return_date: str | None = None
+    adults: int = 1
+    currency: str = "GBP"
+    country: str = "GB"
+    cabin: str | None = None
+    max_amount_minor: int | None = None
+    correlation_id: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class FlightSegment:
+    origin: str
+    destination: str
+    departure: str
+    arrival: str
+    airline_code: str
+    airline_name: str
+    flight_number: str
+    duration_minutes: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class FlightOffer:
+    provider_id: str
+    source: SearchProvenance
+    external_id: str
+    origin: str
+    destination: str
+    departure: str
+    arrival: str
+    airline: str
+    segments: tuple[FlightSegment, ...]
+    stops: int
+    duration_minutes: int | None
+    cabin: str | None
+    currency: str | None
+    amount_minor: int | None
+    baggage: str | None
+    booking_authority: BookingAuthority = "none"
+
+
+@dataclass(frozen=True, slots=True)
+class FlightSearchPage:
+    provider_id: str
+    source: SearchProvenance
+    fetched_at: str
+    query: FlightSearchQuery
+    offers: tuple[FlightOffer, ...]
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class ExternalSearchFailure:
     code: SearchFailureCode
     provider_id: str
@@ -152,7 +225,8 @@ class ExternalSearchFailure:
 
 ExternalSearchResult = ExternalSearchPage | ExternalSearchFailure
 ExperienceSearchResult = ExperienceSearchPage | ExternalSearchFailure
-SearchResult = ExternalSearchPage | ExperienceSearchPage | ExternalSearchFailure
+FlightSearchResult = FlightSearchPage | ExternalSearchFailure
+SearchResult = ExternalSearchPage | ExperienceSearchPage | FlightSearchPage | ExternalSearchFailure
 
 
 class ExternalSearchPort(Protocol):
@@ -165,9 +239,16 @@ class ExperienceSearchPort(Protocol):
         """Return a buyer-safe experience page or a typed failure. Never stay fixtures."""
 
 
+class FlightSearchPort(Protocol):
+    def search(self, query: FlightSearchQuery) -> FlightSearchResult:
+        """Return a buyer-safe flight page or a typed failure. Never stay fixtures."""
+
+
 def buyer_label(source: SearchProvenance, domain: SearchDomain = "stay") -> str:
     if domain == "experience":
         return EXPERIENCE_BUYER_LABELS[source]
+    if domain == "flight":
+        return FLIGHT_BUYER_LABELS[source]
     return BUYER_LABELS[source]
 
 
@@ -180,6 +261,8 @@ def failure_message(
         return explicit.strip()
     if domain == "experience":
         return EXPERIENCE_FAILURE_COPY[code]
+    if domain == "flight":
+        return FLIGHT_FAILURE_COPY[code]
     return FAILURE_COPY[code]
 
 
@@ -312,6 +395,91 @@ def public_experience_search_result(result: ExperienceSearchResult) -> dict[str,
         "buyerSafeMessage": (
             f"{buyer_label(result.source, domain)}: {len(offers)} "
             f"{'experience' if len(offers) == 1 else 'experiences'}. Not a booking."
+        ),
+        "bookingAuthority": "none",
+    }
+
+
+def public_flight_query(query: FlightSearchQuery | None) -> dict[str, object] | None:
+    if query is None:
+        return None
+    payload: dict[str, object] = {
+        "domain": "flight",
+        "origin": query.origin,
+        "destination": query.destination,
+        "date": query.date,
+        "adults": query.adults,
+        "currency": query.currency,
+    }
+    if query.return_date:
+        payload["returnDate"] = query.return_date
+    if query.cabin:
+        payload["cabin"] = query.cabin
+    return payload
+
+
+def public_flight_offer(offer: FlightOffer) -> dict[str, object]:
+    price: dict[str, object] = {}
+    if offer.currency:
+        price["currency"] = offer.currency
+    if offer.amount_minor is not None:
+        price["amountMinor"] = offer.amount_minor
+    return {
+        "id": offer.external_id,
+        "origin": offer.origin,
+        "destination": offer.destination,
+        "departure": offer.departure,
+        "arrival": offer.arrival,
+        "airline": offer.airline,
+        "stops": offer.stops,
+        "durationMinutes": offer.duration_minutes,
+        "cabin": offer.cabin,
+        "baggage": offer.baggage,
+        "price": price,
+        "segments": [
+            {
+                "origin": item.origin,
+                "destination": item.destination,
+                "departure": item.departure,
+                "arrival": item.arrival,
+                "airlineCode": item.airline_code,
+                "airlineName": item.airline_name,
+                "flightNumber": item.flight_number,
+                "durationMinutes": item.duration_minutes,
+            }
+            for item in offer.segments
+        ],
+        "bookingAuthority": offer.booking_authority,
+    }
+
+
+def public_flight_search_result(result: FlightSearchResult) -> dict[str, object]:
+    """Buyer-visible flight payload. No provider JSON, stay fixtures, or payment claims."""
+
+    domain: SearchDomain = "flight"
+    if isinstance(result, ExternalSearchFailure):
+        return {
+            "status": result.code.value,
+            "label": buyer_label(result.source, domain),
+            "providerId": result.provider_id,
+            "source": result.source.value,
+            "query": None,
+            "offers": [],
+            "buyerSafeMessage": failure_message(result.code, result.buyer_safe_message, domain),
+            "bookingAuthority": "none",
+        }
+    return {
+        "status": "ok",
+        "label": buyer_label(result.source, domain),
+        "providerId": result.provider_id,
+        "source": result.source.value,
+        "fetchedAt": result.fetched_at,
+        "query": public_flight_query(result.query),
+        "offers": [public_flight_offer(item) for item in result.offers],
+        "warnings": list(result.warnings),
+        "buyerSafeMessage": (
+            f"{len(result.offers)} sandbox flight "
+            f"{'option' if len(result.offers) == 1 else 'options'}. Not a ticket."
         ),
         "bookingAuthority": "none",
     }

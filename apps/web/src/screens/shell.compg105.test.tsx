@@ -22,7 +22,7 @@ function renderApp(path = "/") {
 describe("COMP-G1-05 Phase 1 Reservedge shell", () => {
   it("renders the Reservedge rail wordmark, SIM chip, and inbox filters", async () => {
     renderApp("/");
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     expect(screen.getAllByText("Reservedge").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SIM").length).toBeGreaterThan(0);
     expect(screen.getByText("Simulation mode")).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("COMP-G1-05 Phase 1 Reservedge shell", () => {
 
   it("keeps one public wordmark and does not show the giant simulation banner", async () => {
     const { container } = renderApp("/");
-    await screen.findByRole("heading", { name: "Bookings" });
+    await screen.findByRole("heading", { name: "Booking Chats" });
     expect(container.querySelectorAll(".re-wordmark")).toHaveLength(1);
     expect(container.querySelector(".itaa-simulation-banner")).toBeNull();
     expect(container.querySelector(".itaa-stage-track")).toBeNull();
@@ -64,7 +64,7 @@ describe("COMP-G1-05 Phase 1 Reservedge shell", () => {
   it("filters the inbox, deletes a seed draft, and redirects /inbox", async () => {
     const user = userEvent.setup();
     renderApp("/inbox");
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Pending" }));
     expect(screen.getByText(/paused by you/i)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Running" }));

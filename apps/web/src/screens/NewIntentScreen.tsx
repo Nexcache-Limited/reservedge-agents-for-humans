@@ -146,8 +146,8 @@ export function NewIntentScreen({ api }: { api: ItaaApi }) {
           Describe the parking requirement
         </Text>
         <p className="itaa-text itaa-text--body">
-          Write the parking need in your own words. ITAA extracts fields for your review. It does
-          not invent an airport or dates, and it does not contact real suppliers.
+          Write the parking need in your own words. Reservedge extracts fields for your review. It
+          does not invent an airport or dates, and it does not contact real suppliers.
         </p>
         <label className="itaa-field-label itaa-text itaa-text--label" htmlFor="intake-text">
           Parking requirement
@@ -290,8 +290,8 @@ function IntakeReview({
         </Text>
       ) : null}
       <p className="itaa-text itaa-text--body">
-        Edit the fields ITAA should research. Confirmation creates the Purchase Intent. Raw text
-        stays with you and is not stored on the intent.
+        Edit the fields Reservedge should research. Confirmation creates the Purchase Intent. Raw
+        text stays with you and is not stored on the intent.
       </p>
       <IntakeFields draft={draft} onDraft={onDraft} />
       <EvidencePanel extraction={extraction} text={text} />

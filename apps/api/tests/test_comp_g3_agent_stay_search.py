@@ -95,12 +95,19 @@ def test_london_dated_trip_is_not_a_milan_or_stay_hardcode() -> None:
     assert "jfk" not in str(body).lower()
 
 
-def test_explicit_hotel_dispatches_stay_search() -> None:
+def test_explicit_hotel_dispatches_stay_search_after_yes() -> None:
     client, provider = _client()
     created = client.post(f"{PREFIX}/sessions", json={"objective": HOTEL})
     assert created.status_code == 200, created.text
     body = created.json()
-    stay = body["staySearch"]
+    assert body.get("staySearch") in (None, {})
+    assert "search_stay_offers" not in provider.execute_tools
+    pending = body.get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "stay.search" in pending["capabilities"]
+    confirmed = client.post(f"{PREFIX}/sessions/{body['sessionId']}/turns", json={"message": "yes"})
+    assert confirmed.status_code == 200, confirmed.text
+    stay = confirmed.json()["staySearch"]
     assert isinstance(stay, dict)
     assert stay["status"] == "ok"
     assert stay["source"] == "fake"
@@ -126,6 +133,13 @@ def test_follow_up_hotel_and_rental_activates_stay_only() -> None:
     assert by_kind["hotel"]["provenance"] == "explicit"
     assert by_kind["rental"]["provenance"] == "explicit"
     assert "parking" not in by_kind
+    assert "search_stay_offers" not in provider.execute_tools
+    yes = client.post(
+        f"{PREFIX}/sessions/{session_id}/turns",
+        json={"message": "yes"},
+    )
+    assert yes.status_code == 200, yes.text
+    body = yes.json()
     assert "search_stay_offers" in provider.execute_tools
     stay = body["staySearch"]
     assert isinstance(stay, dict)
@@ -140,20 +154,15 @@ def test_parking_demo_does_not_invoke_stay_search() -> None:
     assert "search_stay_offers" not in provider.execute_tools
 
 
-def test_sandbox_hold_requires_confirm_and_strips_rate_ref() -> None:
+def test_sandbox_hold_runs_after_search_authorization() -> None:
     client, provider = _client()
     created = client.post(f"{PREFIX}/sessions", json={"objective": HOTEL})
     assert created.status_code == 200, created.text
     body = created.json()
-    offer_id = body["staySearch"]["offers"][0]["id"]
-    assert "rateRef" not in created.text
-    blocked = client.post(
-        f"{PREFIX}/sessions/{body['sessionId']}/turns",
-        json={"tool": "book_stay_sandbox", "payload": {"offerId": offer_id}},
-    )
-    assert blocked.status_code == 409
-    confirmed = client.post(f"{PREFIX}/sessions/{body['sessionId']}/confirm", json={})
-    assert confirmed.status_code == 200, confirmed.text
+    searched = client.post(f"{PREFIX}/sessions/{body['sessionId']}/turns", json={"message": "yes"})
+    assert searched.status_code == 200, searched.text
+    offer_id = searched.json()["staySearch"]["offers"][0]["id"]
+    assert "rateRef" not in searched.text
     held = client.post(
         f"{PREFIX}/sessions/{body['sessionId']}/turns",
         json={"tool": "book_stay_sandbox", "payload": {"offerId": offer_id}},

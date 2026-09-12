@@ -9,13 +9,17 @@ from itaa_application.external_search_port import (
     ExternalSearchFailure,
     ExternalSearchPage,
     ExternalSearchQuery,
+    FlightSearchPage,
+    FlightSearchQuery,
     PlaceRef,
     SearchFailureCode,
     SearchProvenance,
 )
 from itaa_liteapi_hotels.adapter import LiteApiStaySearchAdapter, rates_request_body
-from itaa_liteapi_hotels.compose import compose_stay_search_port
+from itaa_liteapi_hotels.compose import compose_flight_search_port, compose_stay_search_port
 from itaa_liteapi_hotels.fake import FakeStaySearchAdapter
+from itaa_liteapi_hotels.fake_flights import FakeFlightSearchAdapter
+from itaa_liteapi_hotels.flights import LiteApiFlightSearchAdapter, flights_request_body
 from itaa_liteapi_hotels.normalize import normalize_offers
 
 
@@ -45,6 +49,13 @@ def test_milan_rates_request_uses_city_and_dates() -> None:
     assert body["maxRatesPerHotel"] == 1
     assert body["limit"] == 6
     assert "hotelIds" not in body
+
+
+def test_heathrow_rates_request_uses_london_city_for_sandbox_catalog() -> None:
+    body = rates_request_body(_query("Heathrow"))
+    assert body["cityName"] == "London"
+    assert body["countryCode"] == "GB"
+    assert body["currency"] == "GBP"
 
 
 def test_miami_rates_request_uses_us_city() -> None:
@@ -343,3 +354,89 @@ def test_opt_in_live_sandbox_milan() -> None:
         not isinstance(result, ExternalSearchFailure)
         or result.code is not SearchFailureCode.UNAUTHORIZED
     )
+
+
+def _flight_query() -> FlightSearchQuery:
+    return FlightSearchQuery(origin="MAN", destination="LHR", date="2026-10-25")
+
+
+def test_flights_request_body_uses_legs() -> None:
+    body = flights_request_body(_flight_query())
+    assert body["legs"] == [
+        {
+            "origin": "MAN",
+            "destination": "LHR",
+            "date": "2026-10-25",
+            "direction": "OUTBOUND",
+        }
+    ]
+    assert body["adults"] == 1
+    assert body["currency"] == "GBP"
+
+
+def test_ci_default_flight_compose_is_fake(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ITAA_STAY_SEARCH_MODE", raising=False)
+    monkeypatch.delenv("ITAA_LITEAPI_API_KEY", raising=False)
+    port = compose_flight_search_port()
+    assert isinstance(port, FakeFlightSearchAdapter)
+
+
+def test_fake_flight_search_is_labelled_and_not_stay() -> None:
+    page = FakeFlightSearchAdapter().search(_flight_query())
+    assert isinstance(page, FlightSearchPage)
+    assert page.source is SearchProvenance.FAKE
+    assert len(page.offers) == 2
+    assert page.offers[0].origin == "MAN"
+    assert page.offers[0].destination == "LHR"
+    blob = str(page).lower()
+    assert "spadari" not in blob
+    assert "skyshield" not in blob
+
+
+def test_sandbox_flight_success_page() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path.endswith("/v3.0/flights/rates")
+        return httpx.Response(
+            200,
+            json={
+                "data": [
+                    {
+                        "journeys": [
+                            {
+                                "journeyKey": "j1",
+                                "totalDuration": {"minutes": 70},
+                                "segments": [
+                                    {
+                                        "originCode": "MAN",
+                                        "destinationCode": "LHR",
+                                        "departureTime": "2026-10-25T09:15:00",
+                                        "arrivalTime": "2026-10-25T10:25:00",
+                                        "carrier": {
+                                            "marketingCode": "BA",
+                                            "marketingName": "British Airways",
+                                        },
+                                        "flight": {"marketingNumber": "1391"},
+                                        "duration": {"minutes": 70},
+                                    }
+                                ],
+                                "offers": [
+                                    {
+                                        "offerId": "off-1",
+                                        "cabin": "economy",
+                                        "pricing": {"display": {"total": 48.5, "currency": "GBP"}},
+                                        "baggage": {"included": True},
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                ]
+            },
+        )
+
+    adapter = LiteApiFlightSearchAdapter(api_key=_key(), transport=httpx.MockTransport(handler))
+    result = adapter.search(_flight_query())
+    assert isinstance(result, FlightSearchPage)
+    assert result.source is SearchProvenance.SANDBOX
+    assert result.offers[0].airline == "British Airways"
+    assert result.offers[0].booking_authority == "none"

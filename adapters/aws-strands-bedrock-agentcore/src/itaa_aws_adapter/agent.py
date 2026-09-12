@@ -6,7 +6,11 @@ from collections.abc import Mapping
 from typing import Protocol
 
 from itaa_application.errors import ApplicationError
-from itaa_application.external_search_port import ExperienceSearchPort, ExternalSearchPort
+from itaa_application.external_search_port import (
+    ExperienceSearchPort,
+    ExternalSearchPort,
+    FlightSearchPort,
+)
 from itaa_application.golden_path import GoldenPathFacade
 from itaa_aws_adapter.events import activity_event
 from itaa_aws_adapter.fake import fake_plan_turn
@@ -33,9 +37,13 @@ class FakeOrchestrator:
         facade: GoldenPathFacade | None = None,
         stay_search: ExternalSearchPort | None = None,
         experience_search: ExperienceSearchPort | None = None,
+        flight_search: FlightSearchPort | None = None,
     ) -> None:
         self._tools = ClosedTools(
-            facade, stay_search=stay_search, experience_search=experience_search
+            facade,
+            stay_search=stay_search,
+            experience_search=experience_search,
+            flight_search=flight_search,
         )
 
     def plan_turn(
@@ -94,6 +102,7 @@ def compose_orchestrator(
     facade: GoldenPathFacade | None = None,
     stay_search: ExternalSearchPort | None = None,
     experience_search: ExperienceSearchPort | None = None,
+    flight_search: FlightSearchPort | None = None,
 ) -> BuyerOrchestrator:
     mode = resolve_model_mode()
     if stay_search is None:
@@ -104,14 +113,28 @@ def compose_orchestrator(
         from itaa_prioticket_experiences.compose import compose_experience_search_port
 
         experience_search = compose_experience_search_port()
+    if flight_search is None:
+        from itaa_liteapi_hotels.compose import compose_flight_search_port
+
+        flight_search = compose_flight_search_port()
     if mode == MODE_LIVE:
         from itaa_aws_adapter.live import LiveOrchestrator
 
         return BuyerOrchestrator(
-            LiveOrchestrator(facade, stay_search=stay_search, experience_search=experience_search)
+            LiveOrchestrator(
+                facade,
+                stay_search=stay_search,
+                experience_search=experience_search,
+                flight_search=flight_search,
+            )
         )
     return BuyerOrchestrator(
-        FakeOrchestrator(facade, stay_search=stay_search, experience_search=experience_search)
+        FakeOrchestrator(
+            facade,
+            stay_search=stay_search,
+            experience_search=experience_search,
+            flight_search=flight_search,
+        )
     )
 
 

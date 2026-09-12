@@ -154,8 +154,11 @@ export function mergeAgentView(session: PlanSession, view: AgentSessionView): Pl
       transcript: mergeTranscripts(previous?.transcript ?? [], bound.transcript),
       domains: mergeParkingDomains(previous?.domains, bound.domains),
       pendingAuthorization: bound.pendingAuthorization ?? previous?.pendingAuthorization ?? null,
+      pendingSearchAuthorization:
+        bound.pendingSearchAuthorization ?? previous?.pendingSearchAuthorization ?? null,
       staySearch: view.staySearch ?? previous?.staySearch ?? null,
       experienceSearch: view.experienceSearch ?? previous?.experienceSearch ?? null,
+      flightSearch: view.flightSearch ?? previous?.flightSearch ?? null,
       sharedBookingContext: view.sharedBookingContext ?? previous?.sharedBookingContext ?? null,
       workspace: view.workspace ?? previous?.workspace ?? null,
     },
@@ -412,9 +415,11 @@ function bindingFromView(
     transcript: view.transcript ?? [],
     domains: view.domains ?? {},
     pendingAuthorization: view.pendingAuthorization ?? null,
+    pendingSearchAuthorization: view.pendingSearchAuthorization ?? null,
     buyerSafeMessage: view.buyerSafeMessage ?? "",
     staySearch: view.staySearch ?? null,
     experienceSearch: view.experienceSearch ?? null,
+    flightSearch: view.flightSearch ?? null,
     sharedBookingContext: view.sharedBookingContext ?? null,
     workspace: view.workspace ?? null,
   };

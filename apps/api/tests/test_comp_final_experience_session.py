@@ -86,8 +86,19 @@ def test_hotel_and_things_to_do_dispatch_both_searches() -> None:
     assert "rental" not in by_kind
     facts = body["projection"]["facts"]
     assert facts.get("flightSatisfied") is True
-    stay = body["staySearch"]
-    experience = body["experienceSearch"]
+    assert body.get("staySearch") in (None, {})
+    pending = body.get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "stay.search" in pending["capabilities"]
+    assert "experience.search" in pending["capabilities"]
+    yes = client.post(
+        f"{PREFIX}/sessions/{session_id}/turns",
+        json={"message": "yes"},
+    )
+    assert yes.status_code == 200, yes.text
+    later = yes.json()
+    stay = later["staySearch"]
+    experience = later["experienceSearch"]
     assert isinstance(stay, dict) and stay["status"] == "ok"
     assert isinstance(experience, dict) and experience["status"] == "ok"
     assert stay["providerId"] != experience["providerId"]
@@ -98,8 +109,8 @@ def test_hotel_and_things_to_do_dispatch_both_searches() -> None:
     assert "milan" in stay_names or "milan" in str(stay["query"]).lower()
     assert "milan" in exp_titles or "milan" in str(experience["query"]).lower()
     assert all("checkIn" not in item for item in experience["offers"])
-    assert "client_secret" not in refined.text.lower()
-    assert "itaa_prioticket" not in refined.text.lower()
+    assert "client_secret" not in yes.text.lower()
+    assert "itaa_prioticket" not in yes.text.lower()
 
 
 def test_london_things_to_do_is_not_milan_hardcode() -> None:
@@ -110,7 +121,12 @@ def test_london_things_to_do_is_not_milan_hardcode() -> None:
         f"{PREFIX}/sessions/{session_id}/turns",
         json={"message": "Find things to do in London"},
     ).json()
-    experience = refined["experienceSearch"]
+    assert refined.get("experienceSearch") in (None, {})
+    yes = client.post(
+        f"{PREFIX}/sessions/{session_id}/turns",
+        json={"message": "yes"},
+    ).json()
+    experience = yes["experienceSearch"]
     assert isinstance(experience, dict)
     blob = str(experience).lower()
     assert "london" in blob
@@ -124,6 +140,7 @@ def test_parking_does_not_stale_stay_or_experience() -> None:
     created = client.post(f"{PREFIX}/sessions", json={"objective": MILAN}).json()
     session_id = created["sessionId"]
     client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": HOTEL_THINGS})
+    client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": "yes"})
     parked = client.post(
         f"{PREFIX}/sessions/{session_id}/turns",
         json={"message": PARKING},
@@ -138,6 +155,7 @@ def test_checkout_change_stales_only_stay() -> None:
     created = client.post(f"{PREFIX}/sessions", json={"objective": MILAN}).json()
     session_id = created["sessionId"]
     client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": HOTEL_THINGS})
+    client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": "yes"})
     before_experience = provider.execute_tools.count("search_experience_offers")
     changed = client.post(
         f"{PREFIX}/sessions/{session_id}/turns",
@@ -157,6 +175,7 @@ def test_evening_preference_stales_only_experience() -> None:
     created = client.post(f"{PREFIX}/sessions", json={"objective": MILAN}).json()
     session_id = created["sessionId"]
     client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": HOTEL_THINGS})
+    client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": "yes"})
     before_stay = provider.execute_tools.count("search_stay_offers")
     evening = client.post(
         f"{PREFIX}/sessions/{session_id}/turns",
@@ -166,10 +185,12 @@ def test_evening_preference_stales_only_experience() -> None:
     assert "evening" in prefs
     experience = evening["experienceSearch"]
     assert isinstance(experience, dict)
-    assert "evening" in str(experience.get("query") or {}).lower() or any(
-        "evening" in str(item.get("availability") or "").lower() for item in experience["offers"]
-    )
+    assert experience.get("stale") is True
+    pending = evening.get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "experience.search" in pending["capabilities"]
     assert evening["staySearch"].get("stale") is not True
     assert provider.execute_tools.count("search_stay_offers") == before_stay
+    assert provider.execute_tools.count("search_experience_offers") == 1
     assert "show" not in {item["kind"] for item in evening["projection"]["tasks"]}
     assert all(item["kind"] != "ents" for item in evening["projection"]["tasks"])

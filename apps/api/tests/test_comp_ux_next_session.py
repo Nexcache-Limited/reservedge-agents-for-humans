@@ -87,15 +87,18 @@ def test_hotel_and_rental_activate_independent_lanes() -> None:
     assert refined["domains"]["stay"]["provenance"] == "explicit"
     assert "rental" in refined["domains"]
     assert "parking" not in refined["domains"]
-    stay = refined["staySearch"]
+    assert refined.get("staySearch") in (None, {})
+    yes = client.post(
+        f"{PREFIX}/sessions/{session_id}/turns",
+        json={"message": "yes"},
+    ).json()
+    stay = yes["staySearch"]
     assert isinstance(stay, dict)
     assert stay["stale"] is False
     assert stay["offerKind"] == "regular"
     assert all(item.get("offerKind") == "regular" for item in stay["offers"])
     assert "search_stay_offers" in provider.execute_tools
-    assert "no rental inventory" in (refined.get("buyerSafeMessage") or "").lower() or (
-        "requirement" in (refined.get("buyerSafeMessage") or "").lower()
-    )
+    assert "no rental inventory" in (yes.get("buyerSafeMessage") or "").lower()
 
 
 def test_adding_parking_does_not_stale_stay() -> None:
@@ -103,6 +106,7 @@ def test_adding_parking_does_not_stale_stay() -> None:
     created = client.post(f"{PREFIX}/sessions", json={"objective": MILAN}).json()
     session_id = created["sessionId"]
     client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": HOTEL_RENTAL})
+    client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": "yes"})
     parked = client.post(
         f"{PREFIX}/sessions/{session_id}/turns",
         json={"message": PARKING},
@@ -120,6 +124,7 @@ def test_stay_checkout_change_does_not_mark_parking_stale() -> None:
     created = client.post(f"{PREFIX}/sessions", json={"objective": MILAN}).json()
     session_id = created["sessionId"]
     client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": HOTEL_RENTAL})
+    client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": "yes"})
     client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": PARKING})
     before = len(provider.execute_tools)
     changed = client.post(
@@ -130,5 +135,5 @@ def test_stay_checkout_change_does_not_mark_parking_stale() -> None:
     assert parking["offerSet"]["stale"] is not True
     stay = changed.get("staySearch")
     assert isinstance(stay, dict)
-    assert stay.get("offerKind") == "regular"
-    assert len(provider.execute_tools) >= before
+    assert stay.get("stale") is True
+    assert len(provider.execute_tools) == before

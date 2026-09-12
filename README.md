@@ -2,7 +2,7 @@
 
 **AWS Agents for Humans · Everyday Agents track**
 
-Reservedge is a privacy-first **Intent to Action Agent (ITAA)**. A buyer types an open-ended objective the way they would say it out loud. **AWS Strands Agents** on **Amazon Bedrock** interpret that objective, ask at most three blocking questions, and return a structured multi-task plan. Deterministic code — not the model — labels each task **Explicit**, **Inferred**, or **Proposed** and routes it to a closed capability. Humans still confirm the plan. Parking still requires **A1–A4**. Stay research and experience search never become a booking.
+Reservedge is a privacy-first **Intent to Action Agent (ITAA)**. A buyer types an open-ended objective the way they would say it out loud. **AWS Strands Agents** on **Amazon Bedrock** interpret that objective, ask at most three blocking questions, and return a structured multi-task plan. Deterministic code — not the model — labels each task **Explicit**, **Inferred**, or **Proposed** and routes it to a closed capability. Provider search waits for **conversational authorization**. Parking still requires **A1–A4**. Stay, flight, and experience research never become a booking or ticket.
 
 This repository is the public competition export of an accepted local checkpoint. It is a **working local product**, not a stub. There are **no real charges, reservations, or supplier bookings**.
 
@@ -13,6 +13,7 @@ Browser  →  /v1/agent/**  (product BFF)
                  ↓
             closed capabilities
                  ├── stay.search      LiteAPI sandbox hotel research
+                 ├── flight.search    LiteAPI sandbox flight research (not a ticket)
                  ├── experience.search Prioticket adapter (catalog currently provider-limited)
                  ├── parking.search   labelled simulated suppliers
                  └── rental.search    requirement-only (no invented inventory)
@@ -27,30 +28,35 @@ The browser talks to `/v1/agent/**`. Do not treat `/v1/aws/**` as the UI path.
 - **Conversation-first** intent: “What are you planning or trying to get done?”
 - **AWS Strands Agents SDK** Plan/Execute behind a closed tool set
 - **Amazon Bedrock live Plan path** (allowlisted model; fail-closed unless explicitly invoked)
-- **Multi-domain task inference and routing** — stay, experience, parking, rental — without location heuristics (Milan does not become a hotel, London does not become an experience, “trip” does not become parking)
-- **LiteAPI** sandbox **hotel research** (`stay.search`) — server-side env names only; not a booking
+- **Multi-domain task inference and routing** — stay, flight, experience, parking, rental — without location heuristics (Milan does not become a hotel, “I'm flying from JFK…” does not open a flight lane, London does not become an experience)
+- **Conversational search authorization** — no LiteAPI or parking search until the buyer confirms the ready set in chat
+- **Conversational refinements** — date/task/preference mutations stale only the affected domain and require a new search authorization
+- **Capability-aware suggestions** — the agent asks only newly missing facts for the ready capabilities
+- **Booking Chats UX** — Running / Pending / History inbox; resume does not invent an Unknown intent
+- **LiteAPI** sandbox **hotel research** (`stay.search`) and **flight research** (`flight.search`) — server-side env names only; not a booking or ticket
 - **Prioticket** experience adapter (`experience.search`) integrated with OAuth2 client-credentials; **city-linked catalog inventory is currently provider-limited**, so Milan/London experience search can return a truthful empty set
 - **Governed simulated parking** (`parking.search`) — ParkDirect / SkyShield / TerminalFlex, labelled simulation
 - **Rental capability without live inventory** — requirement capture only; no invented cars
+- **Reservedge** visible branding in buyer chrome (internal `itaa_*` namespaces unchanged)
 - **Code-validated structured agent state** (`PlanTurn` → UI `PlanProjection`)
 - **Explicit / Inferred / Proposed** provenance assigned by the projector, not the model
 - **A1–A4 human authorization** before any simulated parking supplier work
 - Default judge/local setup is **fake mode** — no cloud credentials required
 
-Local live Bedrock Plan turns were exercised on 7 September 2026 (one Bedrock cycle per planning turn). LiteAPI sandbox stay search returned real Milan hotel research in later UAT. That is not Amazon Bedrock AgentCore, not a public live demo, and not a real hotel or experience booking. AgentCore is **not deployed** and is not claimed.
+Local live Bedrock Plan turns were exercised on 7 September 2026 (one Bedrock cycle per planning turn). LiteAPI sandbox stay and flight search return research-only pages after conversational authorization. That is not Amazon Bedrock AgentCore and not a real hotel, flight ticket, or experience booking. AgentCore is **not deployed** and is not claimed.
 
 ## What this checkpoint is not
 
 Do not read the demo as a live marketplace. This cut does **not** include:
 
-- real bookings, inventory holds, payments, or contact with real suppliers
+- real bookings, tickets, inventory holds, payments, or contact with real suppliers
 - Prioticket as a working Milan (or other city) experience catalog until the provider provisions that inventory
 - production supplier booking APIs
-- durable persistence or cross-session resume
+- durable persistence (process-local sessions; Booking Chats resume only while the API process is up)
 - production authentication
 - a native iOS/Android application (responsive mobile-web only)
 - Amazon Bedrock AgentCore
-- a hosted public live-demo URL
+- a production booking marketplace
 
 ## Pre-existing platform vs competition-period AWS work
 
@@ -58,7 +64,7 @@ Do not read the demo as a live marketplace. This cut does **not** include:
 
 **Already in the Reservedge platform** (before or independent of this competition window): cloud-neutral domain and application core, disclosure/isolation, A1–A4 governance, deterministic ranking, simulated suppliers, FastAPI golden path, React/Vite buyer UI, and the intent-first substrate.
 
-**Competition-period AWS work:** Strands Agents integration, Bedrock live Plan path, `/v1/aws/**`, `/v1/agent/**`, conversation-first multi-domain session/domain state, LiteAPI stay adapter, Prioticket experience adapter, and the AWS demo/submission pack under `docs/demo-aws` and `docs/submissions-aws`.
+**Competition-period AWS work:** Strands Agents integration, Bedrock live Plan path, `/v1/aws/**`, `/v1/agent/**`, conversation-first multi-domain session/domain state, conversational search authorization and refinements, LiteAPI stay and flight adapters, Prioticket experience adapter, Booking Chats UX, and the AWS demo/submission pack under `docs/demo-aws` and `docs/submissions-aws`.
 
 The Google/Gemini adapter under `adapters/google` is not part of this Devpost claim.
 
@@ -67,10 +73,12 @@ The Google/Gemini adapter under `adapters/google` is not part of this Devpost cl
 Canonical wording: [docs/submissions-aws/HONESTY.md](docs/submissions-aws/HONESTY.md).
 
 - Supplier execution and payment are simulated. `SIMULATED - NO REAL CHARGES OR RESERVATIONS`
-- LiteAPI stay results are **research only**. Selecting a hotel is not a booking.
+- No provider search runs before conversational authorization.
+- LiteAPI stay and flight results are **research only**. Selecting a hotel is not a booking. Selecting a flight is not a ticket.
 - Prioticket is an integrated experience adapter. Empty city results mean the provider catalog does not currently expose that inventory — not a silent fixture.
 - Parking is a **labelled simulation**. A1–A4 remain distinct human grants.
 - Rental is requirement-only. The product does not invent car inventory.
+- Changing one requirement stales only the affected domain and requires a new search authorization.
 - A4 is not a booking. Mode is `SIMULATED`.
 - Session state is process-local and non-durable. Restarting the API discards every session.
 
@@ -100,7 +108,7 @@ make setup
 
 `make setup` uses committed lockfiles and `.env.example` defaults. It does not require cloud credentials.
 
-Stay and experience adapters default to fake mode. Optional sandbox names (`ITAA_LITEAPI_API_KEY`, `ITAA_PRIOTICKET_CLIENT_ID`, `ITAA_PRIOTICKET_CLIENT_SECRET`) stay empty in `.env.example`. Never use `VITE_*` for those values.
+Stay, flight, and experience adapters default to fake mode. Optional sandbox names (`ITAA_LITEAPI_API_KEY`, `ITAA_PRIOTICKET_CLIENT_ID`, `ITAA_PRIOTICKET_CLIENT_SECRET`) stay empty in `.env.example`. Never use `VITE_*` for those values. `ITAA_STAY_SEARCH_MODE=sandbox` also enables LiteAPI flight research when a key is supplied at runtime.
 
 ### Fake-mode startup (default demo)
 
@@ -168,7 +176,7 @@ uv run uvicorn itaa_aws_adapter.app:app \
 - Without `ITAA_AWS_LIVE_INVOKE=1`, live mode fails closed (`model: unavailable`). There is no silent fallback to fake fixtures.
 - Live UAT notes (no operator identifiers): [docs/submissions-aws/LIVE_UAT.md](docs/submissions-aws/LIVE_UAT.md).
 
-Optional LiteAPI sandbox stay research (server-side only):
+Optional LiteAPI sandbox stay and flight research (server-side only; both gated by conversational authorization):
 
 ```bash
 export ITAA_STAY_SEARCH_MODE=sandbox
@@ -196,7 +204,7 @@ Strands Plan/Execute + code projector
     ↓
 Closed capability routing
     ↓
-Adapters (LiteAPI research, Prioticket adapter, simulated parking, rental requirement)
+Adapters (LiteAPI stay/flight research, Prioticket adapter, simulated parking, rental requirement)
     ↓
 Governance (A1–A4) for simulated parking
 ```
@@ -212,7 +220,7 @@ See [ADR-0002](docs/adr/ADR-0002-cloud-neutral-boundaries.md) and [ADR-0003](doc
 | Path | Responsibility |
 | ---------------------------------------- | ------------------------------------------------------------ |
 | `apps/api` | Local FastAPI composition root (process-local simulation) |
-| `apps/web` | React/Vite buyer client (conversation-first + parking golden path) |
+| `apps/web` | React/Vite buyer client (Booking Chats, conversation-first, parking golden path) |
 | `apps/supplier-simulator` | Isolated simulated parking suppliers |
 | `packages/domain` | Cloud-neutral domain; no I/O |
 | `packages/application` | Use cases, capability routing, external-search port |
@@ -220,7 +228,7 @@ See [ADR-0002](docs/adr/ADR-0002-cloud-neutral-boundaries.md) and [ADR-0003](doc
 | `packages/policy` | Deterministic disclosure, hashing, approvals, isolation |
 | `packages/ranking` | Deterministic scoring and explanation facts |
 | `adapters/aws-strands-bedrock-agentcore` | Strands / Bedrock adapter (fake default; live Plan opt-in) |
-| `adapters/liteapi-hotels` | LiteAPI stay research adapter (names-only config) |
+| `adapters/liteapi-hotels` | LiteAPI stay and flight research adapter (names-only config) |
 | `adapters/prioticket-experiences` | Prioticket experience adapter (names-only config) |
 | `docs/submissions-aws` | Competition honesty, provenance, UAT, Devpost draft |
 | `docs/demo-aws` | Demo script, architecture, AgentCore design-only note |

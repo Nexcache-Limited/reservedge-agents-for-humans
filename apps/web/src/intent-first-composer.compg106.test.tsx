@@ -108,7 +108,7 @@ describe("intent-first React composer", () => {
     });
     await user.type(field, "Keep this objective");
     await user.click(document.querySelector(".re-tabs a[href='/bookings']") as HTMLAnchorElement);
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /recommended \$71\.40/ })).toBeInTheDocument();
     await user.click(document.querySelector(".re-tabs a[href='/activity']") as HTMLAnchorElement);
     expect(await screen.findByRole("heading", { name: "Activity" })).toBeInTheDocument();
@@ -150,11 +150,11 @@ describe("intent-first domain inference", () => {
 describe("intent-first shell copy", () => {
   it("labels the list Bookings and keeps domain shortcuts out of the first heading", async () => {
     renderApp("/");
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     const main = screen.getByRole("main");
     expect(within(main).queryByRole("heading", { name: "What do you need?" })).toBeNull();
     expect(screen.getAllByRole("link", { name: "Intent" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: "Bookings" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: "Booking Chats" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link", { name: "Activity" }).length).toBeGreaterThan(0);
   });
 });

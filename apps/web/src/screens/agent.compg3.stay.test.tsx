@@ -65,12 +65,12 @@ function milanClarifyView(): AgentSessionView {
       { role: "user", text: MILAN },
       {
         role: "agent",
-        text: "I have Milan from Mumbai and the dates. I can help with hotels, car rentals, and parking. Say the word.",
+        text: "I have Milan from Mumbai and the dates. I can help with hotels, airport parking, and things to do. Say the word.",
       },
     ],
     domains: {},
     buyerSafeMessage:
-      "I have Milan from Mumbai and the dates. I can help with hotels, car rentals, and parking. Say the word.",
+      "I have Milan from Mumbai and the dates. I can help with hotels, airport parking, and things to do. Say the word.",
     staySearch: null,
   };
 }
@@ -168,7 +168,9 @@ describe("COMP-G3 capability routing workspace", () => {
     await user.click(screen.getByRole("button", { name: "Start booking" }));
     expect((await screen.findAllByText("Clarify & plan")).length).toBeGreaterThan(0);
     expect(screen.queryByRole("group", { name: "What should I help book?" })).toBeNull();
-    expect(screen.getByText(/I can help with hotels, car rentals, and parking/i)).toBeTruthy();
+    expect(
+      screen.getByText(/I can help with hotels, airport parking, and things to do/i),
+    ).toBeTruthy();
     expect(screen.queryByLabelText(/labelled fake hotel search/i)).toBeNull();
     expect(screen.queryByText("Hotel Spadari al Duomo")).toBeNull();
     const workspace = document.querySelector(".re-clarify")?.textContent?.toLowerCase() ?? "";
@@ -205,7 +207,7 @@ describe("COMP-G3 capability routing workspace", () => {
     expect(screen.getByText("Hotel Spadari al Duomo")).toBeTruthy();
     expect(screen.getByLabelText("Stay offers, scroll sideways")).toBeTruthy();
     expect(document.querySelector(".re-stay-search-photo")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Confirm plan to sandbox-hold" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Request sandbox hold" })).toBeTruthy();
     expect(screen.getByText(/research until a sandbox hold/i)).toBeTruthy();
   });
 
@@ -218,7 +220,7 @@ describe("COMP-G3 capability routing workspace", () => {
         { role: "user" as const, text: "20th October to 25th" },
         {
           role: "agent" as const,
-          text: "I have Milan from Mumbai and the dates. I can help with hotels, car rentals, and parking. Say the word.",
+          text: "I have Milan from Mumbai and the dates. I can help with hotels, airport parking, and things to do. Say the word.",
         },
       ],
     };

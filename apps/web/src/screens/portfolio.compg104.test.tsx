@@ -67,7 +67,7 @@ describe("COMP-G1-04 portfolio UI", () => {
     );
     await user.click(await screen.findByRole("tab", { name: "Needs you" }));
     expect(
-      within(screen.getByLabelText("Your bookings")).getAllByText(/Airport parking · JFK/),
+      within(screen.getByLabelText("Your booking chats")).getAllByText(/Airport parking · JFK/),
     ).toHaveLength(6);
     expect(document.body.textContent ?? "").not.toMatch(/pi_/);
     await user.click(screen.getByRole("tab", { name: "Pending" }));

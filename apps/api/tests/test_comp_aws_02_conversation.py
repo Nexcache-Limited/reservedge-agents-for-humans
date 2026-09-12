@@ -49,7 +49,8 @@ def test_accepted_parking_without_iata_asks_airport() -> None:
     assert airport.get("value") in {None, ""}
     assert body["projection"]["facts"]["parkingAirport"] == ""
     blob = f"{body.get('buyerSafeMessage') or ''} {parking.get('ask') or ''}".lower()
-    assert "which airport do you need parking at" in blob
+    assert "airport" in blob
+    assert "jfk" in blob or "which airport do you need parking at" in blob
     assert airport.get("value") != "JFK"
 
 
@@ -64,16 +65,17 @@ def test_demo_a_domain_is_execution_ready_without_intent() -> None:
     assert fields["covered"]["value"] == "preferred"
     assert fields["shuttleMaxMinutes"]["provenance"] == "explicit"
     assert parking["completeness"] in {"ready", "awaiting_grant"}
-    assert body["pendingAuthorization"]["gate"] == "A2"
-    prompt = (body["pendingAuthorization"].get("prompt") or "").lower()
-    assert "everything i need for parking" in prompt
-    assert "request offers" in prompt
+    pending = body.get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "parking.search" in pending["capabilities"]
+    prompt = (pending.get("prompt") or body.get("buyerSafeMessage") or "").lower()
+    assert "shall i" in prompt or "request offers" in prompt
     assert parking.get("intentId") in {None, ""}
     assert body.get("transcript")
 
 
-def test_typed_yes_does_not_grant_on_turns() -> None:
-    client, _provider = _client()
+def test_typed_yes_authorizes_pending_parking_search() -> None:
+    client, _provider = _wired()
     created = client.post(f"{PREFIX}/sessions", json={"objective": DEMO_A}).json()
     session_id = created["sessionId"]
     turned = client.post(
@@ -82,9 +84,9 @@ def test_typed_yes_does_not_grant_on_turns() -> None:
     )
     assert turned.status_code == 200
     body = turned.json()
-    assert body["pendingAuthorization"]["gate"] == "A2"
-    parking = body["domains"]["parking"]
-    assert parking.get("intentId") in {None, ""}
+    offers = body["domains"]["parking"]["offerSet"]["snapshot"]["offers"]
+    assert {item["rank"] for item in offers} == {1, 2, 3}
+    assert body["pendingAuthorization"]["gate"] == "A3"
 
 
 def test_direct_patch_and_stale_flag() -> None:
@@ -364,11 +366,11 @@ def test_rental_then_parking_uses_parking_place_and_dates() -> None:
     assert later["airportCode"]["value"] == "MAN"
     assert str(later["start"]["value"]).startswith("2026-10-26T07:00")
     assert str(later["end"]["value"]).startswith("2026-10-28T22:00")
-    pending = timed.json()["pendingAuthorization"]
-    assert pending["gate"] == "A2"
-    prompt = (pending.get("prompt") or "").lower()
-    assert "everything i need for parking" in prompt
-    assert "request offers" in prompt
+    pending = timed.json().get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "parking.search" in pending["capabilities"]
+    prompt = (pending.get("prompt") or timed.json().get("buyerSafeMessage") or "").lower()
+    assert "shall i" in prompt or "request offers" in prompt
     assert "confirm this requirement" not in prompt
 
 
@@ -389,8 +391,9 @@ def test_gatwick_in_day_range_keeps_dates_and_clocks() -> None:
     message = (body.get("buyerSafeMessage") or "").lower()
     assert "when should parking start" not in message
     assert "when should parking finish" not in message
-    pending = body["pendingAuthorization"]
-    assert pending["gate"] == "A2"
+    pending = body.get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "parking.search" in pending["capabilities"]
     session_id = body["sessionId"]
     follow = client.post(
         f"{PREFIX}/sessions/{session_id}/turns",
@@ -426,4 +429,6 @@ def test_time_only_follow_up_without_parking_word_overlays_clocks() -> None:
     clocks = timed.json()["domains"]["parking"]["fields"]
     assert str(clocks["start"]["value"]) == f"{year}-{month}-13T02:00:00Z"
     assert str(clocks["end"]["value"]) == f"{year}-{month}-16T22:00:00Z"
-    assert timed.json()["pendingAuthorization"]["gate"] == "A2"
+    pending = timed.json().get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "parking.search" in pending["capabilities"]

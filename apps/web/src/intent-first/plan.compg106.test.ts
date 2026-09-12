@@ -103,7 +103,7 @@ describe("intent-first plan simulation", () => {
     expect(facts.destination).toBe("London");
     expect(facts.hasExactDates).toBe(false);
     expect(firstTurnCopy(facts)).toBe(
-      "I have London. When are you travelling? I can help with hotels, things to do, car rentals, and parking. Say the word.",
+      "I have London. When are you travelling? I can help with hotels, airport parking, and things to do. Say the word.",
     );
     expect(firstTurnCopy(facts).toLowerCase()).not.toContain("where and when");
   });
@@ -366,5 +366,18 @@ describe("intent-first plan simulation", () => {
     expect(line).toContain("07:00–22:00");
     expect(line).toContain("pi_01k2");
     expect(line.split(" · ").length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps an explicit flight task when hotel and parking are also stated", () => {
+    const objective =
+      "I need a flight from Manchester to Heathrow on 25 October, a hotel near Heathrow, and airport parking in Manchester.";
+    const facts = extractFacts(objective);
+    expect(facts.flightStated).toBe(true);
+    expect(facts.hotelStated).toBe(true);
+    expect(facts.parkingStated).toBe(true);
+    const kinds = projectPlan(createPlanSession(objective)).tasks.map((task) => task.kind);
+    expect(kinds).toContain("flight");
+    expect(kinds).toContain("hotel");
+    expect(kinds).toContain("parking");
   });
 });

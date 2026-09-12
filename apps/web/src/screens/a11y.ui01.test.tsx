@@ -85,7 +85,7 @@ describe("accessibility", () => {
     expect(await screen.findByRole("navigation", { name: "Primary" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Skip to main content" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Bookings" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Booking Chats" })).toBeInTheDocument();
   });
 
   it("supports keyboard activation and disabled reasons", async () => {

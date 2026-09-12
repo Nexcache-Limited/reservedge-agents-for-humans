@@ -24,7 +24,7 @@ const RAIL = [
 
 const TABS = [
   { to: "/", label: "Intent", end: true },
-  { to: "/bookings", label: "Bookings", end: true },
+  { to: "/bookings", label: "Booking Chats", end: true },
   { to: "/activity", label: "Activity", end: false },
 ] as const;
 
@@ -118,16 +118,16 @@ export function PortfolioLayout({ api }: { api: ItaaApi }) {
     const restored = activateParked(id);
     setSelectedId(id);
     const row = intents.find((item) => item.id === id) ?? null;
-    if (id.startsWith("pi_")) {
-      navigate(`/intents/${id}`);
-      return;
-    }
     if (
       (isLiveChatRow(planSession, id) || restored) &&
       row?.status !== "done" &&
       row?.status !== "cancelled"
     ) {
       navigate("/intents/clarify");
+      return;
+    }
+    if (id.startsWith("pi_")) {
+      navigate(`/intents/${id}`);
       return;
     }
     const narrow =
@@ -164,7 +164,7 @@ export function PortfolioLayout({ api }: { api: ItaaApi }) {
             composeHome(location.pathname, selected)
               ? "New intent"
               : inbox
-                ? "Bookings"
+                ? "Booking Chats"
                 : header.title
           }
           meta={composeHome(location.pathname, selected) ? "" : inbox ? "" : header.meta}
@@ -211,7 +211,7 @@ function headerFor(
     return { title: "New intent", meta: "" };
   }
   if (pathname === "/bookings") {
-    return { title: "Bookings", meta: "" };
+    return { title: "Booking Chats", meta: "" };
   }
   if (pathname === "/intents/new") {
     return { title: "New intent", meta: "" };
@@ -252,13 +252,7 @@ function headerFor(
 function ReservedgeRail({ needsCount }: { needsCount: number }) {
   const location = useLocation();
   const { planSession } = usePortfolio();
-  const parkingId = planSession?.agent?.domains?.parking?.intentId;
-  const intentTo =
-    typeof parkingId === "string" && parkingId.startsWith("pi_")
-      ? `/intents/${parkingId}`
-      : planSession !== null
-        ? "/intents/clarify"
-        : "/";
+  const intentTo = planSession !== null ? "/intents/clarify" : "/";
   const intentsOn =
     ["/", "/bookings", "/intents/new", "/intents/clarify"].includes(location.pathname) ||
     location.pathname.startsWith("/intents/");
@@ -359,13 +353,7 @@ function MobileAppBar({
 function MobileTabs() {
   const location = useLocation();
   const { planSession } = usePortfolio();
-  const parkingId = planSession?.agent?.domains?.parking?.intentId;
-  const intentTo =
-    typeof parkingId === "string" && parkingId.startsWith("pi_")
-      ? `/intents/${parkingId}`
-      : planSession !== null
-        ? "/intents/clarify"
-        : "/";
+  const intentTo = planSession !== null ? "/intents/clarify" : "/";
   return (
     <nav className="re-tabs" aria-label="Primary">
       {TABS.map((item) => {
@@ -376,7 +364,7 @@ function MobileTabs() {
               location.pathname === "/intents/new" ||
               location.pathname === "/intents/clarify" ||
               location.pathname.startsWith("/intents/new/"))) ||
-          (item.label === "Bookings" &&
+          (item.label === "Booking Chats" &&
             (location.pathname === "/bookings" ||
               (location.pathname.startsWith("/intents/") &&
                 !location.pathname.startsWith("/intents/new") &&

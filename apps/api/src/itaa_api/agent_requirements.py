@@ -43,7 +43,9 @@ NAMED_AIRPORTS: dict[str, str] = {
     "stansted": "STN",
     "london stansted": "STN",
     "manchester airport": "MAN",
+    "manchester": "MAN",
     "edinburgh airport": "EDI",
+    "edinburgh": "EDI",
     "kennedy": "JFK",
     "jfk airport": "JFK",
     "la guardia": "LGA",
@@ -90,6 +92,47 @@ PARKING_FROM_DAYS_RE = re.compile(
 IATA_PARKING_RE = re.compile(r"\b([A-Za-z]{3})\s+parking\b", re.I)
 PLACE_CITIES: dict[str, str] = {
     "manchester": "MAN",
+    "edinburgh": "EDI",
+    "glasgow": "GLA",
+}
+CITY_AIRPORT_CANDIDATES: dict[str, tuple[str, ...]] = {
+    "manchester": ("MAN",),
+    "edinburgh": ("EDI",),
+    "glasgow": ("GLA",),
+    "amsterdam": ("AMS",),
+    "paris": ("CDG",),
+    "dublin": ("DUB",),
+    "london": ("LHR", "LGW", "STN"),
+    "new york": ("JFK", "LGA", "EWR"),
+    "nyc": ("JFK", "LGA", "EWR"),
+}
+AIRPORT_CHOICE_LABELS: dict[str, str] = {
+    "LHR": "Heathrow (LHR)",
+    "LGW": "Gatwick (LGW)",
+    "STN": "Stansted (STN)",
+    "JFK": "JFK",
+    "LGA": "LaGuardia (LGA)",
+    "EWR": "Newark (EWR)",
+    "MAN": "Manchester Airport (MAN)",
+    "EDI": "Edinburgh Airport (EDI)",
+    "GLA": "Glasgow Airport (GLA)",
+    "AMS": "Schiphol (AMS)",
+    "CDG": "Charles de Gaulle (CDG)",
+    "DUB": "Dublin Airport (DUB)",
+}
+IATA_STAY_PLACE: dict[str, str] = {
+    "LHR": "Heathrow",
+    "LGW": "Gatwick",
+    "STN": "Stansted",
+    "MAN": "Manchester",
+    "EDI": "Edinburgh",
+    "GLA": "Glasgow",
+    "AMS": "Amsterdam",
+    "CDG": "Paris",
+    "DUB": "Dublin",
+    "JFK": "New York",
+    "LGA": "New York",
+    "EWR": "Newark",
 }
 _MONTH_WORDS: tuple[tuple[str, str], ...] = (
     ("january", "01"),
@@ -145,6 +188,13 @@ COVERED_DECLINE_RE = re.compile(
 SHUTTLE_RE = re.compile(r"shuttle[^\d]{0,24}(\d{1,2})", re.I)
 CLOCK_RE = re.compile(
     r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b|\b(\d{1,2}):(\d{2})\b",
+    re.I,
+)
+CLOCK_SPAN_RE = re.compile(
+    r"\b(\d{1,2}(?::\d{2})?\s*(?:am|pm))"
+    r"(?:\s+on(?:\s+the)?\s+\d{1,2}(?:st|nd|rd|th)?)?"
+    r"\s+(?:to|until|through)\s+"
+    r"(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b",
     re.I,
 )
 ORDINAL_RE = re.compile(r"\b(\d{1,2})(?:st|nd|rd|th)\b", re.I)
@@ -284,12 +334,16 @@ RENTAL_NO_ADAPTER_COPY = (
     "integrated in this build, so no rental offers are shown. Hotel search can run "
     "when stay is Explicit. Airport parking is a separate simulated path if you add it."
 )
+FLIGHT_UNSUPPORTED_COPY = (
+    "I can search sandbox flight options. This build does not complete airline payment "
+    "or issue a ticket."
+)
 
 SUPPORT_LABELS: dict[str, str] = {
     "parking": "live_simulated",
     "rental": "demonstration",
     "ents": "demonstration",
-    "flight": "unsupported",
+    "flight": "sandbox_search",
     "hotel": "sandbox_search",
     "experience": "sandbox_search",
 }
@@ -308,11 +362,32 @@ def capabilities_catalog() -> dict[str, object]:
                 "fields": [dict(item) for item in RENTAL_FIELDS],
             },
             "ents": {"support": "demonstration", "fields": []},
-            "flight": {"support": "unsupported", "fields": []},
+            "flight": {"support": "sandbox_search", "fields": []},
             "hotel": {"support": "sandbox_search", "fields": []},
             "experience": {"support": "sandbox_search", "fields": []},
         },
     }
+
+
+def usable_capability_invite() -> str:
+    """Buyer-facing invite derived from the closed capability catalog, not LLM wording."""
+
+    labels: list[str] = []
+    if SUPPORT_LABELS.get("hotel") in {"sandbox_search", "live"}:
+        labels.append("hotels")
+    if SUPPORT_LABELS.get("flight") in {"sandbox_search", "live"}:
+        labels.append("flights")
+    if SUPPORT_LABELS.get("parking") in {"live_simulated", "live"}:
+        labels.append("airport parking")
+    if SUPPORT_LABELS.get("experience") in {"sandbox_search", "live"}:
+        labels.append("things to do")
+    if not labels:
+        return "Say what you would like to book."
+    if len(labels) == 1:
+        return f"I can help with {labels[0]}. Say the word."
+    if len(labels) == 2:
+        return f"I can help with {labels[0]} and {labels[1]}. Say the word."
+    return f"I can help with {', '.join(labels[:-1])}, and {labels[-1]}. Say the word."
 
 
 def catalog_prompt() -> str:
@@ -870,8 +945,27 @@ def apply_model_patches(
             "value": value,
             "evidence": evidence,
         }
-        if not isinstance(domain, dict) or field_spec(kind, field_id) is None:
+        if not isinstance(domain, dict) or (
+            field_spec(kind, field_id) is None and field_id not in {"startTime", "endTime"}
+        ):
             rejected.append({**report, "reason": "unknown_field"})
+            continue
+        if kind == "parking" and field_id in {"startTime", "endTime"}:
+            target = "start" if field_id == "startTime" else "end"
+            held = domain.get("fields") if isinstance(domain.get("fields"), dict) else {}
+            current = held.get(target) if isinstance(held, dict) else None
+            current_value = current.get("value") if isinstance(current, dict) else None
+            inst = overlay_time_on_instant(current_value, str(value or ""))
+            if inst is None:
+                rejected.append({**report, "reason": "type"})
+                continue
+            blob = f"{conversation} {last_user_message} {evidence}".lower()
+            if not CLOCK_RE.search(blob):
+                rejected.append({**report, "reason": "no_evidence"})
+                continue
+            if apply_patch(domain, target, inst, source=source, provenance="explicit"):
+                changed_by_kind.setdefault(kind, []).append(target)
+            accepted.append({**report, "value": inst, "fieldId": target})
             continue
         coerced = coerce_value(kind, field_id, value)
         if coerced is None:
@@ -881,6 +975,19 @@ def apply_model_patches(
             coerced = _without_unevidenced_clock(
                 coerced, f"{conversation} {last_user_message} {evidence}"
             )
+            held = domain.get("fields") if isinstance(domain.get("fields"), dict) else {}
+            current = held.get(field_id) if isinstance(held, dict) else None
+            current_value = current.get("value") if isinstance(current, dict) else None
+            if date_mutation_without_calendar(
+                current_value,
+                coerced,
+                f"{conversation} {last_user_message} {evidence}",
+            ):
+                rejected.append({**report, "reason": "date_locked"})
+                continue
+            kept = keep_existing_clock(current_value, coerced)
+            if kept is not None:
+                coerced = kept
         if not _buyer_evidence(conversation, last_user_message, field_id, coerced, evidence):
             rejected.append({**report, "reason": "no_evidence"})
             continue
@@ -932,11 +1039,13 @@ def _buyer_evidence(
         }
         month_token = names.get(month, "")
         year = match.group(1)
+        if _day_only_as_clock(blob, day):
+            return False
+        if not _calendar_day_evidenced(blob, day):
+            return False
         month_named = any(re.search(rf"\b{re.escape(name)}\b", blob) for name, _num in _MONTH_WORDS)
-        return (
-            (year in blob or year == "2026")
-            and day in blob
-            and (month_token in blob or month in blob or not month_named)
+        return (year in blob or year == "2026") and (
+            month_token in blob or month in blob or not month_named
         )
     token = str(value).strip().lower()
     if field_id == "covered":
@@ -1168,7 +1277,7 @@ def _window_patches(
     for match in _CALENDAR_RE.finditer(conversation):
         if last_parking < 0 or match.start() >= last_parking:
             calendar = match
-    if parking_span:
+    if parking_span and not _span_days_are_clocks(conversation, parking_span):
         start_day = parking_span.group(2)
         end_day = parking_span.group(4)
         start_clock = _clock_to_hhmm(parking_span.group(1) or "")
@@ -1221,12 +1330,7 @@ def _window_patches(
 
 
 def _clock_range(conversation: str) -> tuple[str, str] | None:
-    match = re.search(
-        r"\b(\d{1,2}(?::\d{2})?\s*(?:am|pm))\s+(?:to|until|through)\s+"
-        r"(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b",
-        conversation,
-        re.I,
-    )
+    match = CLOCK_SPAN_RE.search(conversation)
     if match is None:
         return None
     start_clock = _clock_to_hhmm(match.group(1))
@@ -1257,12 +1361,7 @@ def _time_only_patches(
     haystack = f"{parking_context or ''} {conversation}".lower()
     if "parking" not in haystack:
         return []
-    match = re.search(
-        r"\b(\d{1,2}(?::\d{2})?\s*(?:am|pm))\s+(?:to|until|through)\s+"
-        r"(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b",
-        conversation,
-        re.I,
-    )
+    match = CLOCK_SPAN_RE.search(conversation)
     start_raw = ""
     end_raw = ""
     if match is not None:
@@ -1329,7 +1428,133 @@ def overlay_time_on_instant(current: object, clock: str) -> str | None:
     date = current[:10]
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
         return None
-    return f"{date}T{clock}"
+    token = clock.strip()
+    if re.match(r"^\d{2}:\d{2}:\d{2}Z$", token):
+        return f"{date}T{token}"
+    parsed = _clock_to_hhmm(token)
+    if parsed:
+        return f"{date}T{parsed}"
+    if re.match(r"^\d{2}:\d{2}(?::\d{2})?Z?$", token):
+        second = "00"
+        clock_match = re.match(r"^(\d{2}:\d{2})(?::(\d{2}))?Z?$", token)
+        if clock_match and clock_match.group(2):
+            second = clock_match.group(2)
+        elif clock_match is None:
+            return None
+        hhmm = clock_match.group(1) if clock_match else token[:5]
+        return f"{date}T{hhmm}:{second}Z"
+    return None
+
+
+def overlay_calendar_on_instant(current: object, new_date: str) -> str:
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", new_date):
+        return new_date
+    if isinstance(current, str) and "T" in current and len(current) >= 10:
+        return f"{new_date}{current[10:]}"
+    return new_date
+
+
+def keep_existing_clock(current: object, proposed: object) -> str | None:
+    if not isinstance(current, str) or not isinstance(proposed, str):
+        return None
+    if "T" not in current or "T" in proposed:
+        return None
+    if len(current) < 10 or len(proposed) < 10:
+        return None
+    if current[:10] != proposed[:10]:
+        return None
+    clock = current.split("T", 1)[1]
+    return overlay_time_on_instant(proposed, clock)
+
+
+def _span_days_are_clocks(conversation: str, match: re.Match[str]) -> bool:
+    for index in (2, 4):
+        token = match.group(index)
+        if not token:
+            continue
+        rest = conversation[match.end(index) : match.end(index) + 12]
+        if re.match(r"(?:st|nd|rd|th)?\s*(?:am|pm)\b", rest, re.I):
+            return True
+    return False
+
+
+def _calendar_day_evidenced(blob: str, day: str) -> bool:
+    if not day:
+        return False
+    return (
+        re.search(
+            rf"\b{re.escape(day)}(?:st|nd|rd|th)?\b(?!\s*(?:am|pm|:))",
+            blob,
+            re.I,
+        )
+        is not None
+    )
+
+
+def _day_only_as_clock(blob: str, day: str) -> bool:
+    if not day:
+        return False
+    clock_hits = len(re.findall(rf"\b{re.escape(day)}\s*(?:am|pm)\b", blob, re.I))
+    return clock_hits > 0 and not _calendar_day_evidenced(blob, day)
+
+
+def date_mutation_without_calendar(current: object, proposed: object, blob: str) -> bool:
+    if not isinstance(current, str) or not isinstance(proposed, str):
+        return False
+    if len(current) < 10 or len(proposed) < 10:
+        return False
+    if current[:10] == proposed[:10]:
+        return False
+    match = re.search(r"(\d{4})-(\d{2})-(\d{2})", proposed)
+    if match is None:
+        return True
+    day = str(int(match.group(3)))
+    return not _calendar_day_evidenced(blob, day)
+
+
+def single_city_airport(city: str) -> str:
+    cleaned = re.sub(r"[^a-z]+", " ", city.lower()).strip()
+    codes = CITY_AIRPORT_CANDIDATES.get(cleaned)
+    if codes is None or len(codes) != 1:
+        return ""
+    return codes[0]
+
+
+def airport_candidates_for_city(city: str) -> tuple[str, ...]:
+    cleaned = re.sub(r"[^a-z]+", " ", city.lower()).strip()
+    return CITY_AIRPORT_CANDIDATES.get(cleaned, ())
+
+
+def parking_airport_ask(destination: str) -> str:
+    codes = airport_candidates_for_city(destination)
+    if len(codes) > 1:
+        labels = ", ".join(AIRPORT_CHOICE_LABELS.get(code, code) for code in codes)
+        place = destination.strip() or "that city"
+        return f"Which {place} airport do you need parking at: {labels}?"
+    return "Which airport do you need parking at?"
+
+
+def resolve_airport_reply(text: str) -> str:
+    """Normalize a buyer airport reply: IATA, name, or single-airport city.
+
+    Never invents an IATA code from a multi-airport city name.
+    """
+
+    cleaned = re.sub(r"[^a-z]+", " ", text.lower()).strip()
+    if not cleaned:
+        return ""
+    codes = CITY_AIRPORT_CANDIDATES.get(cleaned)
+    if codes is not None and len(codes) != 1:
+        return ""
+    named = normalize_iata(text)
+    if named:
+        return named
+    if codes is not None and len(codes) == 1:
+        return codes[0]
+    stripped = re.sub(r"[^A-Za-z]+", "", text).upper()
+    if stripped in KNOWN_IATA:
+        return stripped
+    return ""
 
 
 def _rental_when(conversation: str) -> str:

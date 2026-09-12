@@ -2,12 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { BuyerSessionState, ItaaApi } from "../api/types.js";
 import { projectAgentSession } from "../intent-first/agent.js";
-import {
-  compactSharedContext,
-  parkingBookingStarted,
-  projectPlan,
-  type ContextChip,
-} from "../intent-first/plan.js";
+import { compactSharedContext, projectPlan } from "../intent-first/plan.js";
 import {
   DOMAIN_META,
   FILTERS,
@@ -19,6 +14,8 @@ import {
 } from "../reservedge/inbox.js";
 import { snapshotToRow } from "../reservedge/map-snapshot.js";
 import {
+  agentLanesActive,
+  hideDesktopWorkspaceChat,
   mergeAgentInboxRows,
   planSessionToRow,
   showRunningInboxChat,
@@ -142,7 +139,9 @@ export function InboxScreen({
   const shown = useMemo(() => rows.filter((row) => matchesFilter(row, filter)), [rows, filter]);
   const compact = location.pathname !== "/" && location.pathname !== "/bookings";
   const onClarify = location.pathname === "/intents/clarify";
-  const runningChat = filter === "running" && showRunningInboxChat(planSession) && !onClarify;
+  const runningChat =
+    showRunningInboxChat(planSession) &&
+    ((onClarify && hideDesktopWorkspaceChat(planSession)) || (filter === "running" && !onClarify));
   const cardRows = useMemo(() => {
     if (!runningChat || liveRow == null) {
       return shown;
@@ -188,10 +187,10 @@ export function InboxScreen({
   }
 
   return (
-    <section className="re-list" aria-label="Your bookings">
+    <section className="re-list" aria-label="Your booking chats">
       <div className="re-list-head">
         <div className="re-list-title-row">
-          <h1 className="re-list-title">Bookings</h1>
+          <h1 className="re-list-title">Booking Chats</h1>
           <button type="button" className="re-new itaa-focus-ring" onClick={startNewIntent}>
             New intent
           </button>
@@ -282,52 +281,24 @@ export function InboxScreen({
 }
 
 function BookingSharedContext() {
-  const location = useLocation();
   const { planSession } = usePortfolio();
-  if (planSession == null || location.pathname === "/intents/clarify") {
+  if (planSession == null) {
     return null;
   }
   const projection =
     planSession.agent != null ? projectAgentSession(planSession) : projectPlan(planSession);
   const parking = planSession.agent?.domains?.parking;
-  if (parkingBookingStarted(parking)) {
-    const line = compactSharedContext(projection.facts, parking);
-    if (line === "") {
-      return null;
-    }
-    return (
-      <div className="re-list-context is-compact">
-        <div className="re-clarify-kicker">SHARED CONTEXT</div>
-        <p className="re-list-context-line">{line}</p>
-      </div>
-    );
+  if (!agentLanesActive(planSession)) {
+    return null;
   }
-  const gathering = planSession.phase === "clarify";
-  const chips: ContextChip[] = gathering
-    ? projection.chips.filter((chip) => chip.source !== "INFERRED")
-    : projection.chips;
-  if (chips.length === 0) {
+  const line = compactSharedContext(projection.facts, parking);
+  if (line === "") {
     return null;
   }
   return (
-    <div className="re-list-context">
+    <div className="re-list-context is-compact">
       <div className="re-clarify-kicker">SHARED CONTEXT</div>
-      <div className="re-clarify-chips">
-        {chips.map((chip) => (
-          <span key={chip.id} className="re-clarify-chip">
-            {chip.label}
-            <span
-              className={`re-clarify-chip-src is-${chip.source.replace(" ", "-").toLowerCase()}`}
-            >
-              {chip.source}
-            </span>
-          </span>
-        ))}
-      </div>
-      <p className="re-clarify-footnote">
-        Shared context never travels as one payload. Each task takes only the fields its own
-        suppliers need.
-      </p>
+      <p className="re-list-context-line">{line}</p>
     </div>
   );
 }

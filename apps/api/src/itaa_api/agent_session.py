@@ -29,20 +29,35 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from itaa_api.agent_requirements import (
+    CLOCK_RE,
     COMPETITION_PARKING_ONLY_COPY,
+    FLIGHT_UNSUPPORTED_COPY,
+    IATA_STAY_PLACE,
     RENTAL_NO_ADAPTER_COPY,
     apply_defaults,
     apply_model_patches,
     apply_patch,
+    date_mutation_without_calendar,
     empty_domain,
     execution_fields,
     extract_conversation_patches,
     join_catalog_asks,
+    keep_existing_clock,
     mark_stale,
+    overlay_calendar_on_instant,
     overlay_time_on_instant,
+    parking_airport_ask,
     public_domain,
     refresh_completeness,
+    resolve_airport_reply,
     sanitize_buyer_message,
+    single_city_airport,
+)
+from itaa_api.conversation_refine import (
+    BuyerRefinement,
+    is_explicit_date_mutation,
+    parse_refinement,
+    refinement_copy,
 )
 from itaa_api.errors import (
     application_error_handler,
@@ -63,6 +78,25 @@ from itaa_api.intake import (
     register_agent_intake,
 )
 from itaa_api.portfolio_http import attach_portfolio_cookie
+from itaa_api.search_authorization import (
+    EXPERIENCE as SEARCH_EXPERIENCE,
+)
+from itaa_api.search_authorization import (
+    FLIGHT as SEARCH_FLIGHT,
+)
+from itaa_api.search_authorization import (
+    PARKING as SEARCH_PARKING,
+)
+from itaa_api.search_authorization import (
+    STAY as SEARCH_STAY,
+)
+from itaa_api.search_authorization import (
+    build_pending,
+    fingerprints_match,
+    match_confirmation,
+    public_pending,
+    results_copy,
+)
 from itaa_application.capability_routing import (
     Capability,
     established_capabilities,
@@ -106,17 +140,12 @@ _MUTATING_TOOLS = frozenset(
         "solicit_parking_offers",
         "accept_offer",
         "authorize_simulated_transaction",
-        "book_stay_sandbox",
     }
 )
 PARKING_INTAKE_PATH = "/intents/new/parking"
 FALLBACK_COPY = "Using the local planner (labelled)"
 FAILED_COPY = "Could not complete this step"
 CONFIRMED_COPY = "Plan confirmed"
-REQUEST_OFFERS_PROMPT = (
-    "I have everything I need for parking. "
-    "Shall I request offers from 3 isolated simulated suppliers?"
-)
 
 router = APIRouter()
 
@@ -181,6 +210,16 @@ class AgentSession:
     stay_rate_refs: dict[str, str] = field(default_factory=dict)
     experience_search: dict[str, object] | None = None
     experience_search_fingerprint: str = ""
+    pending_search_authorization: dict[str, object] | None = None
+    stay_max_amount_minor: int | None = None
+    locked_destination: str = ""
+    dropped_kinds: list[str] = field(default_factory=list)
+    parking_dates_held: bool = False
+    locked_parking_start: str = ""
+    locked_parking_end: str = ""
+    flight_search: dict[str, object] | None = None
+    flight_search_fingerprint: str = ""
+    last_refinement_note: str = ""
 
 
 def mint_opaque(prefix: str) -> str:
@@ -425,6 +464,218 @@ def _provider_objective(session: AgentSession) -> str:
     return " ".join(item for item in parts if item)
 
 
+def _apply_conversation_refinements(session: AgentSession) -> None:
+    last = _last_user_text(session)
+    if not last:
+        return
+    change = parse_refinement(last)
+    if not change.applies():
+        return
+    note = refinement_copy(change)
+    if (
+        change.start_date
+        and change.end_date
+        and change.date_scope != "parking"
+        and is_explicit_date_mutation(last, change)
+    ):
+        session.answers["startDate"] = change.start_date
+        session.answers["endDate"] = change.end_date
+        session.answers["dates"] = f"{change.start_date} to {change.end_date}"
+    if change.destination:
+        session.locked_destination = change.destination
+    if change.stay_max_minor is not None:
+        session.stay_max_amount_minor = change.stay_max_minor
+    if change.hold_parking_dates:
+        session.parking_dates_held = True
+    if change.drop_parking and "parking" not in session.dropped_kinds:
+        session.dropped_kinds.append("parking")
+    if change.add_experience and "things to do" not in session.extra_note.lower():
+        session.extra_note = f"{session.extra_note} things to do".strip()
+    parking = session.domains.get("parking")
+    if isinstance(parking, dict) and not session.parking_dates_held and change.parking_airport:
+        apply_patch(
+            parking,
+            "airportCode",
+            change.parking_airport,
+            source="current_turn",
+            provenance="explicit",
+        )
+        mark_stale(parking, ["airportCode"])
+    if change.flight_origin or change.flight_destination or change.flight_date:
+        flight = session.domains.get("flight")
+        if not isinstance(flight, dict):
+            session.domains["flight"] = empty_domain("flight", provenance="explicit", accepted=True)
+            flight = session.domains["flight"]
+        flight["accepted"] = True
+        flight["provenance"] = "explicit"
+        fields = flight.setdefault("fields", {})
+        if not isinstance(fields, dict):
+            fields = {}
+            flight["fields"] = fields
+        if change.flight_origin:
+            fields["origin"] = {
+                "value": change.flight_origin,
+                "source": "current_turn",
+                "provenance": "explicit",
+            }
+        if change.flight_destination:
+            fields["destination"] = {
+                "value": change.flight_destination,
+                "source": "current_turn",
+                "provenance": "explicit",
+            }
+        if change.flight_date:
+            fields["date"] = {
+                "value": change.flight_date,
+                "source": "current_turn",
+                "provenance": "explicit",
+            }
+    session.last_refinement_note = note
+    session.pending_search_authorization = None
+    _overlay_parking_dates(session, change)
+
+
+def _reapply_last_date_refinement(session: AgentSession) -> None:
+    last = _last_user_text(session)
+    if last:
+        change = parse_refinement(last)
+        if change.start_date:
+            _overlay_parking_dates(session, change)
+    if (
+        session.locked_parking_start
+        and session.locked_parking_end
+        and not session.parking_dates_held
+        and "parking" not in session.dropped_kinds
+    ):
+        parking = session.domains.get("parking")
+        if not isinstance(parking, dict):
+            return
+        fields = parking.get("fields") if isinstance(parking.get("fields"), dict) else {}
+        current_start = None
+        current_end = None
+        if isinstance(fields, dict):
+            held_start = fields.get("start")
+            held_end = fields.get("end")
+            if isinstance(held_start, dict):
+                current_start = held_start.get("value")
+            if isinstance(held_end, dict):
+                current_end = held_end.get("value")
+        apply_patch(
+            parking,
+            "start",
+            overlay_calendar_on_instant(current_start, session.locked_parking_start),
+            source="current_turn",
+            provenance="explicit",
+        )
+        apply_patch(
+            parking,
+            "end",
+            overlay_calendar_on_instant(current_end, session.locked_parking_end),
+            source="current_turn",
+            provenance="explicit",
+        )
+
+
+def _overlay_parking_dates(session: AgentSession, change: BuyerRefinement) -> None:
+    if not change.start_date or not change.end_date:
+        return
+    if change.date_scope == "stay" or change.hold_parking_dates:
+        return
+    if change.date_scope not in {"all", "parking"}:
+        return
+    if session.parking_dates_held:
+        return
+    last = _last_user_text(session)
+    if change.date_scope == "all" and last and not is_explicit_date_mutation(last, change):
+        return
+    session.locked_parking_start = change.start_date
+    session.locked_parking_end = change.end_date
+    parking = session.domains.get("parking")
+    if not isinstance(parking, dict):
+        return
+    fields = parking.get("fields") if isinstance(parking.get("fields"), dict) else {}
+    current_start = None
+    current_end = None
+    if isinstance(fields, dict):
+        held_start = fields.get("start")
+        held_end = fields.get("end")
+        if isinstance(held_start, dict):
+            current_start = held_start.get("value")
+        if isinstance(held_end, dict):
+            current_end = held_end.get("value")
+    apply_patch(
+        parking,
+        "start",
+        overlay_calendar_on_instant(current_start, change.start_date),
+        source="current_turn",
+        provenance="explicit",
+    )
+    apply_patch(
+        parking,
+        "end",
+        overlay_calendar_on_instant(current_end, change.end_date),
+        source="current_turn",
+        provenance="explicit",
+    )
+    mark_stale(parking, ["start", "end"])
+
+
+def _apply_locked_facts(session: AgentSession) -> None:
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    if isinstance(facts, dict):
+        if session.answers.get("startDate"):
+            facts["startDate"] = session.answers["startDate"]
+            facts["hasExactDates"] = True
+        if session.answers.get("endDate"):
+            facts["endDate"] = session.answers["endDate"]
+        if session.answers.get("startDate") and session.answers.get("endDate"):
+            facts["dates"] = f"{session.answers['startDate']} to {session.answers['endDate']}"
+        if not session.locked_destination:
+            held = facts.get("destination")
+            if isinstance(held, str) and held.strip() and _stay_explicit(session):
+                session.locked_destination = held.strip()
+        if session.locked_destination:
+            facts["destination"] = session.locked_destination
+    tasks = session.projection.get("tasks")
+    if isinstance(tasks, list) and session.dropped_kinds:
+        session.projection["tasks"] = [
+            item
+            for item in tasks
+            if not (
+                isinstance(item, dict)
+                and str(item.get("kind") or "") in {"parking", *session.dropped_kinds}
+            )
+        ]
+        if "parking" in session.dropped_kinds:
+            session.domains.pop("parking", None)
+    if "things to do" in session.extra_note.lower():
+        experience = session.domains.get("experience")
+        if not isinstance(experience, dict):
+            session.domains["experience"] = empty_domain(
+                "experience", provenance="explicit", accepted=True
+            )
+        else:
+            experience["accepted"] = True
+            experience["provenance"] = "explicit"
+        if isinstance(tasks, list) and not any(
+            isinstance(item, dict) and item.get("kind") == "experience" for item in tasks
+        ):
+            session.projection.setdefault("tasks", [])
+            held = session.projection.get("tasks")
+            if isinstance(held, list):
+                held.append(
+                    {
+                        "id": "experience-added",
+                        "kind": "experience",
+                        "title": "Experience",
+                        "provenance": "explicit",
+                        "accepted": True,
+                        "support": "sandbox_search",
+                        "supportLabel": "Sandbox experience search",
+                    }
+                )
+
+
 def _append_event(session: AgentSession, kind: str, message: str) -> None:
     session.events.append(
         {
@@ -465,6 +716,8 @@ def _apply_plan_result(session: AgentSession, result: Mapping[str, object]) -> N
     session.tool_trace.append({"kind": "plan"})
     synced = plan_turn if isinstance(plan_turn, dict) else None
     _sync_domains(session, source="current_turn", plan_turn=synced)
+    _apply_locked_facts(session)
+    _ensure_stay_destination(session)
     _rewrite_agent_questions(session)
     message = ""
     if isinstance(plan_turn, dict):
@@ -481,6 +734,10 @@ def _apply_plan_result(session: AgentSession, result: Mapping[str, object]) -> N
     session.buyer_safe_message = _compose_buyer_message(
         session, message, a2_complete=bool(a2_complete)
     )
+    if session.last_refinement_note:
+        session.buyer_safe_message = (
+            f"{session.last_refinement_note} {session.buyer_safe_message}".strip()
+        )
     _refresh_pending(session)
     _append_agent_turn(session, session.buyer_safe_message)
 
@@ -564,7 +821,10 @@ def _sync_domains(
         if not isinstance(item, dict):
             continue
         kind = item.get("kind")
-        if kind not in {"parking", "rental", "hotel", "experience"}:
+        if kind not in {"parking", "rental", "hotel", "experience", "flight"}:
+            continue
+        domain_key = "stay" if kind == "hotel" else str(kind)
+        if domain_key in session.dropped_kinds or str(kind) in session.dropped_kinds:
             continue
         provenance = str(item.get("provenance") or "proposed")
         accepted = item.get("accepted") is True or provenance == "explicit"
@@ -584,8 +844,10 @@ def _sync_domains(
             if accepted:
                 current["accepted"] = True
     _apply_model_requirement_patches(session, plan_turn, source=source)
-    _seed_parking_from_facts(session, source=source)
+    if "parking" not in session.dropped_kinds:
+        _seed_parking_from_facts(session, source=source)
     _apply_extracted_patches(session, source=source)
+    _reapply_last_date_refinement(session)
     parking = session.domains.get("parking")
     if isinstance(parking, dict):
         apply_defaults(parking)
@@ -603,14 +865,15 @@ def _localize_parking_asks(session: AgentSession) -> None:
     parking = session.domains.get("parking")
     facts = session.projection.get("facts")
     dest = facts.get("destination") if isinstance(facts, dict) else ""
-    if not isinstance(parking, dict) or str(dest).lower() != "london":
+    if not isinstance(parking, dict):
         return
     asks = parking.get("ask")
     if not isinstance(asks, list):
         return
+    prompt = parking_airport_ask(str(dest or ""))
     for item in asks:
         if isinstance(item, dict) and item.get("id") == "airportCode":
-            item["ask"] = "Which London airport do you need parking at?"
+            item["ask"] = prompt
 
 
 def _parking_led(session: AgentSession) -> bool:
@@ -694,6 +957,9 @@ _PARKING_VEHICLE_ASK_RE = re.compile(r"\bvehicle class\b", re.I)
 
 
 def _compose_buyer_message(session: AgentSession, model_message: str, *, a2_complete: bool) -> str:
+    last = _last_user_text(session)
+    if re.search(r"\b(pay for|purchase|ticket)\s+(?:a |the )?flights?\b", last, re.I):
+        return sanitize_buyer_message(FLIGHT_UNSUPPORTED_COPY, a2_complete=a2_complete)
     if _non_parking_booking_request(session):
         rental = session.domains.get("rental")
         rental_explicit = isinstance(rental, dict) and (
@@ -766,6 +1032,17 @@ def _apply_model_requirement_patches(
 def _apply_extracted_patches(session: AgentSession, *, source: str) -> None:
     conversation = _conversation(session)
     last = _last_user_text(session)
+    last_change = parse_refinement(last) if last else None
+    clock_follow_up = bool(last and CLOCK_RE.search(last))
+    skip_parking_dates = bool(
+        last
+        and (
+            (last_change is not None and last_change.start_date)
+            or (last_change is not None and last_change.date_scope == "stay")
+            or (last_change is not None and last_change.hold_parking_dates)
+            or not clock_follow_up
+        )
+    )
     patches = extract_conversation_patches(conversation, source=source)  # type: ignore[arg-type]
     if last and last.strip() and last.strip() != conversation.strip():
         patches.extend(
@@ -778,11 +1055,23 @@ def _apply_extracted_patches(session: AgentSession, *, source: str) -> None:
     parking_changed: list[str] = []
     for patch in patches:
         kind = str(patch.get("kind") or "")
+        if kind == "parking" and "parking" in session.dropped_kinds:
+            continue
         domain_key = "stay" if kind == "hotel" else kind
         domain = session.domains.get(domain_key)
         if not isinstance(domain, dict):
             continue
         field_id = str(patch.get("fieldId") or "")
+        if (
+            kind == "parking"
+            and (
+                session.parking_dates_held
+                or skip_parking_dates
+                or (last_change is not None and last_change.date_scope == "stay")
+            )
+            and field_id in {"start", "end", "startTime", "endTime"}
+        ):
+            continue
         if field_id in {"startTime", "endTime"}:
             target = "start" if field_id == "startTime" else "end"
             fields = domain.get("fields")
@@ -804,6 +1093,31 @@ def _apply_extracted_patches(session: AgentSession, *, source: str) -> None:
                 and kind == "parking"
             ):
                 parking_changed.append(target)
+            continue
+        if field_id in {"start", "end"}:
+            fields = domain.get("fields")
+            current = None
+            if isinstance(fields, dict):
+                held = fields.get(field_id)
+                if isinstance(held, dict):
+                    current = held.get("value")
+            if date_mutation_without_calendar(current, patch.get("value"), conversation):
+                continue
+            value = patch.get("value")
+            kept = keep_existing_clock(current, value)
+            if kept is not None:
+                value = kept
+            if (
+                apply_patch(
+                    domain,
+                    field_id,
+                    value,
+                    source=source,  # type: ignore[arg-type]
+                    provenance="explicit",
+                )
+                and kind == "parking"
+            ):
+                parking_changed.append(field_id)
             continue
         if (
             apply_patch(
@@ -833,6 +1147,16 @@ def _seed_parking_from_facts(session: AgentSession, *, source: str) -> None:
             parking,
             "airportCode",
             airport,
+            source=source,  # type: ignore[arg-type]
+            provenance="explicit",
+        )
+    destination = str(facts.get("destination") or "")
+    solo = single_city_airport(destination)
+    if solo and _empty_field(fields, "airportCode"):
+        apply_patch(
+            parking,
+            "airportCode",
+            solo,
             source=source,  # type: ignore[arg-type]
             provenance="explicit",
         )
@@ -952,19 +1276,8 @@ def _refresh_pending(session: AgentSession) -> None:
         parking["completeness"] = "offers"
         session.buyer_safe_message = prompt
         return
-    intent_id = parking.get("intentId")
-    resource_id = intent_id if isinstance(intent_id, str) and intent_id and not stale else None
-    session.pending_authorization = {
-        "gate": "A2",
-        "domain": "parking",
-        "prompt": REQUEST_OFFERS_PROMPT,
-        "resourceId": resource_id,
-    }
-    parking["completeness"] = "awaiting_grant"
-    session.buyer_safe_message = sanitize_buyer_message(
-        REQUEST_OFFERS_PROMPT,
-        a2_complete=False,
-    )
+    session.pending_authorization = None
+    parking["completeness"] = "ready"
 
 
 def _offer_accept_prompt(snapshot: Mapping[str, object]) -> str:
@@ -1073,6 +1386,8 @@ def _public_session(session: AgentSession) -> dict[str, object]:
         "experienceSearch": (
             None if session.experience_search is None else dict(session.experience_search)
         ),
+        "flightSearch": None if session.flight_search is None else dict(session.flight_search),
+        "pendingSearchAuthorization": public_pending(session.pending_search_authorization),
         "sharedBookingContext": _shared_booking_context(session),
         "workspace": {
             "persistence": "process-local",
@@ -1085,6 +1400,7 @@ def _public_session(session: AgentSession) -> dict[str, object]:
 
 
 def _plan(request: Request, session: AgentSession) -> None:
+    _apply_conversation_refinements(session)
     provider = _provider(request)
     payload: dict[str, object] = {
         "objective": _provider_objective(session),
@@ -1102,7 +1418,8 @@ def _plan(request: Request, session: AgentSession) -> None:
         _append_event(session, "FAILED_CLOSED", FAILED_COPY)
         raise ApplicationError("model", "unavailable") from None
     _apply_plan_result(session, result)
-    _dispatch_capability_searches(request, session)
+    _apply_airport_reply(session)
+    _reconcile_search_authorization(request, session)
 
 
 def _execute(
@@ -1135,18 +1452,25 @@ def _execute(
     return dict(inner)
 
 
-def _dispatch_capability_searches(request: Request, session: AgentSession) -> None:
-    """Invoke configured provider adapters for established Explicit capabilities.
+def _dispatch_capability_searches(
+    request: Request,
+    session: AgentSession,
+    capabilities: Sequence[str] | None = None,
+) -> None:
+    """Dispatch only buyer-authorized search capabilities.
 
     Destination plus dates never activates stay.search or experience.search. Unconfigured
-    capabilities (rental.search) stay silent — no simulated substitute. Parking uses the
-    existing simulated A1–A4 path, not this dispatcher.
+    capabilities (rental.search) stay silent — no simulated substitute. Parking search
+    uses the simulated supplier path after search authorization, not A3–A4.
     """
 
+    allowed = None if capabilities is None else set(capabilities)
     tasks, facts = snapshots_from_projection(session.projection)
     for capability in established_capabilities(tasks, facts):
         tool = _CAPABILITY_TOOLS.get(capability)
         if tool == "search_stay_offers":
+            if allowed is not None and SEARCH_STAY not in allowed:
+                continue
             _search_stay_offers(
                 request,
                 session,
@@ -1156,8 +1480,475 @@ def _dispatch_capability_searches(request: Request, session: AgentSession) -> No
                 facts.origin_city,
             )
         elif tool == "search_experience_offers":
+            if allowed is not None and SEARCH_EXPERIENCE not in allowed:
+                continue
             prefs = _experience_preferences(session)
             _search_experience_offers(request, session, facts.destination, prefs)
+    if (allowed is None or SEARCH_FLIGHT in allowed) and _flight_search_ready(session):
+        _search_flight_offers(request, session)
+    if (allowed is None or SEARCH_PARKING in allowed) and _parking_search_ready(session):
+        _dispatch_parking_search(request, session)
+
+
+def _parking_search_ready(session: AgentSession) -> bool:
+    parking = session.domains.get("parking")
+    if not isinstance(parking, dict) or parking.get("accepted") is not True:
+        return False
+    missing = parking.get("missing") if isinstance(parking.get("missing"), list) else []
+    if missing:
+        return False
+    offer_held = parking.get("offerSet")
+    offer = offer_held if isinstance(offer_held, dict) else {}
+    snapshot = offer.get("snapshot")
+    return not (
+        isinstance(snapshot, dict) and snapshot.get("offers") and offer.get("stale") is not True
+    )
+
+
+def _parking_fingerprint(session: AgentSession) -> str:
+    parking = session.domains.get("parking")
+    if not isinstance(parking, dict):
+        return ""
+    fields = parking.get("fields") if isinstance(parking.get("fields"), dict) else {}
+    parts: list[str] = []
+    for field_id in ("airportCode", "start", "end", "vehicleClass", "covered"):
+        held = fields.get(field_id) if isinstance(fields, dict) else None
+        value = held.get("value") if isinstance(held, dict) else ""
+        parts.append(str(value or ""))
+    return "|".join(parts)
+
+
+def _search_place(session: AgentSession) -> str:
+    parking = session.domains.get("parking")
+    fields = parking.get("fields") if isinstance(parking, dict) else {}
+    airport = ""
+    if isinstance(fields, dict):
+        held = fields.get("airportCode")
+        if isinstance(held, dict):
+            airport = str(held.get("value") or "")
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    dest = str(facts.get("destination") or "") if isinstance(facts, dict) else ""
+    return dest or airport or "those dates"
+
+
+def _ensure_stay_destination(session: AgentSession) -> None:
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    if not isinstance(facts, dict) or str(facts.get("destination") or "").strip():
+        return
+    if not _stay_explicit(session):
+        return
+    airport = (
+        str(facts.get("destinationAirport") or facts.get("parkingAirport") or "").strip().upper()
+    )
+    if not airport:
+        parking = session.domains.get("parking")
+        fields = parking.get("fields") if isinstance(parking, dict) else {}
+        if isinstance(fields, dict):
+            held = fields.get("airportCode")
+            if isinstance(held, dict):
+                airport = str(held.get("value") or "").strip().upper()
+    place = IATA_STAY_PLACE.get(airport)
+    if not place:
+        return
+    facts["destination"] = place
+    if not str(facts.get("destinationAirport") or "").strip():
+        facts["destinationAirport"] = airport
+
+
+def _rental_explicit(session: AgentSession) -> bool:
+    rental = session.domains.get("rental")
+    if isinstance(rental, dict) and (
+        rental.get("accepted") is True or str(rental.get("provenance") or "") == "explicit"
+    ):
+        return True
+    tasks = session.projection.get("tasks")
+    if not isinstance(tasks, list):
+        return False
+    for item in tasks:
+        if not isinstance(item, dict) or item.get("kind") != "rental":
+            continue
+        if item.get("accepted") is True or str(item.get("provenance") or "") == "explicit":
+            return True
+    return False
+
+
+def _current_search_fingerprints(session: AgentSession) -> dict[str, str]:
+    tasks, facts = snapshots_from_projection(session.projection)
+    prints: dict[str, str] = {}
+    if facts.destination and facts.start_date and facts.end_date:
+        stay_parts = [facts.destination, facts.start_date, facts.end_date]
+        if session.stay_max_amount_minor is not None:
+            stay_parts.append(str(session.stay_max_amount_minor))
+        prints[SEARCH_STAY] = "|".join(stay_parts)
+    if _parking_fingerprint(session):
+        prints[SEARCH_PARKING] = _parking_fingerprint(session)
+    prefs = _experience_preferences(session)
+    if facts.destination:
+        prints[SEARCH_EXPERIENCE] = "|".join((facts.destination, *prefs))
+    flight_fp = _flight_fingerprint(session)
+    if flight_fp:
+        prints[SEARCH_FLIGHT] = flight_fp
+    del tasks
+    return prints
+
+
+def _explicit_search_kinds(session: AgentSession) -> set[str]:
+    kinds: set[str] = set()
+    tasks = session.projection.get("tasks")
+    if isinstance(tasks, list):
+        for item in tasks:
+            if not isinstance(item, dict):
+                continue
+            kind = str(item.get("kind") or "")
+            provenance = str(item.get("provenance") or "")
+            if provenance != "explicit" and item.get("accepted") is not True:
+                continue
+            if kind == "hotel":
+                kinds.add("hotel")
+            elif kind == "parking":
+                kinds.add("parking")
+            elif kind == "experience":
+                kinds.add("experience")
+            elif kind == "flight":
+                kinds.add("flight")
+    if _parking_led(session):
+        kinds.add("parking")
+    if _stay_explicit(session):
+        kinds.add("hotel")
+    experience = session.domains.get("experience")
+    if isinstance(experience, dict) and (
+        experience.get("accepted") is True or str(experience.get("provenance") or "") == "explicit"
+    ):
+        kinds.add("experience")
+    flight = session.domains.get("flight")
+    if isinstance(flight, dict) and (
+        flight.get("accepted") is True or str(flight.get("provenance") or "") == "explicit"
+    ):
+        kinds.add("flight")
+    return kinds
+
+
+def _stay_facts_ready(session: AgentSession) -> bool:
+    tasks, facts = snapshots_from_projection(session.projection)
+    del tasks
+    return bool(facts.destination and facts.start_date and facts.end_date)
+
+
+def _search_blocked(session: AgentSession) -> bool:
+    kinds = _explicit_search_kinds(session)
+    if "hotel" in kinds and not _stay_facts_ready(session):
+        return True
+    if "parking" in kinds and not (
+        _parking_search_ready(session) or _parking_has_fresh_offers(session)
+    ):
+        parking = session.domains.get("parking")
+        missing = parking.get("missing") if isinstance(parking, dict) else []
+        if isinstance(missing, list) and missing:
+            return True
+        if not _parking_search_ready(session) and not _parking_has_fresh_offers(session):
+            return True
+    return "flight" in kinds and not _flight_search_ready(session)
+
+
+def _parking_has_fresh_offers(session: AgentSession) -> bool:
+    parking = session.domains.get("parking")
+    if not isinstance(parking, dict):
+        return False
+    offer_held = parking.get("offerSet")
+    offer = offer_held if isinstance(offer_held, dict) else {}
+    snapshot = offer.get("snapshot")
+    return (
+        isinstance(snapshot, dict)
+        and bool(snapshot.get("offers"))
+        and offer.get("stale") is not True
+    )
+
+
+def _ready_search_capabilities(session: AgentSession) -> list[str]:
+    ready: list[str] = []
+    kinds = _explicit_search_kinds(session)
+    tasks, facts = snapshots_from_projection(session.projection)
+    established = established_capabilities(tasks, facts)
+    if "hotel" in kinds and Capability.STAY_SEARCH in established:
+        ready.append(SEARCH_STAY)
+    if "parking" in kinds and (
+        _parking_search_ready(session) or _parking_has_fresh_offers(session)
+    ):
+        ready.append(SEARCH_PARKING)
+    if "experience" in kinds and Capability.EXPERIENCE_SEARCH in established:
+        ready.append(SEARCH_EXPERIENCE)
+    if "flight" in kinds and _flight_search_ready(session):
+        ready.append(SEARCH_FLIGHT)
+    return ready
+
+
+def _fresh_result(session: AgentSession, capability: str, fingerprint: str) -> bool:
+    if not fingerprint:
+        return False
+    if capability == SEARCH_STAY:
+        current = session.stay_search
+        return (
+            fingerprint == session.stay_search_fingerprint
+            and isinstance(current, dict)
+            and current.get("stale") is not True
+            and current.get("status") == "ok"
+        )
+    if capability == SEARCH_PARKING:
+        return _parking_has_fresh_offers(session) and fingerprint == _parking_fingerprint(session)
+    if capability == SEARCH_EXPERIENCE:
+        current = session.experience_search
+        return (
+            fingerprint == session.experience_search_fingerprint
+            and isinstance(current, dict)
+            and current.get("stale") is not True
+        )
+    if capability == SEARCH_FLIGHT:
+        current = session.flight_search
+        return (
+            fingerprint == session.flight_search_fingerprint
+            and isinstance(current, dict)
+            and current.get("stale") is not True
+            and current.get("status") == "ok"
+        )
+    return False
+
+
+def _invalidate_stale_searches(session: AgentSession, prints: Mapping[str, str]) -> None:
+    stay_fp = prints.get(SEARCH_STAY, "")
+    if (
+        session.stay_search is not None
+        and session.stay_search_fingerprint
+        and stay_fp != session.stay_search_fingerprint
+    ):
+        current = dict(session.stay_search)
+        if current.get("offers"):
+            current["stale"] = True
+            session.stay_search = current
+            stay = session.domains.get("stay")
+            if isinstance(stay, dict):
+                stay["completeness"] = "stale"
+    exp_fp = prints.get(SEARCH_EXPERIENCE, "")
+    if (
+        session.experience_search is not None
+        and session.experience_search_fingerprint
+        and exp_fp != session.experience_search_fingerprint
+    ):
+        current = dict(session.experience_search)
+        if current.get("offers"):
+            current["stale"] = True
+            session.experience_search = current
+    flight_fp = prints.get(SEARCH_FLIGHT, "")
+    if (
+        session.flight_search is not None
+        and session.flight_search_fingerprint
+        and flight_fp != session.flight_search_fingerprint
+    ):
+        current = dict(session.flight_search)
+        if current.get("offers"):
+            current["stale"] = True
+            session.flight_search = current
+
+
+def _replace_last_agent_turn(session: AgentSession, text: str) -> None:
+    cleaned = text.strip()
+    session.buyer_safe_message = cleaned
+    if not cleaned:
+        return
+    if session.transcript and session.transcript[-1].get("role") == "agent":
+        session.transcript[-1] = {
+            **session.transcript[-1],
+            "text": cleaned,
+        }
+        return
+    _append_agent_turn(session, cleaned)
+
+
+def _apply_airport_reply(session: AgentSession) -> None:
+    last = _last_user_text(session)
+    if not last or len(last.strip()) > 40:
+        return
+    code = resolve_airport_reply(last)
+    if not code:
+        return
+    parking = session.domains.get("parking")
+    if isinstance(parking, dict) and (
+        parking.get("accepted") is True or str(parking.get("provenance") or "") == "explicit"
+    ):
+        fields = parking.get("fields") if isinstance(parking.get("fields"), dict) else {}
+        if _empty_field(fields, "airportCode"):
+            apply_patch(
+                parking,
+                "airportCode",
+                code,
+                source="current_turn",
+                provenance="explicit",
+            )
+            apply_defaults(parking)
+            refresh_completeness(
+                parking,
+                str(session.pending_authorization["gate"])
+                if session.pending_authorization
+                else None,
+            )
+            _localize_parking_asks(session)
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    if isinstance(facts, dict) and not str(facts.get("departureAirport") or "").strip():
+        facts["departureAirport"] = code
+        session.answers["departureAirport"] = code
+
+
+def _dispatch_parking_search(request: Request, session: AgentSession) -> None:
+    parking = session.domains.get("parking")
+    if not isinstance(parking, dict):
+        return
+    snapshot = _grant_a2(request, session, parking)
+    offer = parking.setdefault("offerSet", {})
+    if isinstance(offer, dict):
+        offer["snapshot"] = snapshot
+        offer["stale"] = False
+        offer["intentId"] = snapshot.get("intentId")
+    parking["intentId"] = snapshot.get("intentId")
+    _refresh_pending(session)
+
+
+def _reconcile_search_authorization(request: Request, session: AgentSession) -> None:
+    last = _last_user_text(session)
+    _ensure_stay_destination(session)
+    prints = _current_search_fingerprints(session)
+    _invalidate_stale_searches(session, prints)
+    prior = session.pending_search_authorization
+    confirmed: tuple[str, ...] | None = None
+    if fingerprints_match(prior, prints):
+        confirmed = match_confirmation(last, prior)
+    else:
+        session.pending_search_authorization = None
+    try:
+        if confirmed:
+            _dispatch_capability_searches(request, session, confirmed)
+            session.pending_search_authorization = None
+            note = results_copy(
+                confirmed,
+                {
+                    "stay": session.stay_search or {},
+                    "parking": session.domains.get("parking") or {},
+                    "experience": session.experience_search or {},
+                    "flight": session.flight_search or {},
+                },
+            )
+            if note:
+                if _rental_explicit(session):
+                    note = f"{note} {RENTAL_NO_ADAPTER_COPY}".strip()
+                _replace_last_agent_turn(session, note)
+            _refresh_pending(session)
+            return
+        if _search_blocked(session):
+            return
+        ready = _ready_search_capabilities(session)
+        needed = [
+            capability
+            for capability in ready
+            if not _fresh_result(session, capability, prints.get(capability, ""))
+        ]
+        if not needed:
+            return
+        pending = build_pending(needed, prints, place=_search_place(session))
+        session.pending_search_authorization = pending
+        prompt = str(pending.get("prompt") or "")
+        if prompt:
+            note = session.last_refinement_note
+            combined = f"{note} {prompt}".strip() if note else prompt
+            _replace_last_agent_turn(session, combined)
+    finally:
+        session.last_refinement_note = ""
+
+
+def _flight_field(session: AgentSession, field_id: str) -> str:
+    flight = session.domains.get("flight")
+    fields = flight.get("fields") if isinstance(flight, dict) else {}
+    if not isinstance(fields, dict):
+        return ""
+    held = fields.get(field_id)
+    if not isinstance(held, dict):
+        return ""
+    return str(held.get("value") or "").strip()
+
+
+def _flight_fingerprint(session: AgentSession) -> str:
+    origin = _flight_field(session, "origin")
+    destination = _flight_field(session, "destination")
+    date = _flight_field(session, "date")
+    if not origin or not destination or not date:
+        return ""
+    return "|".join((origin, destination, date))
+
+
+def _flight_search_ready(session: AgentSession) -> bool:
+    return bool(_flight_fingerprint(session))
+
+
+def _filter_stay_budget(session: AgentSession, public: dict[str, object]) -> dict[str, object]:
+    limit = session.stay_max_amount_minor
+    if limit is None:
+        return public
+    offers = public.get("offers")
+    if not isinstance(offers, list):
+        return public
+    kept: list[object] = []
+    for item in offers:
+        if not isinstance(item, dict):
+            continue
+        price = item.get("price") if isinstance(item.get("price"), dict) else {}
+        amount = price.get("amountMinor") if isinstance(price, dict) else None
+        if isinstance(amount, int) and amount > limit:
+            continue
+        kept.append(item)
+    public["offers"] = kept
+    return public
+
+
+def _search_flight_offers(request: Request, session: AgentSession) -> None:
+    origin = _flight_field(session, "origin")
+    destination = _flight_field(session, "destination")
+    date = _flight_field(session, "date")
+    fingerprint = _flight_fingerprint(session)
+    if fingerprint == session.flight_search_fingerprint and session.flight_search is not None:
+        current = session.flight_search
+        if isinstance(current, dict):
+            current["stale"] = False
+        return
+    try:
+        provider = _provider(request)
+        result = provider.execute_turn(
+            {
+                "tool": "search_flight_offers",
+                "payload": {
+                    "origin": origin,
+                    "destination": destination,
+                    "date": date,
+                    "correlationId": session.correlation_id,
+                },
+                "correlationId": session.correlation_id,
+            }
+        )
+        inner = result.get("result") if isinstance(result, dict) else None
+        if not isinstance(inner, dict):
+            raise ApplicationError("flightSearch", "unavailable")
+        public = dict(inner)
+        public["stale"] = False
+    except ApplicationError:
+        public = {
+            "status": "unavailable",
+            "label": "Sandbox flight search",
+            "providerId": "liteapi-flights",
+            "source": "sandbox",
+            "query": {"origin": origin, "destination": destination, "date": date},
+            "offers": [],
+            "buyerSafeMessage": "Flight search is unavailable right now.",
+            "bookingAuthority": "none",
+            "stale": False,
+        }
+    session.flight_search = public
+    session.flight_search_fingerprint = fingerprint
 
 
 def _search_stay_offers(
@@ -1169,6 +1960,8 @@ def _search_stay_offers(
     origin: str,
 ) -> None:
     fingerprint = "|".join((destination, start, end))
+    if session.stay_max_amount_minor is not None:
+        fingerprint = f"{fingerprint}|{session.stay_max_amount_minor}"
     if fingerprint == session.stay_search_fingerprint and session.stay_search is not None:
         current = session.stay_search
         if isinstance(current, dict):
@@ -1199,7 +1992,7 @@ def _search_stay_offers(
         if not isinstance(inner, dict):
             raise ApplicationError("staySearch", "unavailable")
         session.stay_rate_refs = _stay_rate_refs(inner)
-        public = _public_stay_search(inner)
+        public = _filter_stay_budget(session, _public_stay_search(inner))
     except ApplicationError:
         if previous is not None and previous.get("offers"):
             public = dict(previous)
@@ -1237,9 +2030,6 @@ def _search_stay_offers(
         if isinstance(offer, dict):
             offer["stale"] = public.get("stale") is True
     session.tool_trace.append({"kind": "execute", "tool": "search_stay_offers"})
-    note = str(public.get("buyerSafeMessage") or "")
-    if note:
-        _append_agent_turn(session, note)
 
 
 def _public_stay_search(raw: Mapping[str, object]) -> dict[str, object]:
@@ -1426,9 +2216,6 @@ def _search_experience_offers(
         if isinstance(offer, dict):
             offer["stale"] = public.get("stale") is True
     session.tool_trace.append({"kind": "execute", "tool": "search_experience_offers"})
-    note = str(public.get("buyerSafeMessage") or "")
-    if note:
-        _append_agent_turn(session, note)
 
 
 def _public_experience_search(raw: Mapping[str, object]) -> dict[str, object]:
@@ -1661,7 +2448,6 @@ def confirm_session(
     session.confirmed = True
     _append_event(session, "PLAN_CONFIRMED", CONFIRMED_COPY)
     _attach_parking_handoff(request, session)
-    _dispatch_capability_searches(request, session)
     _sync_domains(session, source="earlier_turn")
     _refresh_pending(session)
     return _public_session(session)
@@ -1675,13 +2461,19 @@ def grant_session(
 ) -> dict[str, object]:
     session = _require_session(request, session_id)
     pending = session.pending_authorization
-    if not isinstance(pending, dict) or pending.get("gate") != body.gate:
-        raise ApplicationError("approvalId", "required")
-    if body.domain != "parking" or pending.get("domain") != "parking":
-        raise ApplicationError("domain", "closed")
     parking = session.domains.get("parking")
-    if not isinstance(parking, dict) or parking.get("accepted") is not True:
-        raise ApplicationError("parking", "illegal_state")
+    if body.gate == "A2":
+        if not isinstance(parking, dict) or parking.get("accepted") is not True:
+            raise ApplicationError("parking", "illegal_state")
+        if not _parking_search_ready(session):
+            raise ApplicationError("approvalId", "required")
+    else:
+        if not isinstance(pending, dict) or pending.get("gate") != body.gate:
+            raise ApplicationError("approvalId", "required")
+        if body.domain != "parking" or pending.get("domain") != "parking":
+            raise ApplicationError("domain", "closed")
+        if not isinstance(parking, dict) or parking.get("accepted") is not True:
+            raise ApplicationError("parking", "illegal_state")
     if body.gate == "A1":
         snapshot = _grant_a1(request, session, parking)
     elif body.gate == "A2":

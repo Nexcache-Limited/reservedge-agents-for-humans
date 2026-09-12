@@ -11,8 +11,11 @@ from itaa_application.external_search_port import (
     ExperienceSearchPort,
     ExternalSearchPort,
     ExternalSearchQuery,
+    FlightSearchPort,
+    FlightSearchQuery,
     PlaceRef,
     public_experience_search_result,
+    public_flight_search_result,
     public_search_result,
 )
 from itaa_application.golden_path import GoldenPathFacade, map_closed_error
@@ -45,6 +48,7 @@ EXECUTE_TOOLS: Final[tuple[str, ...]] = (
     "prepare_parking_requirement",
     "search_stay_offers",
     "search_experience_offers",
+    "search_flight_offers",
     "book_stay_sandbox",
     "get_buyer_snapshot",
     "solicit_parking_offers",
@@ -159,6 +163,7 @@ class ClosedTools:
         facade: GoldenPathFacade | None = None,
         stay_search: ExternalSearchPort | None = None,
         experience_search: ExperienceSearchPort | None = None,
+        flight_search: FlightSearchPort | None = None,
     ) -> None:
         self._facade = facade
         if stay_search is None:
@@ -169,8 +174,13 @@ class ClosedTools:
             from itaa_prioticket_experiences.compose import compose_experience_search_port
 
             experience_search = compose_experience_search_port()
+        if flight_search is None:
+            from itaa_liteapi_hotels.compose import compose_flight_search_port
+
+            flight_search = compose_flight_search_port()
         self._stay_search = stay_search
         self._experience_search = experience_search
+        self._flight_search = flight_search
 
     def get_supported_capabilities(self, payload: Mapping[str, object]) -> dict[str, object]:
         del payload
@@ -237,6 +247,25 @@ class ClosedTools:
             or "x-api-key" in encoded
         ):
             raise ApplicationError("experienceSearch", "closed")
+        return public
+
+    def search_flight_offers(self, payload: Mapping[str, object]) -> dict[str, object]:
+        origin = str(payload.get("origin") or "").strip().upper()
+        destination = str(payload.get("destination") or "").strip().upper()
+        date = str(payload.get("date") or payload.get("departureDate") or "").strip()
+        query = FlightSearchQuery(
+            origin=origin,
+            destination=destination,
+            date=date,
+            adults=1,
+            currency=str(payload.get("currency") or "GBP"),
+            correlation_id=str(payload.get("correlationId") or ""),
+        )
+        result = self._flight_search.search(query)
+        public = public_flight_search_result(result)
+        encoded = str(public).lower()
+        if "x-api-key" in encoded or "itaa_liteapi_api_key" in encoded:
+            raise ApplicationError("flightSearch", "closed")
         return public
 
     def book_stay_sandbox(self, payload: Mapping[str, object]) -> dict[str, object]:

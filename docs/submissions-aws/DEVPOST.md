@@ -24,9 +24,12 @@ Stay research can query LiteAPI. Experience search can query Prioticket and will
 Reservedge is a privacy-first **Intent to Action Agent**. You type an arbitrary objective the way you would say it out loud. The Strands buyer orchestrator interprets it, asks at most three blocking questions, and returns a structured plan. A code projector — not the model — assigns **Explicit**, **Inferred**, or **Proposed** and routes to:
 
 - `stay.search` — LiteAPI sandbox hotel research (not a booking)
+- `flight.search` — LiteAPI sandbox flight research (not a ticket)
 - `experience.search` — Prioticket adapter; city inventory currently provider-limited
 - `parking.search` — labelled simulated suppliers
 - `rental.search` — requirement-only, no invented inventory
+
+Provider search waits for conversational confirmation. Changing one requirement stales only that domain.
 
 When parking is on the confirmed plan, the existing golden path still requires you at every approval:
 
@@ -75,5 +78,5 @@ Architecture diagram: [`docs/demo-aws/architecture.svg`](../demo-aws/architectur
 | Public repo URL | https://github.com/Nexcache-Limited/reservedge-agents-for-humans |
 | License | Apache License 2.0 |
 | AWS Builder ID | Operator-only; not stored in this public tree |
-| Live demo URL | None. Local only. Live Plan UAT is not a public URL. |
+| Live demo URL | Competition staging (not production): https://bookingdemo.reservedge.com — process-local sessions, LiteAPI sandbox research, simulated parking |
 | builder.aws.com post | Bonus; not started. Title must include “Agents for Humans”. |

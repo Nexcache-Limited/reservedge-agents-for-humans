@@ -46,6 +46,8 @@ export default defineConfig({
       "src/**/*.compuxnext.test.tsx",
       "src/**/*.compfinal.test.ts",
       "src/**/*.compfinal.test.tsx",
+      "src/**/*.remediation01.test.ts",
+      "src/**/*.remediation01.test.tsx",
     ],
     coverage: {
       provider: "v8",
@@ -72,6 +74,8 @@ export default defineConfig({
         "src/**/*.compuxnext.test.tsx",
         "src/**/*.compfinal.test.ts",
         "src/**/*.compfinal.test.tsx",
+        "src/**/*.remediation01.test.ts",
+        "src/**/*.remediation01.test.tsx",
         "src/test/**",
         "src/main.tsx",
         "src/**/*.d.ts",

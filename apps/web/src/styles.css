@@ -1256,6 +1256,13 @@ body {
     font-size: 21px;
 }
 
+.re-clarify-persist {
+    margin: 0 0 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ws-ink-2);
+}
+
 .re-clarify-plan-lead {
     margin-bottom: 18px;
 }

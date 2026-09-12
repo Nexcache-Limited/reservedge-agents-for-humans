@@ -180,6 +180,7 @@ def test_closed_allowlist_matches_freeze() -> None:
         "prepare_parking_requirement",
         "search_stay_offers",
         "search_experience_offers",
+        "search_flight_offers",
         "book_stay_sandbox",
         "get_buyer_snapshot",
         "solicit_parking_offers",

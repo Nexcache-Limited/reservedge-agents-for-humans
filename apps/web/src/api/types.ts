@@ -404,6 +404,48 @@ export interface AgentExperienceSearch {
   offerKind?: "regular" | "curated";
 }
 
+export interface AgentFlightOffer {
+  id: string;
+  origin: string;
+  destination: string;
+  departure: string;
+  arrival: string;
+  airline: string;
+  stops: number;
+  durationMinutes?: number | null;
+  cabin?: string | null;
+  baggage?: string | null;
+  price?: { currency?: string; amountMinor?: number };
+  segments?: Array<{
+    origin: string;
+    destination: string;
+    departure: string;
+    arrival: string;
+    airlineCode?: string;
+    airlineName?: string;
+    flightNumber?: string;
+  }>;
+  bookingAuthority: "none";
+}
+
+export interface AgentFlightSearch {
+  status: string;
+  label: string;
+  providerId: string;
+  source: "fake" | "sandbox" | "live" | string;
+  query?: {
+    origin?: string;
+    destination?: string;
+    date?: string;
+  } | null;
+  offers: AgentFlightOffer[];
+  buyerSafeMessage: string;
+  bookingAuthority: "none";
+  fetchedAt?: string;
+  warnings?: string[];
+  stale?: boolean;
+}
+
 export interface AgentStaySearch {
   status: string;
   label: string;
@@ -498,6 +540,12 @@ export interface AgentPendingAuthorization {
   offerId?: string | null;
 }
 
+export interface AgentPendingSearchAuthorization {
+  capabilities: string[];
+  fingerprints: Record<string, string>;
+  prompt: string;
+}
+
 export interface AgentToolTraceItem {
   kind: string;
   tool?: string;
@@ -510,6 +558,7 @@ export interface AgentSessionView {
   toolTrace: AgentToolTraceItem[];
   pendingAuthorizations: Array<Record<string, string>>;
   pendingAuthorization?: AgentPendingAuthorization | null;
+  pendingSearchAuthorization?: AgentPendingSearchAuthorization | null;
   parkingHandoff: AgentParkingHandoff | null;
   confirmed: boolean;
   fallback: boolean;
@@ -519,6 +568,7 @@ export interface AgentSessionView {
   buyerSafeMessage?: string;
   staySearch?: AgentStaySearch | null;
   experienceSearch?: AgentExperienceSearch | null;
+  flightSearch?: AgentFlightSearch | null;
   sharedBookingContext?: AgentSharedBookingContext | null;
   workspace?: AgentWorkspaceMeta | null;
 }

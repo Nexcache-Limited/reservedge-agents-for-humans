@@ -83,7 +83,16 @@ def test_hotel_chat_then_confirm_uses_labelled_fake_stay(
         json={"message": "I need a hotel and a rental car."},
     )
     assert turned.status_code == 200, turned.text
-    stay = turned.json()["staySearch"]
+    pending = turned.json().get("pendingSearchAuthorization")
+    assert isinstance(pending, dict)
+    assert "stay.search" in pending["capabilities"]
+    assert turned.json().get("staySearch") in (None, {})
+    yes = client.post(
+        f"/v1/agent/sessions/{session_id}/turns",
+        json={"message": "yes"},
+    )
+    assert yes.status_code == 200, yes.text
+    stay = yes.json()["staySearch"]
     assert isinstance(stay, dict)
     assert stay["status"] == "ok"
     assert stay["source"] == "fake"

@@ -39,8 +39,10 @@ competition period:
 - Amazon Bedrock live Plan path (fail-closed unless explicitly invoked)
 - Provider HTTP /v1/aws/**
 - Product BFF /v1/agent/** and conversation-first agent session / domain state
-- Multi-domain capability routing (stay, experience, parking, rental)
-- LiteAPI stay research adapter (adapters/liteapi-hotels) — sandbox search only
+- Multi-domain capability routing (stay, flight, experience, parking, rental)
+- Conversational search authorization and requirement refinements
+- LiteAPI stay and flight research adapter (adapters/liteapi-hotels) — sandbox search only
+- Booking Chats inbox (Running / Pending / History)
 - Prioticket experience adapter (adapters/prioticket-experiences); city catalog
   inventory is currently provider-limited
 - Browser wiring of Start booking through /v1/agent/**

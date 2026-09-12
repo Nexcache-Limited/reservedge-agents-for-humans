@@ -75,7 +75,7 @@ describe("intent-first Clarify & plan", () => {
     });
     await user.click(screen.getByRole("button", { name: "Start booking" }));
     expect(
-      await screen.findByText(/I can help with hotels, things to do, car rentals, and parking/i),
+      await screen.findByText(/I can help with hotels, airport parking, and things to do/i),
     ).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "What should I help book?" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Answer and update plan" })).toBeNull();
@@ -229,7 +229,7 @@ describe("intent-first Clarify & plan", () => {
     fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-10-14" } });
     fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-10-19" } });
     await user.click(document.querySelector(".re-tabs a[href='/bookings']") as HTMLAnchorElement);
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     await user.click(document.querySelector(".re-tabs a[href='/activity']") as HTMLAnchorElement);
     expect(await screen.findByRole("heading", { name: "Activity" })).toBeInTheDocument();
     await user.click(

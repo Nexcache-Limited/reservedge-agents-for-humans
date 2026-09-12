@@ -17,7 +17,11 @@ from typing import Any
 from pydantic import ValidationError
 
 from itaa_application.errors import ApplicationError
-from itaa_application.external_search_port import ExperienceSearchPort, ExternalSearchPort
+from itaa_application.external_search_port import (
+    ExperienceSearchPort,
+    ExternalSearchPort,
+    FlightSearchPort,
+)
 from itaa_application.golden_path import GoldenPathFacade
 from itaa_aws_adapter.events import activity_event
 from itaa_aws_adapter.mode import (
@@ -51,8 +55,12 @@ PLAN_SYSTEM = (
     "museums, or tours make experience explicit. "
     "If the buyer says flights are already booked, do not search flights. "
     "When a trip is named but no booking component is explicit, ask in buyerSafeMessage "
-    "what to book. Invite hotels, things to do, car rentals, and parking. Do not say you "
-    "will not search. "
+    "what to book. Invite only currently usable capabilities: hotels, airport parking, "
+    "and things to do when experience search is configured. Invite flights when the "
+    "buyer asked to fly. Do not offer car rentals as something this build can fulfil. "
+    "If the buyer asks to pay for or ticket a flight, say sandbox search is available "
+    "but this build does not complete airline payment. "
+    "Search still waits for typed pending search authorization. "
     "If destination is already named, do not ask where. If dates are already named, do not "
     "ask when. Ask only for the missing fact. "
     "Do not emit a helpWith blocking question. Do not invent a vertical. "
@@ -62,7 +70,9 @@ PLAN_SYSTEM = (
     "Buyer-safe copy only. Temperature is low; do not speculate. "
     "Trip departure, trip destination, and parking airport are distinct. "
     "Do not copy Mumbai or New York into parking. Do not invent JFK. "
-    "Do not infer a parking airport from London or another city name. "
+    "Do not infer a parking airport from a multi-airport city such as London or New York. "
+    "If a city has exactly one supported airport (Manchester→MAN, Edinburgh→EDI), resolve "
+    "it without asking which airport. Accept IATA codes in any case, including man→MAN. "
     "Heathrow normalizes to LHR only as an approved named airport. "
     "Do not re-ask facts already present in trusted domain state. "
     "Do not ask parking vehicle class; that is a rental-car fact. "
@@ -73,8 +83,8 @@ PLAN_SYSTEM = (
     "Do not treat a dated destination trip as automatic hotel search, experience search, "
     "or airport parking. "
     "Do not invent JFK. Do not copy Mumbai, Milan, London, or New York into parking. "
-    "Provider search is a later capability after an Explicit task and required fields; "
-    "it is not a booking and does not use A1-A4. "
+    "Provider search waits for a typed pending search authorization after requirements "
+    "are complete. Do not claim a search has run, and do not invent offer counts. "
     "Fill facts.destination with the named city even when it is uncommon. "
     "Fill facts.startDate and facts.endDate as ISO dates when the buyer named a stay window. "
     "Do not restrict destinations to a city list. "
@@ -280,11 +290,15 @@ class LiveOrchestrator:
         plan_invoker: PlanInvoker | None = None,
         stay_search: ExternalSearchPort | None = None,
         experience_search: ExperienceSearchPort | None = None,
+        flight_search: FlightSearchPort | None = None,
     ) -> None:
         resolve_live_model_id()
         resolve_timeout_ms()
         self._tools = ClosedTools(
-            facade, stay_search=stay_search, experience_search=experience_search
+            facade,
+            stay_search=stay_search,
+            experience_search=experience_search,
+            flight_search=flight_search,
         )
         self._plan_invoker = plan_invoker
         self.last_plan_turn: PlanTurn | None = None

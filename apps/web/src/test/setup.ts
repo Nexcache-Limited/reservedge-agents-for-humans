@@ -10,6 +10,23 @@ Node.prototype.getRootNode = function getRootNode(this: Node, options?: GetRootN
   return originalGetRootNode.call(this, options);
 };
 
+// Desktop layout is the default under test. Linux CI jsdom may expose
+// matchMedia against the 1024px viewport, which hides the plan pane in clarify.
+Object.defineProperty(window, "matchMedia", {
+  configurable: true,
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  }),
+});
+
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();
 

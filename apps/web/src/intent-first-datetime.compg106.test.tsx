@@ -165,7 +165,7 @@ describe("intent-first date and time clarification", () => {
     setDate("Start date", "2026-10-14");
     setDate("End date", "2026-10-19");
     await user.click(document.querySelector(".re-tabs a[href='/bookings']") as HTMLAnchorElement);
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     await user.click(document.querySelector(".re-tabs a[href='/activity']") as HTMLAnchorElement);
     expect(await screen.findByRole("heading", { name: "Activity" })).toBeInTheDocument();
     await user.click(

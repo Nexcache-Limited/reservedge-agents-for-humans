@@ -25,6 +25,7 @@ SKIP_DIRS = {
     "__pycache__",
     ".pnpm-store",
     "coverage",
+    "artifacts",
 }
 
 SKIP_SUFFIXES = {

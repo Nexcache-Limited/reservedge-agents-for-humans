@@ -15,7 +15,7 @@ afterEach(() => {
 describe("screen inventory and recovery", () => {
   it("boots the browser router shell", async () => {
     render(<App api={mockApi()} />);
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
   });
 
   it("renders inbox empty and unavailable-backend states", async () => {
@@ -35,7 +35,7 @@ describe("screen inventory and recovery", () => {
         />
       </MemoryRouter>,
     );
-    expect(await screen.findByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Booking Chats" })).toBeInTheDocument();
     expect(screen.getByText(/No intents match this filter|need you/)).toBeInTheDocument();
   });
 

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
@@ -269,12 +269,15 @@ function providerApi(): ItaaApi {
   const store = new Map<string, { objective: string; view: AgentSessionView }>();
   const owned = new Map<string, ReturnType<typeof rankedSnapshot>>();
   let seq = 0;
+  const grantRef: {
+    run?: (sessionId: string, body: { gate: "A2"; domain: "parking" }) => Promise<AgentSessionView>;
+  } = {};
   function mint(): string {
     seq += 1;
     return `as_01k2m3n4p5q6r7s8t9v0w1x2${String(seq).padStart(2, "0")}`;
   }
 
-  return mockApi({
+  const api = mockApi({
     createAgentSession: async ({ objective }) => {
       const sessionId = mint();
       let planned = genericManchester();
@@ -329,16 +332,22 @@ function providerApi(): ItaaApi {
                   },
                   missing: [],
                   ask: [],
-                  completeness: "awaiting_grant",
+                  completeness: "ready",
                   offerSet: { stale: false, snapshot: null },
                 },
               },
-              pendingAuthorization: {
-                gate: "A2" as const,
-                domain: "parking",
+              pendingAuthorization: null,
+              pendingSearchAuthorization: {
+                capabilities: ["parking.search"],
+                fingerprints: {
+                  "parking.search":
+                    "JFK|2026-09-03T13:00:00Z|2026-09-08T22:00:00Z|standard|preferred",
+                },
                 prompt:
-                  "I have everything I need for parking. Shall I request offers from 3 isolated simulated suppliers?",
+                  "I have what I need to search for parking at JFK. Shall I request offers from 3 isolated simulated suppliers?",
               },
+              buyerSafeMessage:
+                "I have what I need to search for parking at JFK. Shall I request offers from 3 isolated simulated suppliers?",
             }
           : {}),
       });
@@ -356,9 +365,23 @@ function providerApi(): ItaaApi {
         });
       }
       const extra = (body.message ?? "").trim();
+      if (
+        /^(yes|yeah|yep|ok|okay|go ahead|proceed)([.!]?)$/i.test(extra) &&
+        current.view.domains?.parking != null &&
+        grantRef.run != null
+      ) {
+        return grantRef.run(sessionId, { gate: "A2", domain: "parking" });
+      }
       if (/new york/i.test(current.objective) || /\bparking\b/i.test(extra)) {
         const planned = fromLocalPlan(current.objective, extra);
-        const next = view(sessionId, { projection: planned });
+        const next = view(sessionId, {
+          projection: planned,
+          transcript: [
+            ...(current.view.transcript ?? []),
+            { role: "user", text: extra },
+            { role: "agent", text: planned.summary },
+          ],
+        });
         store.set(sessionId, { objective: current.objective, view: next });
         return next;
       }
@@ -566,6 +589,8 @@ function providerApi(): ItaaApi {
       return { close: () => undefined };
     },
   });
+  grantRef.run = (sessionId, body) => api.grantAgentSession(sessionId, body);
+  return api;
 }
 
 function renderApp(api: ItaaApi = providerApi()) {
@@ -703,7 +728,9 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
     expect(thread?.nextElementSibling).toBe(compose);
     expect(screen.queryByLabelText("Departing from")).toBeNull();
     expect(screen.queryByRole("group", { name: "Exact dates" })).toBeNull();
-    expect(screen.getByLabelText("Parking airportCode")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.querySelector('input[aria-label="Parking airportCode"]')).not.toBeNull();
+    });
     expect(screen.queryByRole("button", { name: "Begin parking requirement" })).toBeNull();
   });
 
@@ -728,17 +755,13 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
 
   it("confirms through the agent session and keeps parking in the same workspace", async () => {
     const user = await startObjective(DEMO_A);
-    await user.click(await screen.findByRole("button", { name: "Confirm plan" }));
-    expect(
-      await screen.findByText(
-        /Plan confirmed. Stay and experience results appear below when those tasks are on the plan. Keep talking to add parking or a rental./,
-      ),
-    ).toBeInTheDocument();
+    await user.type(await screen.findByLabelText("Add anything else about this trip"), "yes");
+    await user.click(screen.getByRole("button", { name: "Add note" }));
     expect(screen.queryByRole("button", { name: "Send to Reservedge" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Begin parking requirement" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Use the example/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Request parking offers" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Parking airportCode")).toHaveValue("JFK");
+    expect(screen.queryByRole("button", { name: "Request parking offers" })).toBeNull();
+    expect(await screen.findByLabelText("Parking airportCode")).toHaveValue("JFK");
   });
 
   it("labels deterministic fallback and shows a safe failure instead of JFK", async () => {
@@ -857,20 +880,20 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
   });
 
   it("opens a prepared parking requirement after confirm instead of a second intake", async () => {
-    const user = await startObjective(DEMO_A);
-    await user.click(await screen.findByRole("button", { name: "Confirm plan" }));
+    await startObjective(DEMO_A);
     expect(screen.queryByRole("button", { name: "Begin parking requirement" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Send to Reservedge" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Use the example/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Request parking offers" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Parking airportCode")).toHaveValue("JFK");
+    expect(screen.queryByRole("button", { name: "Request parking offers" })).toBeNull();
+    expect(await screen.findByLabelText("Parking airportCode")).toHaveValue("JFK");
   });
 
   it("opens the offer workspace and continues the chat under Running after requesting offers", async () => {
     const user = await startObjective(DEMO_A);
     expect(screen.queryByRole("button", { name: "Begin parking requirement" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Send to Reservedge" })).toBeNull();
-    await user.click(await screen.findByRole("button", { name: "Request parking offers" }));
+    await user.type(await screen.findByLabelText("Add anything else about this trip"), "yes");
+    await user.click(screen.getByRole("button", { name: "Add note" }));
     expect(await screen.findByRole("button", { name: "Take this one" })).toBeInTheDocument();
     expect(screen.getAllByText(/SkyShield/).length).toBeGreaterThan(0);
     expect(await screen.findByText("Continue this booking")).toBeInTheDocument();
@@ -887,7 +910,8 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
 
   it("records the selected offer in Running chat and moves a finished booking to History", async () => {
     const user = await startObjective(DEMO_A);
-    await user.click(await screen.findByRole("button", { name: "Request parking offers" }));
+    await user.type(await screen.findByLabelText("Add anything else about this trip"), "yes");
+    await user.click(screen.getByRole("button", { name: "Add note" }));
     await user.click(await screen.findByRole("button", { name: "Take this one" }));
     expect(
       await screen.findByText(/You accepted the SkyShield offer at USD 148\.00/),
@@ -904,9 +928,7 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
 
   it("parks an unfinished booking in Pending when a new intent starts", async () => {
     const user = await startObjective(DEMO_A);
-    expect(
-      await screen.findByRole("button", { name: "Request parking offers" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByLabelText("Parking airportCode")).toHaveValue("JFK");
     await user.click(screen.getAllByRole("button", { name: "New intent" })[0]!);
     expect(
       await screen.findByRole("heading", { name: "What are you planning or trying to get done?" }),

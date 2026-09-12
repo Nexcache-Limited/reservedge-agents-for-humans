@@ -49,6 +49,14 @@ CITY_AIRPORTS: Final[tuple[tuple[re.Pattern[str], str, str], ...]] = (
     (re.compile(r"\bglasgow\b", re.I), "Glasgow", "GLA"),
 )
 
+# Named airports are stay/parking places, not trip cities. Do not override a city
+# destination when the buyer is only naming a departure airport.
+AIRPORT_PLACES: Final[tuple[tuple[re.Pattern[str], str, str], ...]] = (
+    (re.compile(r"\bheathrow\b", re.I), "Heathrow", "LHR"),
+    (re.compile(r"\bgatwick\b", re.I), "Gatwick", "LGW"),
+    (re.compile(r"\bstansted\b", re.I), "Stansted", "STN"),
+)
+
 MONTHS: Final[dict[str, str]] = {
     "january": "01",
     "jan": "01",
@@ -119,12 +127,16 @@ TASK_META: Final[dict[TaskKind, tuple[str, str, TaskSupport, str]]] = {
     "parking": ("Pk", "Airport parking", "live_simulated", "Live simulated path"),
     "rental": ("Rc", "Rental car", "demonstration", "Demonstration task"),
     "ents": ("En", "Entertainment", "demonstration", "Demonstration task"),
-    "flight": ("Fl", "Flight", "unsupported", "Unsupported in this build"),
+    "flight": ("Fl", "Flight", "sandbox_search", "Sandbox flight search"),
     "hotel": ("Ht", "Hotel", "sandbox_search", "Sandbox hotel search"),
     "experience": ("Ex", "Experience", "sandbox_search", "Sandbox experience search"),
 }
 
 _AIRPORT = re.compile(r"\b([A-Za-z]{3})\b")
+_FLIGHT_ROUTE = re.compile(
+    r"\b(?:flight|flights|fly)\s+from\s+[A-Za-z][A-Za-z .'-]{0,40}?\s+to\s+[A-Za-z]",
+    re.I,
+)
 _EXPLICIT_KIND_NEEDLES: Final[dict[TaskKind, tuple[str, ...]]] = {
     "parking": ("parking",),
     "rental": ("rental car", "hire car", "car hire", "rent a car", "rental"),
@@ -241,6 +253,11 @@ def extract_facts(objective: str, answers: PlanAnswers | None = None) -> Extract
             parking_from_text = parking_iata_from_text(text)
     destination = city[0] if city else _guess_city(text)
     city_airport = city[1] if city else ""
+    if not destination and (hotel_stated or parking_word):
+        named_place = _match_airport_place(lower)
+        if named_place is not None:
+            destination = named_place[0]
+            city_airport = named_place[1]
     destination_airport = city_airport
     # Trip destination/departure are never parking evidence.
     parking_airport = parking_from_text
@@ -514,7 +531,7 @@ def select_clarifications(facts: ExtractedFacts) -> list[BlockingQuestion]:
     return questions[:PLAN_QUESTION_CAP]
 
 
-def base_tasks(facts: ExtractedFacts, answers: PlanAnswers) -> list[PlanTask]:
+def base_tasks(facts: ExtractedFacts, answers: PlanAnswers, objective: str = "") -> list[PlanTask]:
     tasks: list[PlanTask] = []
     where = facts.destination or facts.parkingAirport or "the airport"
     car = answers.carNeed or facts.carNeed
@@ -566,8 +583,11 @@ def base_tasks(facts: ExtractedFacts, answers: PlanAnswers) -> list[PlanTask]:
                 "You asked for things to do, attractions, or experiences.",
             )
         )
-    if facts.tripLike and (facts.landing or facts.flightStated) and not facts.flightSatisfied:
-        provenance = "explicit" if facts.flightStated else "proposed"
+    flight_route = bool(_FLIGHT_ROUTE.search(objective))
+    if not facts.flightSatisfied and (
+        flight_route or (facts.tripLike and (facts.landing or facts.flightStated))
+    ):
+        provenance = "explicit" if facts.flightStated or flight_route else "proposed"
         tasks.append(
             _task(
                 "flight",
@@ -613,7 +633,7 @@ def project_plan(
     if model_turn is not None:
         facts = _overlay_model_trip_facts(facts, model_turn)
     questions = select_clarifications(facts)
-    tasks = base_tasks(facts, resolved)
+    tasks = base_tasks(facts, resolved, objective)
     if model_turn is not None:
         tasks = _downgrade_unearned_explicit(objective, facts, tasks, model_turn)
     visible = _sort_plan_tasks(
@@ -804,7 +824,9 @@ def _rental_detail(provenance: TaskProvenance, where: str) -> str:
 def buyer_invite_copy(facts: ExtractedFacts) -> str:
     """Acknowledge known trip facts. Do not re-ask a named destination or dates."""
 
-    invite = "I can help with hotels, things to do, car rentals, and parking. Say the word."
+    from itaa_api.agent_requirements import usable_capability_invite
+
+    invite = usable_capability_invite()
     origin = f" from {facts.originCity}" if facts.originCity else ""
     if facts.destination and facts.hasExactDates:
         return f"I have {facts.destination}{origin} and the dates. {invite}"
@@ -956,7 +978,11 @@ def _match_city(lower: str) -> tuple[str, str] | None:
     for pattern, city, airport in CITY_AIRPORTS:
         if pattern.search(lower):
             return city, airport
+    skip = {place.lower() for _, place, _code in AIRPORT_PLACES}
+    skip.update({"london heathrow", "heathrow", "gatwick", "stansted"})
     for slug in sorted(CITY_COUNTRY, key=len, reverse=True):
+        if slug in skip:
+            continue
         if re.search(rf"\b{re.escape(slug)}\b", lower):
             name, _country, _currency = CITY_COUNTRY[slug]
             airport = next(
@@ -964,4 +990,11 @@ def _match_city(lower: str) -> tuple[str, str] | None:
                 "",
             )
             return name, airport
+    return None
+
+
+def _match_airport_place(lower: str) -> tuple[str, str] | None:
+    for pattern, place, code in AIRPORT_PLACES:
+        if pattern.search(lower):
+            return place, code
     return None

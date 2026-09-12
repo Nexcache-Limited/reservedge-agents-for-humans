@@ -633,8 +633,8 @@ function RequirementStage({
           Confirm details
         </Text>
         <p className="itaa-text itaa-text--body">
-          You are confirming what ITAA should research. No supplier has been contacted yet. Next,
-          you will review the minimized request before any supplier is contacted. This request
+          "You are confirming what Reservedge should research. No supplier has been contacted yet.
+          Next, you will review the minimized request before any supplier is contacted. This request
           expires {formatHumanDate(snapshot.expiresAt)}.
         </p>
         <p className="itaa-text itaa-text--meta">
@@ -681,7 +681,7 @@ function DisclosureStage({
         <p className="itaa-text itaa-text--body">
           Authorize disclosure to 3 isolated simulated suppliers. This shares only the fields below.
           It does not reserve, buy, or charge anything. Suppliers cannot see competitor identities
-          or offers. Buyer-owned data remains with ITAA.
+          or offers. Buyer-owned data remains with Reservedge.
         </p>
         <p className="itaa-text itaa-text--meta">
           Recipients: ParkDirect, SkyShield, and TerminalFlex. This request expires{" "}
@@ -781,9 +781,9 @@ function OffersStage({
           Recommendation and comparison
         </Text>
         <p className="itaa-text itaa-text--body">
-          ITAA recommends one offer under your stated preferences and the locked ranking policy. It
-          is not claimed to be objectively best. Price is one factor among coverage, shuttle,
-          distance, terms, and add-ons.
+          Reservedge recommends one offer under your stated preferences and the locked ranking
+          policy. It is not claimed to be objectively best. Price is one factor among coverage,
+          shuttle, distance, terms, and add-ons.
         </p>
         {snapshot.recommendedOfferId !== null ? (
           <div className="itaa-recommend">

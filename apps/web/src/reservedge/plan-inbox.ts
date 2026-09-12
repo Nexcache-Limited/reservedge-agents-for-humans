@@ -17,7 +17,7 @@ export function planSessionToRow(session: PlanSession | null): IntentRow | null 
   const projection = session.agent != null ? projectAgentSession(session) : projectPlan(session);
   const facts = overlayParkingDomainFacts(projection.facts, parking);
   const intentId = typeof parking?.intentId === "string" ? parking.intentId : "";
-  const id = intentId.startsWith("pi_") ? intentId : session.agent.sessionId;
+  const id = session.agent.sessionId;
   const domain = primaryInboxDomain(projection.tasks, parking);
   const airport = fieldValue(parking, "airportCode") || facts.parkingAirport;
   const title = inboxTitle(projection.tasks, facts.destination, airport, domain);
@@ -111,6 +111,41 @@ export function showRunningInboxChat(session: PlanSession | null): boolean {
   }
   if (session?.shelf === "pending") {
     return false;
+  }
+  if (session?.agent == null) {
+    return false;
+  }
+  return agentLanesActive(session);
+}
+
+export function hideDesktopWorkspaceChat(session: PlanSession | null): boolean {
+  if (!agentLanesActive(session)) {
+    return false;
+  }
+  if (session?.phase === "clarify") {
+    return false;
+  }
+  return true;
+}
+
+export function agentLanesActive(session: PlanSession | null): boolean {
+  const agent = session?.agent;
+  if (agent == null) {
+    return false;
+  }
+  const parking = agent.domains?.parking;
+  if (parking != null && (parking.accepted === true || parking.provenance === "explicit")) {
+    return true;
+  }
+  const stay = agent.domains?.stay;
+  if (stay != null && (stay.accepted === true || stay.provenance === "explicit")) {
+    return true;
+  }
+  if (agent.staySearch != null || agent.pendingSearchAuthorization != null) {
+    return true;
+  }
+  if (agent.experienceSearch != null || agent.flightSearch != null) {
+    return true;
   }
   return parkingBookingStarted(parking);
 }

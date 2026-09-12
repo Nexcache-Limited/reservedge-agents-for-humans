@@ -7,8 +7,10 @@
 import type {
   AgentDomainState,
   AgentPendingAuthorization,
+  AgentPendingSearchAuthorization,
   AgentSharedBookingContext,
   AgentExperienceSearch,
+  AgentFlightSearch,
   AgentStaySearch,
   AgentTranscriptItem,
   AgentWorkspaceMeta,
@@ -89,9 +91,11 @@ export interface AgentPlanBinding {
   transcript: AgentTranscriptItem[];
   domains: Record<string, AgentDomainState>;
   pendingAuthorization: AgentPendingAuthorization | null;
+  pendingSearchAuthorization?: AgentPendingSearchAuthorization | null;
   buyerSafeMessage: string;
   staySearch: AgentStaySearch | null;
   experienceSearch?: AgentExperienceSearch | null;
+  flightSearch?: AgentFlightSearch | null;
   sharedBookingContext?: AgentSharedBookingContext | null;
   workspace?: AgentWorkspaceMeta | null;
 }
@@ -515,7 +519,10 @@ export function selectClarifications(facts: ExtractedFacts): ClarificationQuesti
 export function projectPlan(session: PlanSession): PlanProjection {
   const facts = applyAnswerOverlay(extractFacts(combinedObjective(session)), session.answers);
   const questions = selectClarifications(facts);
-  const tasks = applyTaskOverrides(baseTasks(facts, session.answers), session.overrides);
+  const tasks = applyTaskOverrides(
+    baseTasks(facts, session.answers, combinedObjective(session)),
+    session.overrides,
+  );
   const chips = planContextChips(facts, session.answers, session.extraNote);
   const visible = sortPlanTasks(
     tasks.filter(
@@ -614,11 +621,15 @@ function periodNote(part: DayPart, flexible: boolean): string {
   return flexible ? "Flexible." : "";
 }
 
-export function supportedAddableKinds(tasks: PlanTask[]): TaskKind[] {
+export function supportedAddableKinds(
+  tasks: PlanTask[],
+  options: { liveAgent?: boolean } = {},
+): TaskKind[] {
   const present = new Set(tasks.map((task) => task.kind));
-  return (["parking", "rental", "ents", "experience"] as const).filter(
-    (kind) => !present.has(kind),
-  );
+  const pool: readonly TaskKind[] = options.liveAgent
+    ? ["parking", "experience"]
+    : ["parking", "rental", "ents"];
+  return pool.filter((kind) => !present.has(kind));
 }
 
 export function addTaskOverride(kind: TaskKind): TaskOverride {
@@ -687,7 +698,7 @@ function applyAnswerOverlay(facts: ExtractedFacts, answers: PlanAnswers): Extrac
   return next;
 }
 
-function baseTasks(facts: ExtractedFacts, answers: PlanAnswers): PlanTask[] {
+function baseTasks(facts: ExtractedFacts, answers: PlanAnswers, objective = ""): PlanTask[] {
   const tasks: PlanTask[] = [];
   const where = facts.destination || facts.parkingAirport || "the airport";
   const car = answers.carNeed || facts.carNeed;
@@ -746,8 +757,15 @@ function baseTasks(facts: ExtractedFacts, answers: PlanAnswers): PlanTask[] {
       ),
     );
   }
-  if (facts.tripLike && (facts.landing || facts.flightStated) && !facts.flightSatisfied) {
-    const provenance: TaskProvenance = facts.flightStated ? "explicit" : "proposed";
+  const flightRoute =
+    /\b(?:flight|flights|fly)\s+from\s+[A-Za-z][A-Za-z .'-]{0,40}?\s+to\s+[A-Za-z]/i.test(
+      objective,
+    );
+  if (
+    !facts.flightSatisfied &&
+    (flightRoute || (facts.tripLike && (facts.landing || facts.flightStated)))
+  ) {
+    const provenance: TaskProvenance = facts.flightStated || flightRoute ? "explicit" : "proposed";
     const accepted = provenance === "explicit";
     tasks.push(
       makeTask(
@@ -1126,7 +1144,7 @@ export function firstTurnCopy(facts: ExtractedFacts): string {
 }
 
 export function buyerInviteCopy(facts: ExtractedFacts): string {
-  const invite = "I can help with hotels, things to do, car rentals, and parking. Say the word.";
+  const invite = "I can help with hotels, airport parking, and things to do. Say the word.";
   const origin = facts.originCity ? ` from ${facts.originCity}` : "";
   if (facts.destination !== "" && facts.hasExactDates) {
     return `I have ${facts.destination}${origin} and the dates. ${invite}`;

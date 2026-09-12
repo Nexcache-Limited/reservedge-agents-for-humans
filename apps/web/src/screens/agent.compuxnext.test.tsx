@@ -69,12 +69,12 @@ function milanClarifyView(): AgentSessionView {
       { role: "user", text: MILAN },
       {
         role: "agent",
-        text: "I have Milan from Mumbai and the dates. I can help with hotels, car rentals, and parking. Say the word.",
+        text: "I have Milan from Mumbai and the dates. I can help with hotels, airport parking, and things to do. Say the word.",
       },
     ],
     domains: {},
     buyerSafeMessage:
-      "I have Milan from Mumbai and the dates. I can help with hotels, car rentals, and parking. Say the word.",
+      "I have Milan from Mumbai and the dates. I can help with hotels, airport parking, and things to do. Say the word.",
     staySearch: null,
     sharedBookingContext: {
       facts: [

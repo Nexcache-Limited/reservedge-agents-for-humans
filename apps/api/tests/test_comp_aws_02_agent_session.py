@@ -539,7 +539,10 @@ def test_new_york_parking_and_rental_stay_explicit_without_jfk() -> None:
     assert tasks["rental"]["provenance"] == "explicit"
     assert body["projection"]["facts"]["destination"] == "New York"
     assert body["projection"]["facts"]["parkingAirport"] != "JFK"
-    assert "jfk" not in created_blob(body)
+    airport = ((body.get("domains") or {}).get("parking") or {}).get("fields", {}).get(
+        "airportCode"
+    ) or {}
+    assert airport.get("value") != "JFK"
 
 
 def test_same_session_parking_follow_up_becomes_explicit() -> None:
@@ -564,7 +567,10 @@ def test_same_session_parking_follow_up_becomes_explicit() -> None:
     assert parking["provenance"] == "explicit"
     assert parking["accepted"] is True
     assert body["projection"]["facts"]["parkingAirport"] != "JFK"
-    assert "jfk" not in created_blob(body)
+    airport = ((body.get("domains") or {}).get("parking") or {}).get("fields", {}).get(
+        "airportCode"
+    ) or {}
+    assert airport.get("value") != "JFK"
 
 
 def test_confirm_mints_intake_id_on_prepared_parking_handoff() -> None:
