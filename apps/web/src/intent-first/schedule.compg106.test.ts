@@ -48,6 +48,25 @@ describe("intent-first schedule helpers", () => {
     expect(looksLikeDateRange("from 14 to sometime in October")).toBe(true);
   });
 
+  it("resolves a yearless day-month to the nearest future occurrence", () => {
+    expect(parseExactCalendar("17 October", new Date("2026-09-13T00:00:00Z"))).toEqual({
+      start: "2026-10-17",
+      end: "2026-10-17",
+    });
+    expect(parseExactCalendar("17 October", new Date("2026-10-17T00:00:00Z"))).toEqual({
+      start: "2026-10-17",
+      end: "2026-10-17",
+    });
+    expect(parseExactCalendar("17 October", new Date("2026-10-18T00:00:00Z"))).toEqual({
+      start: "2027-10-17",
+      end: "2027-10-17",
+    });
+    expect(parseExactCalendar("17 October", new Date("2025-12-31T00:00:00Z"))).toEqual({
+      start: "2026-10-17",
+      end: "2026-10-17",
+    });
+  });
+
   it("still parses an ordinary single exact date", () => {
     expect(parseExactCalendar("19 October 2026")).toEqual({
       start: "2026-10-19",

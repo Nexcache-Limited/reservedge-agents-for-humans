@@ -17,6 +17,7 @@ import {
   AGENT_FALLBACK_COPY,
   AGENT_UPDATING_COPY,
   failAgentSession,
+  isProgressActivity,
   mergeAgentView,
   projectAgentSession,
   syncPlanSessionWithSnapshot,
@@ -24,7 +25,7 @@ import {
   withUpdatingActivity,
 } from "../intent-first/agent.js";
 import { firstTurnCopy, projectPlan, type PlanSession } from "../intent-first/plan.js";
-import { formatMoney, supplierDisplayName } from "../fixtures/golden.js";
+import { formatMoney } from "../fixtures/golden.js";
 
 export function AgentChatPanel({
   api,
@@ -79,21 +80,15 @@ export function AgentChatPanel({
     }
     const subscription = api.subscribeAgentEvents(sessionId, {
       onEvent: (event) => {
+        if (isProgressActivity(event.message)) {
+          return;
+        }
         setPlanSession((current) => {
           if (current === null || current.agent === undefined || current.agent === null) {
             return current;
           }
           if (current.agent.activity.some((item) => item.message === event.message)) {
-            if (event.message === AGENT_UPDATING_COPY) {
-              return current;
-            }
-            return {
-              ...current,
-              agent: {
-                ...current.agent,
-                activity: withoutUpdatingActivity(current.agent.activity),
-              },
-            };
+            return current;
           }
           return {
             ...current,
@@ -253,20 +248,13 @@ export function AgentChatPanel({
               </div>
             </>
           )}
-          {session.agent?.activity.map((event) => {
-            const updating = event.message === AGENT_UPDATING_COPY;
-            return (
-              <p
-                key={`${event.kind}-${event.message}`}
-                className={updating ? "re-clarify-progress" : "re-clarify-enough"}
-                role={updating ? "status" : undefined}
-              >
-                {updating ? <span className="re-processing-spinner" aria-hidden /> : null}
+          {session.agent?.activity
+            .filter((event) => !isProgressActivity(event.message))
+            .map((event) => (
+              <p key={`${event.kind}-${event.message}`} className="re-clarify-enough">
                 {event.message}
               </p>
-            );
-          })}
-          {parkingOffers.length > 0 ? <ConversationOffers offers={parkingOffers} /> : null}
+            ))}
           {showGrant && session.agent?.pendingAuthorization ? (
             <button
               type="button"
@@ -301,28 +289,37 @@ export function AgentChatPanel({
           )}
         </div>
       </div>
-      <form className="re-clarify-compose" onSubmit={sendNote}>
-        <label className="itaa-visually-hidden" htmlFor={inputId}>
-          Add anything else about this trip
-        </label>
-        <input
-          id={inputId}
-          className="re-clarify-input itaa-focus-ring"
-          value={draftNote}
-          placeholder="Add anything else about this trip…"
-          onChange={(event) => setDraftNote(event.target.value)}
-          disabled={busy}
-        />
-        <button
-          type="submit"
-          className="re-clarify-send itaa-focus-ring"
-          aria-label="Add note"
-          aria-busy={busy || undefined}
-          disabled={busy}
-        >
-          {busy ? <span className="re-processing-spinner" aria-hidden /> : "→"}
-        </button>
-      </form>
+      <div className="re-clarify-compose-wrap" aria-busy={busy || undefined}>
+        {busy ? (
+          <p className="re-clarify-progress" role="status">
+            <span className="re-processing-spinner" aria-hidden />
+            {session.agent?.activity.find((item) => isProgressActivity(item.message))?.message ??
+              AGENT_UPDATING_COPY}
+          </p>
+        ) : null}
+        <form className="re-clarify-compose" onSubmit={sendNote}>
+          <label className="itaa-visually-hidden" htmlFor={inputId}>
+            Add anything else about this trip
+          </label>
+          <input
+            id={inputId}
+            className="re-clarify-input itaa-focus-ring"
+            value={draftNote}
+            placeholder="Add anything else about this trip…"
+            onChange={(event) => setDraftNote(event.target.value)}
+            disabled={busy}
+          />
+          <button
+            type="submit"
+            className={`re-clarify-send itaa-focus-ring${draftNote.trim() !== "" && !busy ? " is-ready" : ""}`}
+            aria-label="Add note"
+            aria-busy={busy || undefined}
+            disabled={busy || draftNote.trim() === ""}
+          >
+            {busy ? <span className="re-processing-spinner" aria-hidden /> : "→"}
+          </button>
+        </form>
+      </div>
     </section>
   );
 }
@@ -354,20 +351,4 @@ function grantLabel(gate: string, offers: RankedOffer[] = []): string {
     return `Authorize ${formatMoney(selected.totalMinor, selected.currency)}`;
   }
   return "Authorize simulated reservation";
-}
-
-function ConversationOffers({ offers }: { offers: RankedOffer[] }) {
-  return (
-    <ol className="re-clarify-offers" aria-label="Simulated parking offers">
-      {offers.map((offer) => (
-        <li key={offer.offerId}>
-          {supplierDisplayName(offer.supplierToken)}
-          {offer.recommended ? " · recommended" : ""}
-          {offer.currency && offer.totalMinor !== undefined
-            ? ` · ${offer.currency} ${(offer.totalMinor / 100).toFixed(2)}`
-            : ""}
-        </li>
-      ))}
-    </ol>
-  );
 }

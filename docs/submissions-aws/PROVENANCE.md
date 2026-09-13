@@ -1,7 +1,7 @@
 # Provenance disclosure — pre-existing vs competition-new
 
 Hackathon: **AWS Agents for Humans** (Everyday Agents track).
-This public export is generated from private-main checkpoint `e998c22dd2bce67b9d9e9dd22ec5879cebac016d`. See [BUILD_PROVENANCE.md](../../BUILD_PROVENANCE.md).
+This public export is generated from private-main checkpoint `c79d0a667b1605cf4cfbe338e7a0509ec0ffd867`. See [BUILD_PROVENANCE.md](../../BUILD_PROVENANCE.md).
 
 The submitted *project* is the Strands buyer agent wrapping the governed façade. It is not a rebadge of the earlier platform extraction, and it is not a claim that the whole ITAA platform was built during the competition window.
 
@@ -28,6 +28,7 @@ Developed during the AWS Agents for Humans competition period:
 - Multi-domain capability routing and the external-search port
 - LiteAPI stay and flight research adapter (`adapters/liteapi-hotels`) — configuration names only
 - Conversational search authorization, refinements, and Booking Chats UX
+- Recording-final domain UX: future-year date resolution, airport-local parking clocks, one card per domain, independent hotel/parking search while flight remains Proposed
 - Prioticket experience adapter (`adapters/prioticket-experiences`) — configuration names only; city inventory currently provider-limited
 - Browser wiring: Start booking → `/v1/agent/sessions`; Clarify & Plan renders the BFF `PlanProjection`
 - AWS env/docs under `infra/aws`

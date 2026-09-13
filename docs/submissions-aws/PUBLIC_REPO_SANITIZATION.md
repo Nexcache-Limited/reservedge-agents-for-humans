@@ -1,6 +1,6 @@
 # Public-repo sanitization checklist
 
-This public export is licensed under **Apache License 2.0**. The private product repository license is unchanged. Source checkpoint: `e998c22dd2bce67b9d9e9dd22ec5879cebac016d`.
+This public export is licensed under **Apache License 2.0**. The private product repository license is unchanged. Source checkpoint: `c79d0a667b1605cf4cfbe338e7a0509ec0ffd867`.
 
 ## License and provenance
 

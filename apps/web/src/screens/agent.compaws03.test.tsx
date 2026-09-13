@@ -715,19 +715,18 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
           ],
         }),
     });
-    await startObjective(london, api);
-    expect(
-      await screen.findByText("Which London airport do you need parking at?"),
-    ).toBeInTheDocument();
+    const user = await startObjective(london, api);
+    expect(await screen.findByText("parking.search")).toBeInTheDocument();
+    const question = await screen.findByText("Which London airport do you need parking at?");
     const log = document.querySelector(".re-clarify-log");
     const thread = document.querySelector(".re-clarify-thread");
     const compose = document.querySelector(".re-clarify-compose");
-    expect(log?.contains(screen.getByText("Which London airport do you need parking at?"))).toBe(
-      true,
-    );
-    expect(thread?.nextElementSibling).toBe(compose);
+    expect(log?.contains(question)).toBe(true);
+    expect(thread?.nextElementSibling?.classList.contains("re-clarify-compose-wrap")).toBe(true);
+    expect(thread?.nextElementSibling?.contains(compose)).toBe(true);
     expect(screen.queryByLabelText("Departing from")).toBeNull();
     expect(screen.queryByRole("group", { name: "Exact dates" })).toBeNull();
+    await user.click(await screen.findByRole("button", { name: "Edit details" }));
     await waitFor(() => {
       expect(document.querySelector('input[aria-label="Parking airportCode"]')).not.toBeNull();
     });
@@ -761,6 +760,7 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
     expect(screen.queryByRole("button", { name: "Begin parking requirement" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Use the example/ })).toBeNull();
     expect(screen.queryByRole("button", { name: "Request parking offers" })).toBeNull();
+    await user.click(await screen.findByRole("button", { name: "Edit details" }));
     expect(await screen.findByLabelText("Parking airportCode")).toHaveValue("JFK");
   });
 
@@ -880,11 +880,12 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
   });
 
   it("opens a prepared parking requirement after confirm instead of a second intake", async () => {
-    await startObjective(DEMO_A);
+    const user = await startObjective(DEMO_A);
     expect(screen.queryByRole("button", { name: "Begin parking requirement" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Send to Reservedge" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Use the example/ })).toBeNull();
     expect(screen.queryByRole("button", { name: "Request parking offers" })).toBeNull();
+    await user.click(await screen.findByRole("button", { name: "Edit details" }));
     expect(await screen.findByLabelText("Parking airportCode")).toHaveValue("JFK");
   });
 
@@ -928,6 +929,7 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
 
   it("parks an unfinished booking in Pending when a new intent starts", async () => {
     const user = await startObjective(DEMO_A);
+    await user.click(await screen.findByRole("button", { name: "Edit details" }));
     expect(await screen.findByLabelText("Parking airportCode")).toHaveValue("JFK");
     await user.click(screen.getAllByRole("button", { name: "New intent" })[0]!);
     expect(

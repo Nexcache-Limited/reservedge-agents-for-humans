@@ -895,6 +895,63 @@ body {
     border-color: var(--ws-ink-3);
 }
 
+.re-domain-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.re-fact-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--ws-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.re-domain-edit {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid var(--ws-border);
+    color: var(--ws-ink-2);
+    border-radius: 999px;
+    min-height: 32px;
+    padding: 4px 12px;
+    font: 600 12px var(--itaa-font-interface);
+}
+
+.re-parking-offer-cards {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.re-parking-offer-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--ws-border);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.re-parking-offer-card strong {
+    font-size: 14px;
+}
+
+.re-parking-offer-card span {
+    font-size: 12px;
+    color: var(--ws-ink-2);
+}
+
 .re-domain-lane .re-stay-search {
     margin-top: 10px;
     padding: 0;
@@ -1249,6 +1306,24 @@ body {
     border: 1px solid var(--ws-border);
     color: var(--ws-ink-2);
     flex: none;
+}
+
+.re-clarify-send.is-ready {
+    background: var(--ws-accent);
+    border-color: var(--ws-accent);
+    color: #fff;
+}
+
+.re-clarify-compose-wrap {
+    border-top: 1px solid var(--ws-border-2);
+}
+
+.re-clarify-compose-wrap .re-clarify-progress {
+    margin: 8px 17px 0;
+}
+
+.re-clarify-compose-wrap .re-clarify-compose {
+    border-top: none;
 }
 
 .re-clarify-plan-title {

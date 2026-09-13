@@ -1,6 +1,6 @@
 # COMP-AWS-06 public-export notes
 
-This tree **is** the sanitized Apache-2.0 public competition export of private-main checkpoint `e998c22dd2bce67b9d9e9dd22ec5879cebac016d`.
+This tree **is** the sanitized Apache-2.0 public competition export of private-main checkpoint `c79d0a667b1605cf4cfbe338e7a0509ec0ffd867`.
 
 See [BUILD_PROVENANCE.md](../../BUILD_PROVENANCE.md).
 

@@ -28,6 +28,11 @@ _AFFIRM_BARE = re.compile(
     r"search please|do it)$",
     re.I,
 )
+_STAY_PARKING_RE = re.compile(
+    r"\b(?:search )?(?:the )?(?:hotel|stay) and parking(?: first)?\b|"
+    r"\bparking and (?:the )?(?:hotel|stay)(?: first)?\b",
+    re.I,
+)
 _STAY_ONLY_RE = re.compile(
     r"\b(hotel first|stay first|hotels? only|just (?:the )?hotel|just stay|"
     r"search (?:the )?hotel|search stay)\b",
@@ -111,6 +116,8 @@ def match_confirmation(
     text = message.strip()
     if not text:
         return None
+    if _STAY_PARKING_RE.search(text) and STAY in offered and PARKING in offered:
+        return (STAY, PARKING)
     if _STAY_ONLY_RE.search(text) and STAY in offered:
         return (STAY,)
     if _PARKING_ONLY_RE.search(text) and PARKING in offered:

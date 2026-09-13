@@ -28,6 +28,7 @@ import {
   periodLabel,
   resolvedEndDate,
   seedScheduleFromText,
+  nearestFutureYear,
   type DayPart,
   type ScheduleAnswers,
 } from "./schedule.js";
@@ -360,6 +361,68 @@ function experiencePrefs(lower: string): string[] {
   return prefs;
 }
 
+function stayWindowFromText(
+  text: string,
+  exact: { start: string; end: string } | null,
+): { start: string; end: string } | null {
+  let start = exact?.start ?? "";
+  let end = exact?.end ?? "";
+  if (!start) {
+    const onDate = text.match(
+      /\bon\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)(?:\s+(\d{4}))?/i,
+    );
+    if (onDate) {
+      const monthNames: Record<string, string> = {
+        january: "01",
+        jan: "01",
+        february: "02",
+        feb: "02",
+        march: "03",
+        mar: "03",
+        april: "04",
+        apr: "04",
+        may: "05",
+        june: "06",
+        jun: "06",
+        july: "07",
+        jul: "07",
+        august: "08",
+        aug: "08",
+        september: "09",
+        sept: "09",
+        sep: "09",
+        october: "10",
+        oct: "10",
+        november: "11",
+        nov: "11",
+        december: "12",
+        dec: "12",
+      };
+      const month = monthNames[onDate[2]?.toLowerCase() ?? ""] ?? "";
+      const day = Number(onDate[1]);
+      const year = onDate[3] || String(nearestFutureYear(Number(month), day));
+      if (month && day) {
+        start = `${year}-${month}-${String(day).padStart(2, "0")}`;
+        end = start;
+      }
+    }
+  }
+  if (!start) {
+    return exact;
+  }
+  const duration = text.match(/\bfor\s+(one|two|three|four|five|\d+)\s+(days?|nights?)\b/i);
+  if (duration && (!exact || exact.start === exact.end)) {
+    const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+    const count = words[duration[1]?.toLowerCase() ?? ""] ?? Number(duration[1]);
+    if (count > 0) {
+      const startDate = new Date(`${start}T00:00:00Z`);
+      startDate.setUTCDate(startDate.getUTCDate() + count);
+      end = startDate.toISOString().slice(0, 10);
+    }
+  }
+  return { start, end: end || start };
+}
+
 export function extractFacts(objective: string): ExtractedFacts {
   const text = objective.trim();
   const lower = text.toLowerCase();
@@ -414,11 +477,12 @@ export function extractFacts(objective: string): ExtractedFacts {
   const weekday = text.match(WEEKDAY)?.[0] ?? "";
   const monthOnly = monthDay === "" && MONTH.test(lower);
   const exact = parseExactCalendar(text);
-  const hasExactDates = exact !== null;
+  const stayWindow = stayWindowFromText(text, exact);
+  const hasExactDates = stayWindow !== null;
   const hasLooseDates = hasExactDates || weekday !== "" || monthOnly || nights || monthDay !== "";
   const dates =
-    exact !== null
-      ? formatHumanRange(exact.start, exact.end)
+    stayWindow !== null
+      ? formatHumanRange(stayWindow.start, stayWindow.end)
       : monthDay || (weekday !== "" ? titleCase(weekday) : "") || "";
   const dayPart = detectDayPart(text);
   const timeFlexible = detectFlexible(text);
@@ -438,8 +502,8 @@ export function extractFacts(objective: string): ExtractedFacts {
     dates,
     hasExactDates,
     hasLooseDates,
-    startDate: exact?.start ?? "",
-    endDate: exact?.end ?? "",
+    startDate: stayWindow?.start ?? "",
+    endDate: stayWindow?.end ?? "",
     carNeed: rentalStated ? (carDeclined(lower) ? "no" : "yes") : "",
     parkingStated,
     rentalStated,
@@ -761,9 +825,19 @@ function baseTasks(facts: ExtractedFacts, answers: PlanAnswers, objective = ""):
     /\b(?:flight|flights|fly)\s+from\s+[A-Za-z][A-Za-z .'-]{0,40}?\s+to\s+[A-Za-z]/i.test(
       objective,
     );
+  const otherTransport = /\b(train|eurostar|ferry|bus|coach|driving|drive there|by car)\b/i.test(
+    objective,
+  );
+  const inferredFlight =
+    facts.originCity !== "" &&
+    facts.destination !== "" &&
+    (facts.hasExactDates || facts.hasLooseDates) &&
+    facts.tripLike &&
+    !facts.flightSatisfied &&
+    !otherTransport;
   if (
     !facts.flightSatisfied &&
-    (flightRoute || (facts.tripLike && (facts.landing || facts.flightStated)))
+    (flightRoute || (facts.tripLike && (facts.landing || facts.flightStated)) || inferredFlight)
   ) {
     const provenance: TaskProvenance = facts.flightStated || flightRoute ? "explicit" : "proposed";
     const accepted = provenance === "explicit";
@@ -1158,18 +1232,86 @@ export function buyerInviteCopy(facts: ExtractedFacts): string {
   return `Where and when are you travelling? ${invite}`;
 }
 
-export function sortPlanTasks(tasks: PlanTask[]): PlanTask[] {
-  return [...tasks].sort((left, right) => taskPlanRank(left) - taskPlanRank(right));
+export const DOMAIN_CARD_ORDER: PlanTask["kind"][] = [
+  "flight",
+  "hotel",
+  "rental",
+  "parking",
+  "experience",
+  "ents",
+];
+
+export function sortPlanTasks(
+  tasks: PlanTask[],
+  pinKind: PlanTask["kind"] | null = null,
+): PlanTask[] {
+  return [...tasks].sort((left, right) => {
+    if (pinKind && left.kind === pinKind && right.kind !== pinKind) {
+      return -1;
+    }
+    if (pinKind && right.kind === pinKind && left.kind !== pinKind) {
+      return 1;
+    }
+    const leftRank = DOMAIN_CARD_ORDER.indexOf(left.kind);
+    const rightRank = DOMAIN_CARD_ORDER.indexOf(right.kind);
+    return (leftRank === -1 ? 9 : leftRank) - (rightRank === -1 ? 9 : rightRank);
+  });
 }
 
-function taskPlanRank(task: PlanTask): number {
-  if (task.provenance === "explicit" || (task.accepted && task.provenance !== "proposed")) {
-    return 0;
+const CAPABILITY_KIND: Record<string, PlanTask["kind"]> = {
+  "flight.search": "flight",
+  "stay.search": "hotel",
+  "parking.search": "parking",
+  "experience.search": "experience",
+};
+
+function domainHadResults(agent: AgentPlanBinding, kind: PlanTask["kind"]): boolean {
+  if (kind === "flight") {
+    return agent.flightSearch != null;
   }
-  if (task.provenance === "inferred") {
-    return 1;
+  if (kind === "hotel") {
+    return agent.staySearch != null;
   }
-  return 2;
+  if (kind === "parking") {
+    return (agent.domains?.parking?.offerSet.snapshot?.offers?.length ?? 0) > 0;
+  }
+  if (kind === "experience") {
+    return agent.experienceSearch != null;
+  }
+  return false;
+}
+
+export function refinementPinKind(session: PlanSession): PlanTask["kind"] | null {
+  const agent = session.agent;
+  if (agent == null) {
+    return null;
+  }
+  if (agent.flightSearch?.stale === true) {
+    return "flight";
+  }
+  if (agent.staySearch?.stale === true) {
+    return "hotel";
+  }
+  if (agent.domains?.rental?.completeness === "stale") {
+    return "rental";
+  }
+  if (
+    agent.domains?.parking?.offerSet.stale === true ||
+    agent.domains?.parking?.completeness === "stale"
+  ) {
+    return "parking";
+  }
+  if (agent.experienceSearch?.stale === true) {
+    return "experience";
+  }
+  const pending = agent.pendingSearchAuthorization?.capabilities ?? [];
+  if (pending.length === 1) {
+    const kind = CAPABILITY_KIND[pending[0] ?? ""];
+    if (kind && domainHadResults(agent, kind)) {
+      return kind;
+    }
+  }
+  return null;
 }
 
 function unblocksFor(facts: ExtractedFacts, which: "dates" | "departure"): string[] {
@@ -1279,7 +1421,7 @@ const CITY_STOP = new Set([
 
 function plausibleCity(token: string): boolean {
   const cleaned = token.trim().toLowerCase().replace(/\s+/g, " ");
-  if (cleaned.length < 3 || CITY_STOP.has(cleaned)) {
+  if (cleaned.length < 3 || CITY_STOP.has(cleaned) || cleaned.includes("'")) {
     return false;
   }
   if (cleaned.split(" ").some((part) => CITY_STOP.has(part))) {

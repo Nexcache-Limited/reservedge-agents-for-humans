@@ -91,9 +91,12 @@ def test_prepare_parking_does_not_mint_ids() -> None:
         "prepare_parking_requirement",
         {"objective": DEMO_A, "planConfirmed": True},
     )
+    from itaa_api.calendar_resolve import nearest_future_year
+
+    sep_year = nearest_future_year(9, 3)
     assert result.get("airportCode") == "JFK"
-    assert result.get("startDate") == "2026-09-03"
-    assert result.get("endDate") == "2026-09-08"
+    assert result.get("startDate") == f"{sep_year}-09-03"
+    assert result.get("endDate") == f"{sep_year}-09-08"
     assert result.get("vehicleClass") == "standard"
     assert result.get("covered") == "preferred"
     assert result.get("shuttleMaxMinutes") == 20

@@ -108,7 +108,7 @@ def test_direct_patch_and_stale_flag() -> None:
     )
     assert patched.status_code == 200, patched.text
     parking = patched.json()["domains"]["parking"]
-    assert parking["fields"]["start"]["value"] == "2026-09-03T01:00:00Z"
+    assert parking["fields"]["start"]["value"] == "2026-09-03T01:00:00"
     assert parking["fields"]["start"]["source"] == "direct_edit"
     assert parking["offerSet"]["stale"] is True
 
@@ -203,7 +203,7 @@ def test_london_parking_captures_dates_and_asks_airport_not_trip_funnel() -> Non
     pref = preference.json()["domains"]["parking"]["fields"]
     assert pref["vehicleClass"]["value"] == "suv"
     assert pref["covered"]["value"] == "preferred"
-    assert pref["start"]["value"].endswith("13:00:00Z") or "13:00" in pref["start"]["value"]
+    assert pref["start"]["value"].endswith("13:00:00") or "13:00" in pref["start"]["value"]
 
 
 GATWICK_PARKING = "need parking from 1st November to 5th November near Gatwick airport"
@@ -217,7 +217,7 @@ def test_parking_asks_times_not_vehicle_class_and_honours_uncovered() -> None:
     assert fields["airportCode"]["value"] == "LGW"
     assert str(fields["start"]["value"]).startswith("2026-11-01")
     assert str(fields["end"]["value"]).startswith("2026-11-05")
-    assert "T12:00:00Z" not in str(fields["start"]["value"])
+    assert "T12:00:00" not in str(fields["start"]["value"])
     assert fields["vehicleClass"]["value"] == "standard"
     assert fields["vehicleClass"]["provenance"] == "proposed"
     blob = f"{body.get('buyerSafeMessage') or ''} {parking.get('ask') or ''}".lower()
@@ -230,8 +230,8 @@ def test_parking_asks_times_not_vehicle_class_and_honours_uncovered() -> None:
     )
     assert timed.status_code == 200, timed.text
     timed_fields = timed.json()["domains"]["parking"]["fields"]
-    assert "T11:00:00Z" in str(timed_fields["start"]["value"])
-    assert "T15:00:00Z" in str(timed_fields["end"]["value"])
+    assert "T11:00:00" in str(timed_fields["start"]["value"])
+    assert "T15:00:00" in str(timed_fields["end"]["value"])
     timed_blob = (timed.json().get("buyerSafeMessage") or "").lower()
     assert "vehicle class" not in timed_blob
     assert "covered" in timed_blob
@@ -256,8 +256,8 @@ def test_heathrow_parking_simulates_offers_after_times() -> None:
     created = client.post(f"{PREFIX}/sessions", json={"objective": HEATHROW_PARKING}).json()
     parking = created["domains"]["parking"]
     assert parking["fields"]["airportCode"]["value"] == "LHR"
-    assert "T12:00:00Z" not in str(parking["fields"]["start"]["value"])
-    assert "T12:00:00Z" not in str(parking["fields"]["end"]["value"])
+    assert "T12:00:00" not in str(parking["fields"]["start"]["value"])
+    assert "T12:00:00" not in str(parking["fields"]["end"]["value"])
     assert "time" in (created.get("buyerSafeMessage") or "").lower()
     session_id = created["sessionId"]
     timed = client.post(
@@ -312,10 +312,10 @@ def test_parking_asks_all_remaining_fields_in_one_message() -> None:
     )
     assert timed.status_code == 200, timed.text
     clocks = timed.json()["domains"]["parking"]["fields"]
-    assert "T07:00:00Z" in str(clocks["start"]["value"])
-    assert "T22:00:00Z" in str(clocks["end"]["value"])
-    assert "T00:00:00Z" not in str(clocks["start"]["value"])
-    assert "T00:00:00Z" not in str(clocks["end"]["value"])
+    assert "T07:00:00" in str(clocks["start"]["value"])
+    assert "T22:00:00" in str(clocks["end"]["value"])
+    assert "T00:00:00" not in str(clocks["start"]["value"])
+    assert "T00:00:00" not in str(clocks["end"]["value"])
 
 
 def test_rental_only_does_not_drive_parking_questions() -> None:
@@ -386,8 +386,8 @@ def test_gatwick_in_day_range_keeps_dates_and_clocks() -> None:
     year, month = infer_year_month_for_day(13)
     assert fields["airportCode"]["value"] == "LGW"
     assert fields["covered"]["value"] == "preferred"
-    assert str(fields["start"]["value"]) == f"{year}-{month}-13T02:00:00Z"
-    assert str(fields["end"]["value"]) == f"{year}-{month}-16T22:00:00Z"
+    assert str(fields["start"]["value"]) == f"{year}-{month}-13T02:00:00"
+    assert str(fields["end"]["value"]) == f"{year}-{month}-16T22:00:00"
     message = (body.get("buyerSafeMessage") or "").lower()
     assert "when should parking start" not in message
     assert "when should parking finish" not in message
@@ -401,8 +401,8 @@ def test_gatwick_in_day_range_keeps_dates_and_clocks() -> None:
     )
     assert follow.status_code == 200, follow.text
     later = follow.json()["domains"]["parking"]["fields"]
-    assert str(later["start"]["value"]) == f"{year}-{month}-13T02:00:00Z"
-    assert str(later["end"]["value"]) == f"{year}-{month}-16T22:00:00Z"
+    assert str(later["start"]["value"]) == f"{year}-{month}-13T02:00:00"
+    assert str(later["end"]["value"]) == f"{year}-{month}-16T22:00:00"
     follow_message = (follow.json().get("buyerSafeMessage") or "").lower()
     assert "when should parking start" not in follow_message
 
@@ -419,7 +419,7 @@ def test_time_only_follow_up_without_parking_word_overlays_clocks() -> None:
     fields = created["domains"]["parking"]["fields"]
     assert str(fields["start"]["value"]).startswith(f"{year}-{month}-13")
     assert str(fields["end"]["value"]).startswith(f"{year}-{month}-16")
-    assert "T02:00:00Z" not in str(fields["start"]["value"])
+    assert "T02:00:00" not in str(fields["start"]["value"])
     session_id = created["sessionId"]
     timed = client.post(
         f"{PREFIX}/sessions/{session_id}/turns",
@@ -427,8 +427,8 @@ def test_time_only_follow_up_without_parking_word_overlays_clocks() -> None:
     )
     assert timed.status_code == 200, timed.text
     clocks = timed.json()["domains"]["parking"]["fields"]
-    assert str(clocks["start"]["value"]) == f"{year}-{month}-13T02:00:00Z"
-    assert str(clocks["end"]["value"]) == f"{year}-{month}-16T22:00:00Z"
+    assert str(clocks["start"]["value"]) == f"{year}-{month}-13T02:00:00"
+    assert str(clocks["end"]["value"]) == f"{year}-{month}-16T22:00:00"
     pending = timed.json().get("pendingSearchAuthorization")
     assert isinstance(pending, dict)
     assert "parking.search" in pending["capabilities"]

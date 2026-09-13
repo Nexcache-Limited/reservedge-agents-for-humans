@@ -5,6 +5,13 @@ from __future__ import annotations
 import re
 from typing import Final
 
+from itaa_api.calendar_resolve import (
+    apply_stay_duration,
+    other_transport_stated,
+    parse_anchor_date,
+    resolve_ymd,
+    rewrite_past_iso_if_year_omitted,
+)
 from itaa_aws_adapter import PLAN_QUESTION_CAP
 from itaa_aws_adapter.schemas import (
     BlockingQuestion,
@@ -120,6 +127,12 @@ _CITY_STOP: Final[frozenset[str]] = frozenset(
         "please",
         "covered",
         "uncovered",
+        "i'm",
+        "i've",
+        "we're",
+        "they're",
+        "flying",
+        "returning",
     }
 )
 
@@ -312,6 +325,17 @@ def extract_facts(objective: str, answers: PlanAnswers | None = None) -> Extract
     if overlay is not None:
         dates, has_exact, has_loose, start_date, end_date = overlay
     start_date, end_date = _overlay_checkout(text, start_date, end_date)
+    if not start_date and not _unresolved_calendar_range(text):
+        anchor = parse_anchor_date(text)
+        if anchor:
+            start_date = end_date or anchor
+            end_date = end_date or anchor
+    if start_date and (not end_date or start_date == end_date):
+        start_date, end_date = apply_stay_duration(start_date, end_date or start_date, text)
+    if start_date:
+        start_date = rewrite_past_iso_if_year_omitted(start_date, text)
+    if end_date:
+        end_date = rewrite_past_iso_if_year_omitted(end_date, text)
     if start_date and end_date:
         dates = f"{start_date} to {end_date}" if start_date != end_date else start_date
         has_exact = True
@@ -412,11 +436,9 @@ def parse_exact_calendar(text: str) -> tuple[str, str] | None:
         re.I,
     )
     if spanned:
-        year = spanned.group(4) or "2026"
-        month_num = _month_num(spanned.group(3))
-        if month_num:
-            start = f"{year}-{month_num}-{int(spanned.group(1)):02d}"
-            end = f"{year}-{month_num}-{int(spanned.group(2)):02d}"
+        start = resolve_ymd(spanned.group(3), int(spanned.group(1)), spanned.group(4))
+        end = resolve_ymd(spanned.group(3), int(spanned.group(2)), spanned.group(4))
+        if start and end:
             return _ordered_range(start, end)
     same = re.search(
         rf"\b(\d{{1,2}})\s*[–-]\s*(\d{{1,2}})\s+{month}(?:\s+(\d{{4}}))?\b",
@@ -424,11 +446,9 @@ def parse_exact_calendar(text: str) -> tuple[str, str] | None:
         re.I,
     )
     if same:
-        year = same.group(4) or "2026"
-        month = _month_num(same.group(3))
-        if month:
-            start = f"{year}-{month}-{int(same.group(1)):02d}"
-            end = f"{year}-{month}-{int(same.group(2)):02d}"
+        start = resolve_ymd(same.group(3), int(same.group(1)), same.group(4))
+        end = resolve_ymd(same.group(3), int(same.group(2)), same.group(4))
+        if start and end:
             return _ordered_range(start, end)
     dual = re.finditer(
         r"\b(january|february|march|april|may|june|july|august|september|october|"
@@ -439,14 +459,14 @@ def parse_exact_calendar(text: str) -> tuple[str, str] | None:
     )
     hits = list(dual)
     if len(hits) >= 2:
-        year = hits[0].group(3) or hits[1].group(3) or "2026"
-        m1 = _month_num(hits[0].group(1))
-        m2 = _month_num(hits[1].group(1))
-        if m1 and m2:
-            return _ordered_range(
-                f"{year}-{m1}-{int(hits[0].group(2)):02d}",
-                f"{year}-{m2}-{int(hits[1].group(2)):02d}",
-            )
+        start = resolve_ymd(
+            hits[0].group(1), int(hits[0].group(2)), hits[0].group(3) or hits[1].group(3)
+        )
+        end = resolve_ymd(
+            hits[1].group(1), int(hits[1].group(2)), hits[1].group(3) or hits[0].group(3)
+        )
+        if start and end:
+            return _ordered_range(start, end)
     named = re.search(
         r"\b(january|february|march|april|may|june|july|august|september|october|"
         r"november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)"
@@ -455,13 +475,10 @@ def parse_exact_calendar(text: str) -> tuple[str, str] | None:
         re.I,
     )
     if named:
-        year = named.group(4) or "2026"
-        month = _month_num(named.group(1))
-        if month:
-            return _ordered_range(
-                f"{year}-{month}-{int(named.group(2)):02d}",
-                f"{year}-{month}-{int(named.group(3)):02d}",
-            )
+        start = resolve_ymd(named.group(1), int(named.group(2)), named.group(4))
+        end = resolve_ymd(named.group(1), int(named.group(3)), named.group(4))
+        if start and end:
+            return _ordered_range(start, end)
     month_pat = (
         r"(january|february|march|april|may|june|july|august|september|october|"
         r"november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)"
@@ -469,19 +486,24 @@ def parse_exact_calendar(text: str) -> tuple[str, str] | None:
     leading_month = re.search(
         rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+{month_pat}(?:\s+(\d{{4}}))?\s*"
         rf"(?:to|[–-]|until|through)\s*(?:the\s+)?"
-        rf"(\d{{1,2}})(?:st|nd|rd|th)?(?:\s+{month_pat})?(?:\s+(\d{{4}}))?\b",
+        rf"(\d{{1,2}})(?:st|nd|rd|th)?(?!\s*(?:am|pm))(?:\s+{month_pat})?(?:\s+(\d{{4}}))?\b",
         text,
         re.I,
     )
     if leading_month:
-        start_month = _month_num(leading_month.group(2))
-        end_month = _month_num(leading_month.group(5) or leading_month.group(2))
-        year = leading_month.group(6) or leading_month.group(3) or "2026"
-        if start_month and end_month:
-            return _ordered_range(
-                f"{year}-{start_month}-{int(leading_month.group(1)):02d}",
-                f"{year}-{end_month}-{int(leading_month.group(4)):02d}",
-            )
+        start = resolve_ymd(
+            leading_month.group(2), int(leading_month.group(1)), leading_month.group(3)
+        )
+        end = resolve_ymd(
+            leading_month.group(5) or leading_month.group(2),
+            int(leading_month.group(4)),
+            leading_month.group(6) or leading_month.group(3),
+        )
+        if start and end:
+            return _ordered_range(start, end)
+    single = parse_anchor_date(text)
+    if single:
+        return single, single
     return None
 
 
@@ -584,8 +606,17 @@ def base_tasks(facts: ExtractedFacts, answers: PlanAnswers, objective: str = "")
             )
         )
     flight_route = bool(_FLIGHT_ROUTE.search(objective))
+    inferred_flight = (
+        bool(facts.originCity and facts.destination)
+        and (facts.hasExactDates or facts.hasLooseDates)
+        and not other_transport_stated(objective)
+        and facts.tripLike
+        and not facts.flightSatisfied
+    )
     if not facts.flightSatisfied and (
-        flight_route or (facts.tripLike and (facts.landing or facts.flightStated))
+        flight_route
+        or (facts.tripLike and (facts.landing or facts.flightStated))
+        or inferred_flight
     ):
         provenance = "explicit" if facts.flightStated or flight_route else "proposed"
         tasks.append(
@@ -595,7 +626,12 @@ def base_tasks(facts: ExtractedFacts, answers: PlanAnswers, objective: str = "")
                 provenance == "explicit",
                 "You mentioned a flight."
                 if provenance == "explicit"
-                else f"Inferred from travelling to {where}. Inactive until you accept it.",
+                else (
+                    f"Inferred from travelling from {facts.originCity} to {where}. "
+                    "Inactive until you accept it."
+                    if facts.originCity
+                    else f"Inferred from travelling to {where}. Inactive until you accept it."
+                ),
             )
         )
     if facts.hotelStated:
@@ -632,6 +668,7 @@ def project_plan(
     facts = extract_facts(objective, resolved)
     if model_turn is not None:
         facts = _overlay_model_trip_facts(facts, model_turn)
+    facts = _canonicalize_fact_years(facts, objective)
     questions = select_clarifications(facts)
     tasks = base_tasks(facts, resolved, objective)
     if model_turn is not None:
@@ -674,6 +711,24 @@ def _safe_model_place(raw: str) -> str:
     if re.fullmatch(r"[A-Za-z][A-Za-z .'-]{1,60}", token) is None:
         return ""
     return token
+
+
+def _canonicalize_fact_years(facts: ExtractedFacts, objective: str) -> ExtractedFacts:
+    if not facts.startDate:
+        return facts
+    start = rewrite_past_iso_if_year_omitted(facts.startDate, objective)
+    end = rewrite_past_iso_if_year_omitted(facts.endDate or facts.startDate, objective)
+    if start == facts.startDate and end == (facts.endDate or facts.startDate):
+        return facts
+    return facts.model_copy(
+        update={
+            "startDate": start,
+            "endDate": end,
+            "dates": f"{start} to {end}" if start != end else start,
+            "hasExactDates": True,
+            "hasLooseDates": True,
+        }
+    )
 
 
 def _overlay_model_trip_facts(facts: ExtractedFacts, model_turn: PlanTurn) -> ExtractedFacts:
@@ -837,12 +892,18 @@ def buyer_invite_copy(facts: ExtractedFacts) -> str:
     return f"Where and when are you travelling? {invite}"
 
 
+_DOMAIN_ORDER: Final[dict[TaskKind, int]] = {
+    "flight": 0,
+    "hotel": 1,
+    "rental": 2,
+    "parking": 3,
+    "experience": 4,
+    "ents": 5,
+}
+
+
 def _task_rank(task: PlanTask) -> int:
-    if task.provenance == "explicit" or (task.accepted and task.provenance != "proposed"):
-        return 0
-    if task.provenance == "inferred":
-        return 1
-    return 2
+    return _DOMAIN_ORDER.get(task.kind, 9)
 
 
 def _sort_plan_tasks(tasks: list[PlanTask]) -> list[PlanTask]:
@@ -953,11 +1014,30 @@ def _plausible_city(token: str) -> bool:
     cleaned = " ".join(token.strip().lower().split())
     if len(cleaned) < 3 or cleaned in _CITY_STOP:
         return False
+    if "'" in cleaned:
+        return False
     if any(part in _CITY_STOP for part in cleaned.split()):
         return False
     if cleaned.upper() in KNOWN_AIRPORTS:
         return False
     return bool(re.fullmatch(r"[a-z][a-z .'-]{1,40}", cleaned))
+
+
+def _unresolved_calendar_range(text: str) -> bool:
+    month = (
+        r"(january|february|march|april|may|june|july|august|september|october|"
+        r"november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)"
+    )
+    return (
+        re.search(
+            rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+{month}(?:\s+(\d{{4}}))?\s*"
+            rf"(?:to|[–-]|until|through)\s*(?:the\s+)?"
+            rf"(\d{{1,2}})(?:st|nd|rd|th)?(?!\s*(?:am|pm))",
+            text,
+            re.I,
+        )
+        is not None
+    )
 
 
 def _guess_city(text: str) -> str:

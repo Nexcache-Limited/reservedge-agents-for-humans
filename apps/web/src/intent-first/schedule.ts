@@ -98,7 +98,35 @@ export function normalizeSchedule(value: Partial<ScheduleAnswers> | undefined): 
   };
 }
 
-const COMPETITION_YEAR = "2026";
+export function nearestFutureYear(month: number, day: number, today = new Date()): number {
+  const year = today.getUTCFullYear();
+  const candidate = Date.UTC(year, month - 1, day);
+  const startOfToday = Date.UTC(year, today.getUTCMonth(), today.getUTCDate());
+  if (Number.isNaN(candidate)) {
+    return year;
+  }
+  if (candidate >= startOfToday) {
+    return year;
+  }
+  return year + 1;
+}
+
+function yearFor(
+  month: string,
+  day: string,
+  explicitYear: string | undefined,
+  today?: Date,
+): string {
+  if (explicitYear && /^\d{4}$/.test(explicitYear)) {
+    return explicitYear;
+  }
+  const monthNum = Number(month);
+  const dayNum = Number(day);
+  if (!monthNum || !dayNum) {
+    return String(nearestFutureYear(10, 1, today));
+  }
+  return String(nearestFutureYear(monthNum, dayNum, today));
+}
 
 const SAME_MONTH_RANGE = new RegExp(
   `\\b(?:from\\s+)?(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:to|[–-])\\s*(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})(?:\\.?\\s+(\\d{4}))?\\b`,
@@ -113,16 +141,19 @@ const DUAL_DATE_RANGE = new RegExp(
   "i",
 );
 const DAY_MONTH_TO_DAY = new RegExp(
-  `\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})(?:\\.?\\s+(\\d{4}))?\\s*(?:to|[–-]|until|through)\\s*(?:the\\s+)?(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+(${MONTH_NAMES}))?(?:\\.?\\s+(\\d{4}))?\\b`,
+  `\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})(?:\\.?\\s+(\\d{4}))?\\s*(?:to|[–-]|until|through)\\s*(?:the\\s+)?(\\d{1,2})(?:st|nd|rd|th)?(?!\\s*(?:am|pm))(?:\\s+(${MONTH_NAMES}))?(?:\\.?\\s+(\\d{4}))?\\b`,
   "i",
 );
 
-export function parseExactCalendar(text: string): { start: string; end: string } | null {
+export function parseExactCalendar(
+  text: string,
+  today = new Date(),
+): { start: string; end: string } | null {
   const trimmed = text.trim();
   if (trimmed === "") {
     return null;
   }
-  const range = parseExactRange(trimmed);
+  const range = parseExactRange(trimmed, today);
   if (range !== null) {
     return range;
   }
@@ -130,19 +161,26 @@ export function parseExactCalendar(text: string): { start: string; end: string }
     return null;
   }
   const monthFirst = trimmed.match(
-    new RegExp(`\\b(${MONTH_NAMES})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,)?\\s+(\\d{4})\\b`, "i"),
+    new RegExp(
+      `\\b(${MONTH_NAMES})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,)?(?:\\s+(\\d{4}))?\\b`,
+      "i",
+    ),
   );
   if (monthFirst) {
-    const start = ymd(monthFirst[3] ?? "", monthNumber(monthFirst[1] ?? ""), monthFirst[2] ?? "");
+    const month = monthNumber(monthFirst[1] ?? "");
+    const year = yearFor(month, monthFirst[2] ?? "1", monthFirst[3], today);
+    const start = ymd(year, month, monthFirst[2] ?? "");
     if (start !== null) {
       return { start, end: start };
     }
   }
   const dayFirst = trimmed.match(
-    new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})\\.?\\s+(\\d{4})\\b`, "i"),
+    new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})\\.?(?:\\s+(\\d{4}))?\\b`, "i"),
   );
   if (dayFirst) {
-    const start = ymd(dayFirst[3] ?? "", monthNumber(dayFirst[2] ?? ""), dayFirst[1] ?? "");
+    const month = monthNumber(dayFirst[2] ?? "");
+    const year = yearFor(month, dayFirst[1] ?? "1", dayFirst[3], today);
+    const start = ymd(year, month, dayFirst[1] ?? "");
     if (start !== null) {
       return { start, end: start };
     }
@@ -198,7 +236,7 @@ function orderedRange(start: string, end: string): { start: string; end: string 
   return { start, end };
 }
 
-function parseExactRange(text: string): { start: string; end: string } | null {
+function parseExactRange(text: string, today?: Date): { start: string; end: string } | null {
   const isoRange = text.match(/\b(\d{4}-\d{2}-\d{2})\s*(?:to|[–-])\s*(\d{4}-\d{2}-\d{2})\b/);
   if (
     isoRange?.[1] !== undefined &&
@@ -211,7 +249,7 @@ function parseExactRange(text: string): { start: string; end: string } | null {
   const range = text.match(SAME_MONTH_RANGE);
   if (range) {
     const month = monthNumber(range[3] ?? "");
-    const year = range[4] || COMPETITION_YEAR;
+    const year = yearFor(month, range[1] ?? "1", range[4], today);
     const start = ymd(year, month, range[1] ?? "");
     const end = ymd(year, month, range[2] ?? "");
     if (start !== null && end !== null) {
@@ -240,7 +278,12 @@ function parseExactRange(text: string): { start: string; end: string } | null {
   if (leadingMonth) {
     const startMonth = monthNumber(leadingMonth[2] ?? "");
     const endMonth = monthNumber(leadingMonth[5] || leadingMonth[2] || "");
-    const year = leadingMonth[6] || leadingMonth[3] || COMPETITION_YEAR;
+    const year = yearFor(
+      endMonth,
+      leadingMonth[4] ?? "1",
+      leadingMonth[6] || leadingMonth[3],
+      today,
+    );
     const start = ymd(year, startMonth, leadingMonth[1] ?? "");
     const end = ymd(year, endMonth, leadingMonth[4] ?? "");
     if (start !== null && end !== null) {

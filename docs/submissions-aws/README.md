@@ -1,6 +1,6 @@
 # AWS Agents for Humans — submission pack
 
-**Status:** Public Apache-2.0 competition export of private-main `e998c22dd2bce67b9d9e9dd22ec5879cebac016d`.
+**Status:** Public Apache-2.0 competition export of private-main `c79d0a667b1605cf4cfbe338e7a0509ec0ffd867`.
 **Default demo:** fake mode (`ITAA_AWS_MODEL_MODE=fake`) at `http://127.0.0.1:5180`.
 **Track (recommended):** Everyday Agents.
 **Local live Bedrock Plan UAT succeeded 7 September 2026** (allowlisted `global.anthropic.claude-sonnet-4-6`, one Bedrock cycle per planning turn). **This pack does not claim Amazon Bedrock AgentCore.**

@@ -35,7 +35,8 @@ The browser talks to `/v1/agent/**`. Do not treat `/v1/aws/**` as the UI path.
 - **Booking Chats UX** — Running / Pending / History inbox; resume does not invent an Unknown intent
 - **LiteAPI** sandbox **hotel research** (`stay.search`) and **flight research** (`flight.search`) — server-side env names only; not a booking or ticket
 - **Prioticket** experience adapter (`experience.search`) integrated with OAuth2 client-credentials; **city-linked catalog inventory is currently provider-limited**, so Milan/London experience search can return a truthful empty set
-- **Governed simulated parking** (`parking.search`) — ParkDirect / SkyShield / TerminalFlex, labelled simulation
+- **Governed simulated parking** (`parking.search`) — ParkDirect / SkyShield / TerminalFlex, labelled simulation; parking clocks are **airport-local wall time** (UTC only at the provider/execution boundary)
+- **Recording-final domain UX** — yearless dates resolve to the nearest future occurrence; one compact card per domain; flight stays **Proposed** unless explicitly accepted so hotel/parking/experience can search independently
 - **Rental capability without live inventory** — requirement capture only; no invented cars
 - **Reservedge** visible branding in buyer chrome (internal `itaa_*` namespaces unchanged)
 - **Code-validated structured agent state** (`PlanTurn` → UI `PlanProjection`)

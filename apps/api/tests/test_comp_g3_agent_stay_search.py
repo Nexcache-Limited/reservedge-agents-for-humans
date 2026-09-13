@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 from wp06_fakes import build_facade
@@ -86,13 +88,70 @@ def test_milan_session_clarifies_and_does_not_auto_search() -> None:
     assert "reserved" not in transcript
 
 
+def _travel_field_values(body: dict[str, object]) -> list[str]:
+    """Buyer-visible travel facts and domain airport values only — never opaque IDs."""
+
+    values: list[str] = []
+    projection = body.get("projection")
+    facts = projection.get("facts") if isinstance(projection, dict) else {}
+    if isinstance(facts, dict):
+        for key in (
+            "originCity",
+            "destination",
+            "parkingAirport",
+            "departureAirport",
+            "destinationAirport",
+        ):
+            values.append(str(facts.get(key) or ""))
+    domains = body.get("domains")
+    if isinstance(domains, dict):
+        for domain in domains.values():
+            if not isinstance(domain, dict):
+                continue
+            fields = domain.get("fields") if isinstance(domain.get("fields"), dict) else {}
+            if not isinstance(fields, dict):
+                continue
+            for field_id in ("origin", "destination", "airportCode"):
+                held = fields.get(field_id)
+                if isinstance(held, dict):
+                    values.append(str(held.get("value") or ""))
+    shared = body.get("sharedBookingContext")
+    if isinstance(shared, dict):
+        for item in shared.get("facts") or []:
+            if isinstance(item, dict):
+                values.append(str(item.get("value") or ""))
+    values.append(str(body.get("buyerSafeMessage") or ""))
+    transcript = body.get("transcript")
+    if isinstance(transcript, list):
+        for item in transcript:
+            if isinstance(item, dict):
+                values.append(str(item.get("text") or ""))
+    return values
+
+
 def test_london_dated_trip_is_not_a_milan_or_stay_hardcode() -> None:
     client, provider = _client()
     body = client.post(f"{PREFIX}/sessions", json={"objective": LONDON}).json()
-    assert body["projection"]["facts"]["destination"] == "London"
+    facts = body["projection"]["facts"]
+    assert facts["destination"] == "London"
+    assert facts["originCity"] == "Mumbai"
+    assert facts["destination"] != "Milan"
+    assert facts.get("parkingAirport") in ("", None)
     assert body.get("staySearch") in (None, {})
     assert "search_stay_offers" not in provider.execute_tools
-    assert "jfk" not in str(body).lower()
+    assert "search_flight_offers" not in provider.execute_tools
+    flight = (body.get("domains") or {}).get("flight")
+    if isinstance(flight, dict) and flight:
+        fields = flight.get("fields") if isinstance(flight.get("fields"), dict) else {}
+        origin = ((fields or {}).get("origin") or {}).get("value")
+        destination = ((fields or {}).get("destination") or {}).get("value")
+        if origin:
+            assert origin == "BOM"
+        if destination:
+            assert destination == "LON"
+    for value in _travel_field_values(body):
+        assert not re.search(r"\bJFK\b", value, re.I)
+        assert not re.search(r"\bMilan\b", value, re.I)
 
 
 def test_explicit_hotel_dispatches_stay_search_after_yes() -> None:

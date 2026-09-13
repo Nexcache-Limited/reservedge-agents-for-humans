@@ -22,15 +22,15 @@ def test_clock_range_does_not_overwrite_october_trip_dates() -> None:
     if "start" in by_field:
         assert str(by_field["start"]).startswith("2026-10-24")
         assert str(by_field["end"]).startswith("2026-10-25")
-        assert "T02:00:00Z" in str(by_field["start"])
-        assert "T22:00:00Z" in str(by_field["end"])
+        assert "T02:00:00" in str(by_field["start"])
+        assert "T22:00:00" in str(by_field["end"])
     else:
-        assert by_field["startTime"] == "02:00:00Z"
-        assert by_field["endTime"] == "22:00:00Z"
+        assert by_field["startTime"] == "02:00:00"
+        assert by_field["endTime"] == "22:00:00"
         overlaid_start = overlay_time_on_instant("2026-10-24", str(by_field["startTime"]))
         overlaid_end = overlay_time_on_instant("2026-10-25", str(by_field["endTime"]))
-        assert overlaid_start == "2026-10-24T02:00:00Z"
-        assert overlaid_end == "2026-10-25T22:00:00Z"
+        assert overlaid_start == "2026-10-24T02:00:00"
+        assert overlaid_end == "2026-10-25T22:00:00"
 
 
 def test_follow_up_clocks_overlay_existing_november_dates() -> None:
@@ -42,10 +42,10 @@ def test_follow_up_clocks_overlay_existing_november_dates() -> None:
         ),
     )
     times = {item["fieldId"]: item["value"] for item in follow if item["kind"] == "parking"}
-    start = overlay_time_on_instant("2026-11-10", str(times.get("startTime") or "08:00:00Z"))
-    end = overlay_time_on_instant("2026-11-15", str(times.get("endTime") or "18:00:00Z"))
-    assert start == "2026-11-10T08:00:00Z"
-    assert end == "2026-11-15T18:00:00Z"
+    start = overlay_time_on_instant("2026-11-10", str(times.get("startTime") or "08:00:00"))
+    end = overlay_time_on_instant("2026-11-15", str(times.get("endTime") or "18:00:00"))
+    assert start == "2026-11-10T08:00:00"
+    assert end == "2026-11-15T18:00:00"
 
 
 def test_am_pm_variants_and_overnight_parking() -> None:
@@ -55,12 +55,12 @@ def test_am_pm_variants_and_overnight_parking() -> None:
         calendar_context="parking at MAN from 24 to 25 October",
     )
     times = {item["fieldId"]: item["value"] for item in patches if item["kind"] == "parking"}
-    assert times["startTime"] == "22:00:00Z"
-    assert times["endTime"] == "06:00:00Z"
+    assert times["startTime"] == "22:00:00"
+    assert times["endTime"] == "06:00:00"
     start = overlay_time_on_instant("2026-10-24", str(times["startTime"]))
     end = overlay_time_on_instant("2026-10-25", str(times["endTime"]))
-    assert start == "2026-10-24T22:00:00Z"
-    assert end == "2026-10-25T06:00:00Z"
+    assert start == "2026-10-24T22:00:00"
+    assert end == "2026-10-25T06:00:00"
 
 
 def test_model_patch_cannot_replace_confirmed_date_with_hour() -> None:

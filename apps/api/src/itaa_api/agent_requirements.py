@@ -12,6 +12,12 @@ from copy import deepcopy
 from datetime import UTC, date, datetime
 from typing import Any, Literal
 
+from itaa_api.calendar_resolve import (
+    parse_parking_clock_window,
+    resolve_ymd,
+    to_utc_instant,
+    user_typed_year,
+)
 from itaa_application.errors import ApplicationError
 
 FieldSource = Literal["current_turn", "earlier_turn", "direct_edit", "system_proposal"]
@@ -514,7 +520,7 @@ def _coerce_instant(raw: object) -> str | None:
     clock = re.match(r"^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::(\d{2}))?Z?$", text)
     if clock:
         second = clock.group(3) or "00"
-        return f"{clock.group(1)}T{clock.group(2)}:{second}Z"
+        return f"{clock.group(1)}T{clock.group(2)}:{second}"
     named = re.match(
         r"^(\d{1,2})(?:st|nd|rd|th)?\s+"
         r"(january|february|march|april|may|june|july|august|september|october|"
@@ -636,9 +642,9 @@ def _has_buyer_clock(held: object) -> bool:
         return False
     if re.match(r"^\d{4}-\d{2}-\d{2}$", value):
         return False
-    if not re.search(r"T\d{2}:\d{2}:\d{2}Z$", value):
+    if not re.search(r"T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})?$", value):
         return False
-    return not (held.get("source") == "system_proposal" and value.endswith("T12:00:00Z"))
+    return not (held.get("source") == "system_proposal" and re.search(r"T12:00:00(?:Z)?$", value))
 
 
 def _human_calendar_date(held: object) -> str:
@@ -775,6 +781,11 @@ def execution_fields(domain: Mapping[str, object]) -> dict[str, object]:
     end_held = fields.get("end")
     if not _has_buyer_clock(start_held) or not _has_buyer_clock(end_held):
         raise ApplicationError("start", "required")
+    try:
+        out["start"] = to_utc_instant(start, airport)
+        out["end"] = to_utc_instant(end, airport)
+    except ValueError as exc:
+        raise ApplicationError("start", "required") from exc
     vehicle = out.get("vehicleClass")
     covered = out.get("covered")
     if vehicle not in VEHICLE:
@@ -1159,10 +1170,10 @@ def _clock_to_hhmm(raw: str) -> str | None:
             hour += 12
         if mer == "am" and hour == 12:
             hour = 0
-        return f"{hour:02d}:{minute:02d}:00Z"
+        return f"{hour:02d}:{minute:02d}:00"
     hour = int(match.group(4))
     minute = int(match.group(5))
-    return f"{hour:02d}:{minute:02d}:00Z"
+    return f"{hour:02d}:{minute:02d}:00"
 
 
 def infer_year_month_for_day(day: int, *, today: date | None = None) -> tuple[str, str]:
@@ -1180,19 +1191,13 @@ def infer_year_month_for_day(day: int, *, today: date | None = None) -> tuple[st
 
 
 def _month_or_iso_mentioned(conversation: str) -> bool:
-    if re.search(r"\b(20\d{2})-(\d{2})-\d{2}\b", conversation):
+    if re.search(r"\b(20\d{2})-(\d{2})-\d{2}\b", conversation) and user_typed_year(conversation):
         return True
     lower = conversation.lower()
     return any(re.search(rf"\b{re.escape(name)}\b", lower) for name, _num in _MONTH_WORDS)
 
 
-def _year_month(conversation: str) -> tuple[str, str]:
-    year = "2026"
-    year_match = None
-    for match in re.finditer(r"\b(20\d{2})\b", conversation):
-        year_match = match
-    if year_match:
-        year = year_match.group(1)
+def _year_month(conversation: str, *, day: int | None = None) -> tuple[str, str]:
     month = "10"
     mentions: list[tuple[int, str]] = []
     lower = conversation.lower()
@@ -1201,18 +1206,30 @@ def _year_month(conversation: str) -> tuple[str, str]:
             mentions.append((match.start(), num))
     if mentions:
         month = sorted(mentions)[-1][1]
-    iso = list(re.finditer(r"\b(20\d{2})-(\d{2})-\d{2}\b", conversation))
-    if iso:
-        last = iso[-1]
-        return last.group(1), last.group(2)
-    return year, month
+    if user_typed_year(conversation):
+        year_match = None
+        for match in re.finditer(r"\b(20\d{2})\b", conversation):
+            year_match = match
+        iso = list(re.finditer(r"\b(20\d{2})-(\d{2})-\d{2}\b", conversation))
+        if iso:
+            last = iso[-1]
+            return last.group(1), last.group(2)
+        if year_match:
+            return year_match.group(1), month
+    resolved = resolve_ymd(month, day or 1)
+    if resolved:
+        return resolved[:4], resolved[5:7]
+    return str(datetime.now(UTC).year), month
 
 
 def _ordinal_date(conversation: str, day: str) -> str:
     if _month_or_iso_mentioned(conversation):
-        year, month = _year_month(conversation)
+        year, month = _year_month(conversation, day=int(day))
     else:
         year, month = infer_year_month_for_day(int(day))
+    resolved = resolve_ymd(month, int(day), year if user_typed_year(conversation) else None)
+    if resolved:
+        return resolved
     return f"{year}-{month}-{int(day):02d}"
 
 
@@ -1226,7 +1243,7 @@ def _clock_evidenced(text: str) -> bool:
 def _without_unevidenced_clock(value: object, blob: str) -> object:
     if not isinstance(value, str):
         return value
-    match = re.search(r"^(?P<date>\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}Z$", value)
+    match = re.search(r"^(?P<date>\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}(?:Z)?$", value)
     if match is None:
         return value
     if _clock_evidenced(blob):
@@ -1242,6 +1259,15 @@ def _window_patches(
 ) -> list[dict[str, object]]:
     patches: list[dict[str, object]] = []
     context = calendar_context or conversation
+    parking_window = parse_parking_clock_window(conversation) or parse_parking_clock_window(context)
+    if parking_window:
+        patches.append(
+            {"kind": "parking", "fieldId": "start", "value": parking_window[0], "source": source}
+        )
+        patches.append(
+            {"kind": "parking", "fieldId": "end", "value": parking_window[1], "source": source}
+        )
+        return patches
     month_names = {name: num for name, num in _MONTH_WORDS}
     day_windows = list(PARKING_FROM_DAYS_RE.finditer(conversation))
     if day_windows:
@@ -1305,15 +1331,15 @@ def _window_patches(
             patches.append({"kind": "parking", "fieldId": "end", "value": end, "source": source})
             return patches
     iso = re.search(
-        r"parking[^\n]{0,40}(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}Z"
-        r".{0,20}(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}Z",
+        r"parking[^\n]{0,40}(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}Z?"
+        r".{0,20}(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}Z?",
         conversation,
         re.I,
     )
     if iso:
         start = iso.group(1)
         end_match = re.search(
-            r"(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}Z.{0,20}(\d{4}-\d{2}-\d{2})T",
+            r"(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}Z?.{0,20}(\d{4}-\d{2}-\d{2})T",
             conversation,
         )
         patches.append({"kind": "parking", "fieldId": "start", "value": start, "source": source})
@@ -1429,8 +1455,9 @@ def overlay_time_on_instant(current: object, clock: str) -> str | None:
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
         return None
     token = clock.strip()
-    if re.match(r"^\d{2}:\d{2}:\d{2}Z$", token):
-        return f"{date}T{token}"
+    compact = token[:-1] if token.endswith("Z") else token
+    if re.match(r"^\d{2}:\d{2}:\d{2}$", compact):
+        return f"{date}T{compact}"
     parsed = _clock_to_hhmm(token)
     if parsed:
         return f"{date}T{parsed}"
@@ -1442,7 +1469,7 @@ def overlay_time_on_instant(current: object, clock: str) -> str | None:
         elif clock_match is None:
             return None
         hhmm = clock_match.group(1) if clock_match else token[:5]
-        return f"{date}T{hhmm}:{second}Z"
+        return f"{date}T{hhmm}:{second}"
     return None
 
 

@@ -36,4 +36,7 @@ def test_milan_trip_does_not_force_parking_or_rental() -> None:
     assert "parking" not in by_kind
     assert "rental" not in by_kind
     assert "hotel" not in by_kind
-    assert "flight" not in by_kind
+    flight = by_kind.get("flight")
+    assert flight is not None
+    assert flight.provenance == "proposed"
+    assert flight.accepted is False

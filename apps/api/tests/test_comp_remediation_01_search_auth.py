@@ -139,8 +139,9 @@ def test_journey_a_yes_searches_stay_and_parking() -> None:
     ).json()
     start = str(timed["domains"]["parking"]["fields"]["start"]["value"])
     end = str(timed["domains"]["parking"]["fields"]["end"]["value"])
-    assert start.startswith("2026-11-10T08:00:00Z")
-    assert end.startswith("2026-11-15T18:00:00Z")
+    assert start.startswith("2026-11-10T08:00:00")
+    assert end.startswith("2026-11-15T18:00:00")
+    assert not start.endswith("Z")
     pending = timed.get("pendingSearchAuthorization")
     assert isinstance(pending, dict)
     assert set(pending["capabilities"]) >= {"stay.search", "parking.search"}
@@ -197,8 +198,8 @@ def test_parking_clock_follow_up_keeps_october_dates() -> None:
     )
     assert timed.status_code == 200, timed.text
     fields = timed.json()["domains"]["parking"]["fields"]
-    assert str(fields["start"]["value"]).startswith("2026-10-24T02:00:00Z")
-    assert str(fields["end"]["value"]).startswith("2026-10-25T22:00:00Z")
+    assert str(fields["start"]["value"]).startswith("2026-10-24T02:00:00")
+    assert str(fields["end"]["value"]).startswith("2026-10-25T22:00:00")
     assert "2026-10-02" not in str(fields["start"]["value"])
     assert "2026-10-10" not in str(fields["end"]["value"])
 
@@ -253,6 +254,7 @@ def test_match_confirmation_yes_variants_and_subsets() -> None:
     assert match_confirmation("search both", pending) == (STAY, PARKING)
     assert match_confirmation("hotel first", pending) == (STAY,)
     assert match_confirmation("parking only", pending) == (PARKING,)
+    assert match_confirmation("search the hotel and parking first", pending) == (STAY, PARKING)
     assert match_confirmation("maybe later", pending) is None
 
 

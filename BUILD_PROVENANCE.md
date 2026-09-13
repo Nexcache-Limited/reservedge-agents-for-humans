@@ -5,8 +5,8 @@ private product repository.
 
 | Item                               | Value                                                    |
 | ---------------------------------- | -------------------------------------------------------- |
-| Source checkpoint (private `main`) | `e998c22dd2bce67b9d9e9dd22ec5879cebac016d` |
-| Source commit subject              | `fix(comp): conversational refinements and LiteAPI sandbox flights (#17)` |
+| Source checkpoint (private `main`) | `c79d0a667b1605cf4cfbe338e7a0509ec0ffd867` |
+| Source commit subject              | `fix(comp): recording-final orchestration and UX corrections (#19)` |
 | Export generation                  | `git archive` of that SHA, then public-export transforms |
 | License in this export             | Apache License 2.0 (`LICENSE` + `NOTICE`)              |
 | Private repository license         | Unchanged (not part of this export)                      |

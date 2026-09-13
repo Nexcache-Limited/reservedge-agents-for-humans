@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from itaa_api.agent_requirements import NAMED_AIRPORTS, normalize_iata
+from itaa_api.calendar_resolve import resolve_ymd
 
 DateScope = Literal["all", "stay", "parking"]
 
@@ -116,11 +117,9 @@ def parse_trip_dates(text: str) -> tuple[str, str] | None:
         re.I,
     )
     if spanned:
-        year = spanned.group(4) or "2026"
-        month = _month_num(spanned.group(3))
-        if month:
-            start = f"{year}-{month}-{int(spanned.group(1)):02d}"
-            end = f"{year}-{month}-{int(spanned.group(2)):02d}"
+        start = resolve_ymd(spanned.group(3), int(spanned.group(1)), spanned.group(4))
+        end = resolve_ymd(spanned.group(3), int(spanned.group(2)), spanned.group(4))
+        if start and end:
             return _ordered(start, end)
     dashed = re.search(
         rf"\b(\d{{1,2}})\s*[–-]\s*(\d{{1,2}})\s+{_MONTH}(?:\s+(\d{{4}}))?\b",
@@ -128,11 +127,9 @@ def parse_trip_dates(text: str) -> tuple[str, str] | None:
         re.I,
     )
     if dashed:
-        year = dashed.group(4) or "2026"
-        month = _month_num(dashed.group(3))
-        if month:
-            start = f"{year}-{month}-{int(dashed.group(1)):02d}"
-            end = f"{year}-{month}-{int(dashed.group(2)):02d}"
+        start = resolve_ymd(dashed.group(3), int(dashed.group(1)), dashed.group(4))
+        end = resolve_ymd(dashed.group(3), int(dashed.group(2)), dashed.group(4))
+        if start and end:
             return _ordered(start, end)
     return None
 
@@ -148,11 +145,7 @@ def parse_one_date(text: str) -> str | None:
     )
     if named is None:
         return None
-    year = named.group(3) or "2026"
-    month = _month_num(named.group(2))
-    if not month:
-        return None
-    return f"{year}-{month}-{int(named.group(1)):02d}"
+    return resolve_ymd(named.group(2), int(named.group(1)), named.group(3))
 
 
 def parse_refinement(text: str) -> BuyerRefinement:

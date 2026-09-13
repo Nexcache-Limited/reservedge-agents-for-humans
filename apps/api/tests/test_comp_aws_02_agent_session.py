@@ -321,13 +321,16 @@ def test_confirm_sets_ready_without_a1_or_purchase_intent() -> None:
     fetched = client.get(f"{PREFIX}/sessions/{session_id}")
     assert fetched.json()["projection"]["phase"] == "ready"
     assert provider_phase in {"clarify", "forming"}
+    from itaa_api.calendar_resolve import nearest_future_year
+
+    sep_year = nearest_future_year(9, 3)
     handoff = body["parkingHandoff"]
     assert handoff["path"] == PARKING_INTAKE_PATH
     assert handoff["fields"]["airportCode"] == "JFK"
-    assert handoff["fields"]["startDate"] == "2026-09-03"
-    assert handoff["fields"]["endDate"] == "2026-09-08"
-    assert str(handoff["fields"]["start"]).startswith("2026-09-03")
-    assert str(handoff["fields"]["end"]).startswith("2026-09-08")
+    assert handoff["fields"]["startDate"] == f"{sep_year}-09-03"
+    assert handoff["fields"]["endDate"] == f"{sep_year}-09-08"
+    assert str(handoff["fields"]["start"]).startswith(f"{sep_year}-09-03")
+    assert str(handoff["fields"]["end"]).startswith(f"{sep_year}-09-08")
     assert "intentId" not in handoff["fields"]
     assert "buyerToken" not in handoff["fields"]
     assert provider.execute_tools == ["prepare_parking_requirement"]

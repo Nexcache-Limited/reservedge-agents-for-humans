@@ -53,7 +53,10 @@ def test_milan_keeps_destination_origin_dates_and_not_jfk() -> None:
     assert "parking" not in kinds
     assert "rental" not in kinds
     assert "hotel" not in kinds
-    assert "flight" not in kinds
+    flight = kinds.get("flight")
+    assert flight is not None
+    assert flight.provenance == "proposed"
+    assert flight.accepted is False
     assert not any(question.id == "helpWith" for question in projection.questions)
     assert projection.phase == "forming"
 
@@ -118,13 +121,12 @@ def test_chat_can_name_hotel_and_rental_together() -> None:
     assert by_kind["hotel"].provenance == "explicit"
     assert by_kind["rental"].provenance == "explicit"
     kinds = [task.kind for task in projection.tasks]
-    if "flight" in kinds:
-        assert kinds.index("hotel") < kinds.index("flight")
+    assert kinds.index("flight") < kinds.index("hotel")
     london = project_plan("I'm travelling to London from 20 to 25 October. hotel booking")
     london_kinds = [task.kind for task in london.tasks]
     assert london_kinds[0] == "hotel"
     if "flight" in london_kinds:
-        assert london_kinds.index("hotel") < london_kinds.index("flight")
+        assert london_kinds.index("flight") < london_kinds.index("hotel")
     assert not any(question.id == "helpWith" for question in projection.questions)
     assert not any(question.id == "departureAirport" for question in projection.questions)
     assert "jfk" not in projection.model_dump_json().lower()

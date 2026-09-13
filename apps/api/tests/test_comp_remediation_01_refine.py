@@ -145,7 +145,7 @@ def test_change_all_trip_dates_updates_stay_and_parking() -> None:
     client, provider = _wired()
     session_id, ready = _open_heathrow(client)
     assert _ctx(ready, "startDate") == "2026-11-10"
-    assert str(_parking_start(ready)).startswith("2026-11-10T08:00:00Z")
+    assert str(_parking_start(ready)).startswith("2026-11-10T08:00:00")
     changed = client.post(
         f"{PREFIX}/sessions/{session_id}/turns",
         json={"message": "change the dates to 9 to 14 november"},
@@ -154,8 +154,8 @@ def test_change_all_trip_dates_updates_stay_and_parking() -> None:
     body = changed.json()
     assert _ctx(body, "startDate") == "2026-11-09"
     assert _ctx(body, "endDate") == "2026-11-14"
-    assert str(_parking_start(body)).startswith("2026-11-09T08:00:00Z")
-    assert str(_parking_end(body)).startswith("2026-11-14T18:00:00Z")
+    assert str(_parking_start(body)).startswith("2026-11-09T08:00:00")
+    assert str(_parking_end(body)).startswith("2026-11-14T18:00:00")
     pending = body.get("pendingSearchAuthorization")
     assert isinstance(pending, dict)
     assert set(pending["capabilities"]) >= {"stay.search", "parking.search"}
@@ -177,8 +177,8 @@ def test_stay_only_date_change_preserves_parking() -> None:
     ).json()
     assert _ctx(changed, "startDate") == "2026-11-09"
     assert _ctx(changed, "endDate") == "2026-11-14"
-    assert str(_parking_start(changed)).startswith("2026-11-10T08:00:00Z")
-    assert str(_parking_end(changed)).startswith("2026-11-15T18:00:00Z")
+    assert str(_parking_start(changed)).startswith("2026-11-10T08:00:00")
+    assert str(_parking_end(changed)).startswith("2026-11-15T18:00:00")
     assert changed["staySearch"].get("stale") is True
     assert not _parking_stale(changed)
     pending = changed.get("pendingSearchAuthorization")
@@ -199,8 +199,8 @@ def test_parking_only_date_change_preserves_stay() -> None:
     ).json()
     assert _ctx(changed, "startDate") == "2026-11-10"
     assert _ctx(changed, "endDate") == "2026-11-15"
-    assert str(_parking_start(changed)).startswith("2026-11-09T08:00:00Z")
-    assert str(_parking_end(changed)).startswith("2026-11-14T18:00:00Z")
+    assert str(_parking_start(changed)).startswith("2026-11-09T08:00:00")
+    assert str(_parking_end(changed)).startswith("2026-11-14T18:00:00")
     assert _parking_stale(changed)
     assert changed["staySearch"].get("stale") is not True
     pending = changed.get("pendingSearchAuthorization")
@@ -451,5 +451,5 @@ def test_keep_parking_on_original_dates() -> None:
         },
     ).json()
     assert _ctx(changed, "startDate") == "2026-11-09"
-    assert str(_parking_start(changed)).startswith("2026-11-10T08:00:00Z")
+    assert str(_parking_start(changed)).startswith("2026-11-10T08:00:00")
     assert "parking stays on the original dates" in (changed.get("buyerSafeMessage") or "").lower()

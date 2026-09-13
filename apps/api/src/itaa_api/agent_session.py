@@ -29,7 +29,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from itaa_api.agent_requirements import (
-    CLOCK_RE,
     COMPETITION_PARKING_ONLY_COPY,
     FLIGHT_UNSUPPORTED_COPY,
     IATA_STAY_PLACE,
@@ -53,6 +52,7 @@ from itaa_api.agent_requirements import (
     sanitize_buyer_message,
     single_city_airport,
 )
+from itaa_api.calendar_resolve import parse_parking_clock_window, rewrite_past_iso_if_year_omitted
 from itaa_api.conversation_refine import (
     BuyerRefinement,
     is_explicit_date_mutation,
@@ -93,6 +93,7 @@ from itaa_api.search_authorization import (
 from itaa_api.search_authorization import (
     build_pending,
     fingerprints_match,
+    flight_requested,
     match_confirmation,
     public_pending,
     results_copy,
@@ -219,6 +220,7 @@ class AgentSession:
     locked_parking_end: str = ""
     flight_search: dict[str, object] | None = None
     flight_search_fingerprint: str = ""
+    flight_prefs_resolved: bool = False
     last_refinement_note: str = ""
 
 
@@ -577,6 +579,9 @@ def _reapply_last_date_refinement(session: AgentSession) -> None:
 
 
 def _overlay_parking_dates(session: AgentSession, change: BuyerRefinement) -> None:
+    last = _last_user_text(session)
+    if last and parse_parking_clock_window(last) and change.date_scope != "parking":
+        return
     if not change.start_date or not change.end_date:
         return
     if change.date_scope == "stay" or change.hold_parking_dates:
@@ -717,7 +722,10 @@ def _apply_plan_result(session: AgentSession, result: Mapping[str, object]) -> N
     synced = plan_turn if isinstance(plan_turn, dict) else None
     _sync_domains(session, source="current_turn", plan_turn=synced)
     _apply_locked_facts(session)
+    _canonicalize_session_dates(session)
     _ensure_stay_destination(session)
+    _accept_proposed_flight(session)
+    _resolve_flight_prefs(session)
     _rewrite_agent_questions(session)
     message = ""
     if isinstance(plan_turn, dict):
@@ -848,6 +856,7 @@ def _sync_domains(
         _seed_parking_from_facts(session, source=source)
     _apply_extracted_patches(session, source=source)
     _reapply_last_date_refinement(session)
+    _seed_flight_from_facts(session, source=source)
     parking = session.domains.get("parking")
     if isinstance(parking, dict):
         apply_defaults(parking)
@@ -1031,16 +1040,19 @@ def _apply_model_requirement_patches(
 
 def _apply_extracted_patches(session: AgentSession, *, source: str) -> None:
     conversation = _conversation(session)
-    last = _last_user_text(session)
+    last = _last_user_text(session) or ""
     last_change = parse_refinement(last) if last else None
-    clock_follow_up = bool(last and CLOCK_RE.search(last))
     skip_parking_dates = bool(
         last
+        and last_change is not None
         and (
-            (last_change is not None and last_change.start_date)
-            or (last_change is not None and last_change.date_scope == "stay")
-            or (last_change is not None and last_change.hold_parking_dates)
-            or not clock_follow_up
+            last_change.date_scope == "stay"
+            or last_change.hold_parking_dates
+            or (
+                last_change.start_date
+                and last_change.date_scope != "parking"
+                and parse_parking_clock_window(last) is None
+            )
         )
     )
     patches = extract_conversation_patches(conversation, source=source)  # type: ignore[arg-type]
@@ -1141,6 +1153,27 @@ def _seed_parking_from_facts(session: AgentSession, *, source: str) -> None:
     if not isinstance(parking, dict) or not isinstance(facts, dict):
         return
     fields = parking.get("fields") if isinstance(parking.get("fields"), dict) else {}
+    last = _last_user_text(session) or ""
+    window = parse_parking_clock_window(last)
+    if window is None and _empty_field(fields, "start") and _empty_field(fields, "end"):
+        window = parse_parking_clock_window(_conversation(session))
+    if window:
+        apply_patch(
+            parking,
+            "start",
+            window[0],
+            source=source,  # type: ignore[arg-type]
+            provenance="explicit",
+        )
+        apply_patch(
+            parking,
+            "end",
+            window[1],
+            source=source,  # type: ignore[arg-type]
+            provenance="explicit",
+        )
+        session.locked_parking_start = window[0][:10]
+        session.locked_parking_end = window[1][:10]
     airport = facts.get("parkingAirport")
     if isinstance(airport, str) and airport and _empty_field(fields, "airportCode"):
         apply_patch(
@@ -1162,7 +1195,7 @@ def _seed_parking_from_facts(session: AgentSession, *, source: str) -> None:
         )
     start_date = facts.get("startDate") if isinstance(facts.get("startDate"), str) else ""
     end_date = facts.get("endDate") if isinstance(facts.get("endDate"), str) else ""
-    if start_date and _empty_field(fields, "start"):
+    if window is None and start_date and _empty_field(fields, "start"):
         apply_patch(
             parking,
             "start",
@@ -1170,7 +1203,7 @@ def _seed_parking_from_facts(session: AgentSession, *, source: str) -> None:
             source=source,  # type: ignore[arg-type]
             provenance="explicit",
         )
-    if end_date and _empty_field(fields, "end"):
+    if window is None and end_date and _empty_field(fields, "end"):
         apply_patch(
             parking,
             "end",
@@ -1484,7 +1517,11 @@ def _dispatch_capability_searches(
                 continue
             prefs = _experience_preferences(session)
             _search_experience_offers(request, session, facts.destination, prefs)
-    if (allowed is None or SEARCH_FLIGHT in allowed) and _flight_search_ready(session):
+    if (
+        (allowed is None or SEARCH_FLIGHT in allowed)
+        and _flight_search_ready(session)
+        and "flight" in _explicit_search_kinds(session)
+    ):
         _search_flight_offers(request, session)
     if (allowed is None or SEARCH_PARKING in allowed) and _parking_search_ready(session):
         _dispatch_parking_search(request, session)
@@ -1647,7 +1684,7 @@ def _search_blocked(session: AgentSession) -> bool:
             return True
         if not _parking_search_ready(session) and not _parking_has_fresh_offers(session):
             return True
-    return "flight" in kinds and not _flight_search_ready(session)
+    return False
 
 
 def _parking_has_fresh_offers(session: AgentSession) -> bool:
@@ -1842,6 +1879,7 @@ def _reconcile_search_authorization(request: Request, session: AgentSession) -> 
             _refresh_pending(session)
             return
         if _search_blocked(session):
+            _replace_with_authorized_copy(session)
             return
         ready = _ready_search_capabilities(session)
         needed = [
@@ -1850,6 +1888,7 @@ def _reconcile_search_authorization(request: Request, session: AgentSession) -> 
             if not _fresh_result(session, capability, prints.get(capability, ""))
         ]
         if not needed:
+            _replace_with_authorized_copy(session)
             return
         pending = build_pending(needed, prints, place=_search_place(session))
         session.pending_search_authorization = pending
@@ -1857,9 +1896,266 @@ def _reconcile_search_authorization(request: Request, session: AgentSession) -> 
         if prompt:
             note = session.last_refinement_note
             combined = f"{note} {prompt}".strip() if note else prompt
+            extra = _flight_follow_up(session)
+            if extra:
+                combined = f"{combined} {extra}".strip()
             _replace_last_agent_turn(session, combined)
+        else:
+            _replace_with_authorized_copy(session)
     finally:
         session.last_refinement_note = ""
+
+
+_SEARCH_READY_CLAIM = re.compile(
+    r"i have what i need to search|shall i search",
+    re.I,
+)
+_FLIGHT_ACCEPT_RE = re.compile(
+    r"\b(search (?:the )?flights?|include flights?|yes.{0,24}flights?|"
+    r"help with (?:a |the )?flights?|want (?:a |the )?flights?)\b",
+    re.I,
+)
+_FLIGHT_PREFS_ANY = re.compile(
+    r"\b(any(?:thing)?(?: is)? fine|no preference|no preference|doesn't matter|"
+    r"does not matter|whatever|no airline)\b",
+    re.I,
+)
+_FLIGHT_PREFS_COPY = (
+    "For the flight, do you have a preferred departure time, and should I keep it "
+    "direct only or include connections? Any airline preference is optional."
+)
+_FLIGHT_CITY_CODES = {
+    "new york": "NYC",
+    "nyc": "NYC",
+    "london": "LON",
+    "manchester": "MAN",
+    "edinburgh": "EDI",
+    "heathrow": "LHR",
+    "milan": "MXP",
+    "mumbai": "BOM",
+}
+
+
+def _canonicalize_session_dates(session: AgentSession) -> None:
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    if not isinstance(facts, dict):
+        return
+    start = str(facts.get("startDate") or "")
+    end = str(facts.get("endDate") or "")
+    if start:
+        facts["startDate"] = rewrite_past_iso_if_year_omitted(start, session.objective)
+    if end:
+        facts["endDate"] = rewrite_past_iso_if_year_omitted(end, session.objective)
+    start = str(facts.get("startDate") or "")
+    end = str(facts.get("endDate") or "")
+    if start and end:
+        facts["dates"] = f"{start} to {end}" if start != end else start
+        facts["hasExactDates"] = True
+    if session.answers.get("startDate"):
+        session.answers["startDate"] = str(facts.get("startDate") or session.answers["startDate"])
+    if session.answers.get("endDate"):
+        session.answers["endDate"] = str(facts.get("endDate") or session.answers["endDate"])
+    parking = session.domains.get("parking")
+    fields = parking.get("fields") if isinstance(parking, dict) else None
+    if isinstance(fields, dict):
+        for key in ("start", "end"):
+            held = fields.get(key)
+            if isinstance(held, dict) and isinstance(held.get("value"), str):
+                held["value"] = rewrite_past_iso_if_year_omitted(
+                    str(held["value"]), session.objective
+                )
+    date_held = _flight_field(session, "date")
+    if date_held:
+        rewritten = rewrite_past_iso_if_year_omitted(date_held, session.objective)
+        flight = session.domains.get("flight")
+        flight_fields = flight.get("fields") if isinstance(flight, dict) else None
+        if isinstance(flight_fields, dict) and isinstance(flight_fields.get("date"), dict):
+            flight_fields["date"]["value"] = rewritten[:10]
+
+
+def _flight_city_code(name: str) -> str:
+    cleaned = re.sub(r"[^a-z]+", " ", name.lower()).strip()
+    return _FLIGHT_CITY_CODES.get(cleaned, "")
+
+
+def _seed_flight_from_facts(session: AgentSession, *, source: str) -> None:
+    flight = session.domains.get("flight")
+    facts = session.projection.get("facts")
+    if not isinstance(flight, dict) or not isinstance(facts, dict):
+        return
+    fields = flight.setdefault("fields", {})
+    if not isinstance(fields, dict):
+        fields = {}
+        flight["fields"] = fields
+    origin_city = str(facts.get("originCity") or "").strip()
+    dest_city = str(facts.get("destination") or "").strip()
+    origin_raw = str(facts.get("departureAirport") or origin_city).strip()
+    dest_raw = str(facts.get("destinationAirport") or dest_city).strip()
+    origin_code = _flight_city_code(origin_city) or (
+        origin_raw.upper()
+        if len(origin_raw) == 3 and origin_raw.isalpha()
+        else _flight_city_code(origin_raw)
+    )
+    dest_code = _flight_city_code(dest_city) or (
+        dest_raw.upper()
+        if len(dest_raw) == 3 and dest_raw.isalpha()
+        else _flight_city_code(dest_raw)
+    )
+    date = str(facts.get("startDate") or "")[:10]
+    if origin_code and _empty_field(fields, "origin"):
+        fields["origin"] = {"value": origin_code, "source": source, "provenance": "inferred"}
+    if dest_code and _empty_field(fields, "destination"):
+        fields["destination"] = {"value": dest_code, "source": source, "provenance": "inferred"}
+    if date and _empty_field(fields, "date"):
+        fields["date"] = {"value": date, "source": source, "provenance": "inferred"}
+
+
+def _flight_proposed(session: AgentSession) -> bool:
+    tasks = session.projection.get("tasks")
+    if not isinstance(tasks, list):
+        return False
+    for item in tasks:
+        if (
+            isinstance(item, dict)
+            and item.get("kind") == "flight"
+            and item.get("provenance") == "proposed"
+        ):
+            return item.get("accepted") is not True
+    return False
+
+
+def _accept_proposed_flight(session: AgentSession) -> None:
+    last = _last_user_text(session)
+    if not last or not (_FLIGHT_ACCEPT_RE.search(last) or flight_requested(last)):
+        return
+    flight = session.domains.get("flight")
+    if not isinstance(flight, dict):
+        session.domains["flight"] = empty_domain("flight", provenance="explicit", accepted=True)
+        flight = session.domains["flight"]
+    flight["accepted"] = True
+    flight["provenance"] = "explicit"
+    tasks = session.projection.get("tasks")
+    if isinstance(tasks, list):
+        for item in tasks:
+            if isinstance(item, dict) and item.get("kind") == "flight":
+                item["accepted"] = True
+                item["provenance"] = "explicit"
+    _seed_flight_from_facts(session, source="current_turn")
+
+
+def _resolve_flight_prefs(session: AgentSession) -> None:
+    last = _last_user_text(session)
+    if not last:
+        return
+    if _FLIGHT_PREFS_ANY.search(last):
+        session.flight_prefs_resolved = True
+        return
+    if re.search(
+        r"\b(direct(?: only)?|non[-\s]?stop|connections?|morning|afternoon|evening|"
+        r"airline|cabin|business|economy)\b",
+        last,
+        re.I,
+    ):
+        session.flight_prefs_resolved = True
+
+
+def _flight_follow_up(session: AgentSession) -> str:
+    pending = session.pending_search_authorization
+    pending_caps = pending.get("capabilities") if isinstance(pending, dict) else []
+    if isinstance(pending_caps, list) and pending_caps and SEARCH_FLIGHT not in pending_caps:
+        return ""
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    origin = ""
+    dest = ""
+    if isinstance(facts, dict):
+        origin = str(facts.get("originCity") or facts.get("departureAirport") or "").strip()
+        dest = str(facts.get("destination") or "").strip()
+    date = _flight_field(session, "date") or (
+        str(facts.get("startDate") or "")[:10] if isinstance(facts, dict) else ""
+    )
+    if _flight_proposed(session):
+        where = f" from {origin} to {dest}" if origin and dest else dest and f" to {dest}" or ""
+        when = f" on {date}" if date else ""
+        return (
+            f"It looks like you're travelling{where}{when}. "
+            "Should I search flights? If yes: "
+            f"{_FLIGHT_PREFS_COPY}"
+        )
+    pending = session.pending_search_authorization
+    pending_caps = pending.get("capabilities") if isinstance(pending, dict) else []
+    if (
+        "flight" in _explicit_search_kinds(session)
+        and _flight_search_ready(session)
+        and not session.flight_prefs_resolved
+        and isinstance(pending_caps, list)
+        and SEARCH_FLIGHT in pending_caps
+    ):
+        return _FLIGHT_PREFS_COPY
+    if (
+        "flight" in _explicit_search_kinds(session)
+        and _flight_search_ready(session)
+        and not session.flight_prefs_resolved
+    ):
+        return _FLIGHT_PREFS_COPY
+    return ""
+
+
+def _missing_search_copy(session: AgentSession) -> str:
+    parts: list[str] = []
+    if _stay_explicit(session) and not _stay_facts_ready(session):
+        parts.append("I still need a destination and dates on the hotel before I can search it.")
+    experience = session.domains.get("experience")
+    facts = session.projection.get("facts") if isinstance(session.projection, dict) else {}
+    dest = str(facts.get("destination") or "") if isinstance(facts, dict) else ""
+    if (
+        isinstance(experience, dict)
+        and (
+            experience.get("accepted") is True
+            or str(experience.get("provenance") or "") == "explicit"
+        )
+        and not dest
+    ):
+        parts.append("I still need a destination for things to do.")
+    parking = session.domains.get("parking")
+    missing = parking.get("missing") if isinstance(parking, dict) else []
+    if isinstance(parking, dict) and isinstance(missing, list) and missing:
+        ask = _next_catalog_ask(session)
+        if ask:
+            parts.append(ask)
+    return " ".join(parts)
+
+
+def _replace_with_authorized_copy(session: AgentSession) -> None:
+    next_ask = _next_catalog_ask(session)
+    flight_note = _flight_follow_up(session)
+    pending = session.pending_search_authorization
+    prompt = str(pending.get("prompt") or "") if isinstance(pending, dict) else ""
+    claimed = _SEARCH_READY_CLAIM.search(session.buyer_safe_message or "") is not None
+    if prompt:
+        extra = flight_note
+        combined = f"{prompt} {extra}".strip() if extra else prompt
+        _replace_last_agent_turn(session, combined)
+        return
+    if next_ask:
+        missing = _missing_search_copy(session)
+        parts: list[str] = []
+        for part in (missing, next_ask, flight_note):
+            if part and part not in parts:
+                parts.append(part)
+        _replace_last_agent_turn(session, " ".join(parts))
+        return
+    if claimed:
+        missing = _missing_search_copy(session)
+        combined = " ".join(part for part in (missing, flight_note) if part)
+        if combined:
+            _replace_last_agent_turn(session, combined)
+        return
+    if flight_note and _flight_proposed(session):
+        current = (session.buyer_safe_message or "").strip()
+        if flight_note not in current:
+            _replace_last_agent_turn(
+                session, f"{current} {flight_note}".strip() if current else flight_note
+            )
 
 
 def _flight_field(session: AgentSession, field_id: str) -> str:

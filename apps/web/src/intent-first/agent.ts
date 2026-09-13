@@ -74,6 +74,15 @@ export const AGENT_FAILURE_COPY = "Could not complete this step";
 export const AGENT_FALLBACK_COPY = "Using the local planner (labelled)";
 export const AGENT_OBJECTIVE_COPY = "Understanding your objective";
 export const AGENT_UPDATING_COPY = "Updating your plan";
+const PROGRESS_MESSAGES = new Set([
+  AGENT_OBJECTIVE_COPY,
+  "Checking what information is missing",
+  AGENT_UPDATING_COPY,
+]);
+
+export function isProgressActivity(message: string): boolean {
+  return PROGRESS_MESSAGES.has(message) || /^Preparing \d+ tasks$/.test(message);
+}
 
 export function answersFromAgentFacts(facts: AgentFacts): PlanAnswers {
   const canonicalStart = facts.startDate.trim();
@@ -187,7 +196,9 @@ export function withUpdatingActivity(session: PlanSession): PlanSession {
 export function withoutUpdatingActivity(
   activity: Array<{ kind: string; message: string }>,
 ): Array<{ kind: string; message: string }> {
-  return activity.filter((item) => item.message !== AGENT_UPDATING_COPY);
+  return activity.filter(
+    (item) => item.message !== AGENT_UPDATING_COPY && !isProgressActivity(item.message),
+  );
 }
 
 function mergeTranscripts(

@@ -158,7 +158,7 @@ def test_model_patch_coercion_accepts_natural_closed_values() -> None:
     from itaa_api.agent_requirements import coerce_value, normalize_iata
 
     assert normalize_iata("LHR (Heathrow)") == "LHR"
-    assert coerce_value("parking", "start", "2026-10-15T12:00:00") == "2026-10-15T12:00:00Z"
+    assert coerce_value("parking", "start", "2026-10-15T12:00:00") == "2026-10-15T12:00:00"
     assert coerce_value("parking", "start", "15 October 2026") == "2026-10-15"
     assert coerce_value("parking", "vehicleClass", "an SUV") == "suv"
     assert coerce_value("parking", "start", ["2026-10-15"]) == "2026-10-15"
@@ -247,16 +247,16 @@ def test_gatwick_in_day_range_does_not_drop_dates_or_clocks() -> None:
     year, month = infer_year_month_for_day(13)
     assert by_field["airportCode"] == "LGW"
     assert by_field["covered"] == "preferred"
-    assert str(by_field["start"]) == f"{year}-{month}-13T02:00:00Z"
-    assert str(by_field["end"]) == f"{year}-{month}-16T22:00:00Z"
+    assert str(by_field["start"]) == f"{year}-{month}-13T02:00:00"
+    assert str(by_field["end"]) == f"{year}-{month}-16T22:00:00"
     follow = extract_conversation_patches(
         "I had already given 2 am to 10 pm in my previous message",
         source="current_turn",
         calendar_context=text,
     )
     times = {item["fieldId"]: item["value"] for item in follow if item["kind"] == "parking"}
-    assert times["startTime"] == "02:00:00Z"
-    assert times["endTime"] == "22:00:00Z"
+    assert times["startTime"] == "02:00:00"
+    assert times["endTime"] == "22:00:00"
 
 
 def test_join_catalog_asks_combines_remaining_questions() -> None:

@@ -14,6 +14,7 @@ import type {
   AgentDomainState,
   AgentExperienceSearch,
   AgentFlightSearch,
+  AgentPendingSearchAuthorization,
   AgentStaySearch,
   ItaaApi,
 } from "../api/types.js";
@@ -37,18 +38,20 @@ import {
   projectPlan,
   provenanceLabel,
   provenanceNote,
+  refinementPinKind,
   removeTaskOverride,
   sortPlanTasks,
   supportedAddableKinds,
   taskStatusLabel,
   type ContextChip,
+  type ExtractedFacts,
   type PlanAnswers,
   type PlanSession,
   type PlanTask,
   type QuestionId,
   type TaskKind,
 } from "../intent-first/plan.js";
-import { rangeError } from "../intent-first/schedule.js";
+import { formatHumanRange, rangeError } from "../intent-first/schedule.js";
 import { hideDesktopWorkspaceChat } from "../reservedge/plan-inbox.js";
 import { usePortfolio } from "../reservedge/portfolio.js";
 import { AgentChatPanel } from "./AgentChatPanel.js";
@@ -150,6 +153,7 @@ function ClarifyPlanBody({
     gathering
       ? projection.tasks.filter((task) => task.provenance === "explicit")
       : projection.tasks,
+    refinementPinKind(session),
   );
 
   function patch(next: Partial<PlanSession>) {
@@ -429,16 +433,23 @@ function ClarifyPlanBody({
                 task.kind === "experience" &&
                 agentBacked &&
                 (task.provenance === "explicit" || session.agent?.experienceSearch != null);
-              const flightLane =
-                task.kind === "flight" &&
-                agentBacked &&
-                (task.provenance === "explicit" || session.agent?.flightSearch != null);
+              const flightLane = task.kind === "flight" && agentBacked;
+              const parkingLane =
+                task.kind === "parking" &&
+                parkingDomain != null &&
+                (parkingDomain.accepted === true || parkingDomain.provenance === "explicit");
+              const rentalLane =
+                task.kind === "rental" &&
+                rentalDomain != null &&
+                (rentalDomain.accepted === true || rentalDomain.provenance === "explicit");
               return (
                 <Fragment key={task.id}>
                   {stayLane ? (
                     <StayDomainLane
                       task={task}
                       search={session.agent?.staySearch ?? null}
+                      facts={projection.facts}
+                      pending={session.agent?.pendingSearchAuthorization ?? null}
                       busy={busy}
                       onSandboxHold={holdStay}
                     />
@@ -446,9 +457,71 @@ function ClarifyPlanBody({
                     <ExperienceDomainLane
                       task={task}
                       search={session.agent?.experienceSearch ?? null}
+                      destination={projection.facts.destination}
+                      pending={session.agent?.pendingSearchAuthorization ?? null}
                     />
                   ) : flightLane ? (
-                    <FlightDomainLane task={task} search={session.agent?.flightSearch ?? null} />
+                    <FlightDomainLane
+                      task={task}
+                      search={session.agent?.flightSearch ?? null}
+                      facts={projection.facts}
+                      pending={session.agent?.pendingSearchAuthorization ?? null}
+                      ready={ready}
+                      onRemove={() => removeTask(task.id)}
+                      onAccept={() => acceptTask(task.id)}
+                    />
+                  ) : parkingLane && parkingDomain ? (
+                    <ParkingDomainPane
+                      task={task}
+                      domain={parkingDomain}
+                      busy={busy}
+                      onEdit={(fieldId, value) => {
+                        if (!session.agent) {
+                          return;
+                        }
+                        void api
+                          .postAgentTurn(session.agent.sessionId, {
+                            patches: [{ domain: "parking", fieldId, value }],
+                          })
+                          .then((view) => setPlanSession(mergeAgentView(session, view)))
+                          .catch(() =>
+                            setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)),
+                          );
+                      }}
+                      onTake={(offerId) => {
+                        if (!session.agent) {
+                          return;
+                        }
+                        const intentId =
+                          typeof parkingDomain.intentId === "string" ? parkingDomain.intentId : "";
+                        const offer = (parkingDomain.offerSet.snapshot?.offers ?? []).find(
+                          (item) => item.offerId === offerId,
+                        );
+                        if (intentId.startsWith("pi_") && offer !== undefined) {
+                          void api
+                            .intakeAccept(intentId, { offerId, offerVersion: offer.version })
+                            .then((next) =>
+                              setPlanSession(syncPlanSessionWithSnapshot(session, next)),
+                            )
+                            .catch(() =>
+                              setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)),
+                            );
+                          return;
+                        }
+                        void api
+                          .grantAgentSession(session.agent.sessionId, {
+                            gate: "A3",
+                            domain: "parking",
+                            offerId,
+                          })
+                          .then((view) => setPlanSession(mergeAgentView(session, view)))
+                          .catch(() =>
+                            setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)),
+                          );
+                      }}
+                    />
+                  ) : rentalLane ? (
+                    <RentalDomainPane domain={rentalDomain} task={task} />
                   ) : (
                     <TaskCard
                       task={task}
@@ -473,53 +546,6 @@ function ClarifyPlanBody({
             ) : null}
           </div>
         )}
-        {parkingDomain != null &&
-        (parkingDomain.accepted === true || parkingDomain.provenance === "explicit") ? (
-          <ParkingDomainPane
-            domain={parkingDomain}
-            busy={busy}
-            onEdit={(fieldId, value) => {
-              if (!session.agent) {
-                return;
-              }
-              void api
-                .postAgentTurn(session.agent.sessionId, {
-                  patches: [{ domain: "parking", fieldId, value }],
-                })
-                .then((view) => setPlanSession(mergeAgentView(session, view)))
-                .catch(() => setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)));
-            }}
-            onTake={(offerId) => {
-              if (!session.agent) {
-                return;
-              }
-              const intentId =
-                typeof parkingDomain.intentId === "string" ? parkingDomain.intentId : "";
-              const offer = (parkingDomain.offerSet.snapshot?.offers ?? []).find(
-                (item) => item.offerId === offerId,
-              );
-              if (intentId.startsWith("pi_") && offer !== undefined) {
-                void api
-                  .intakeAccept(intentId, { offerId, offerVersion: offer.version })
-                  .then((next) => setPlanSession(syncPlanSessionWithSnapshot(session, next)))
-                  .catch(() => setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)));
-                return;
-              }
-              void api
-                .grantAgentSession(session.agent.sessionId, {
-                  gate: "A3",
-                  domain: "parking",
-                  offerId,
-                })
-                .then((view) => setPlanSession(mergeAgentView(session, view)))
-                .catch(() => setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)));
-            }}
-          />
-        ) : null}
-        {rentalDomain != null &&
-        (rentalDomain.accepted === true || rentalDomain.provenance === "explicit") ? (
-          <RentalDomainPane domain={rentalDomain} />
-        ) : null}
         {session.agent?.staySearch && !visibleTasks.some((task) => task.kind === "hotel") ? (
           <StayDomainLane
             task={
@@ -536,6 +562,8 @@ function ClarifyPlanBody({
               }
             }
             search={session.agent.staySearch}
+            facts={projection.facts}
+            pending={session.agent?.pendingSearchAuthorization ?? null}
             busy={busy}
             onSandboxHold={holdStay}
           />
@@ -555,6 +583,8 @@ function ClarifyPlanBody({
               accepted: true,
             }}
             search={session.agent.experienceSearch}
+            destination={projection.facts.destination}
+            pending={session.agent?.pendingSearchAuthorization ?? null}
           />
         ) : null}
         {session.agent?.flightSearch && !visibleTasks.some((task) => task.kind === "flight") ? (
@@ -571,6 +601,8 @@ function ClarifyPlanBody({
               accepted: true,
             }}
             search={session.agent.flightSearch}
+            facts={projection.facts}
+            pending={session.agent?.pendingSearchAuthorization ?? null}
           />
         ) : null}
         {addable.length > 0 && !ready && !gathering ? (
@@ -668,18 +700,38 @@ function SharedContextStrip({ chips }: { chips: ContextChip[] }) {
 function StayDomainLane({
   task,
   search,
+  facts,
+  pending,
   busy,
   onSandboxHold,
 }: {
   task: PlanTask;
   search: AgentStaySearch | null;
+  facts: ExtractedFacts;
+  pending: AgentPendingSearchAuthorization | null;
   busy: boolean;
   onSandboxHold: (offerId: string) => Promise<void>;
 }) {
+  const destReady = facts.destination.trim() !== "";
+  const datesReady = facts.startDate.trim() !== "" && facts.endDate.trim() !== "";
+  const requirementReady = destReady && datesReady;
+  const pendingReady = pending?.capabilities.includes("stay.search") === true;
+  const status = search
+    ? search.stale === true
+      ? "stale"
+      : search.status === "ok"
+        ? "offers"
+        : search.status
+    : pendingReady
+      ? "Ready to search"
+      : requirementReady
+        ? "Ready"
+        : "waiting";
   return (
     <section className={`re-domain-lane${search?.stale === true ? " is-stale" : ""}`}>
       <div className="re-clarify-plan-head">
         <span className="re-clarify-kicker">STAY</span>
+        <span className="re-clarify-task-title">{task.title}</span>
         <span className={`re-clarify-provenance is-${task.provenance}`}>
           {provenanceLabel(task.provenance)}
         </span>
@@ -687,8 +739,14 @@ function StayDomainLane({
         {search ? (
           <span className="re-stay-search-source">{searchSourceLabel(search)}</span>
         ) : (
-          <span className="re-clarify-status">waiting</span>
+          <span className={`re-clarify-status${pendingReady ? " is-ready" : ""}`}>{status}</span>
         )}
+      </div>
+      <div className="re-domain-chips">
+        {facts.destination ? <span className="re-fact-chip">{facts.destination}</span> : null}
+        {facts.startDate && facts.endDate ? (
+          <span className="re-fact-chip">{formatHumanRange(facts.startDate, facts.endDate)}</span>
+        ) : null}
       </div>
       {search?.stale === true ? (
         <p className="re-clarify-hold" role="status">
@@ -701,9 +759,12 @@ function StayDomainLane({
         <>
           <p className="re-clarify-task-detail">{task.detail}</p>
           <p className="re-clarify-task-why">{provenanceNote(task.provenance)}</p>
-          <p className="re-clarify-hold">
-            Stay search waits until destination and dates are on the stay requirement.
-          </p>
+          <p className={`re-clarify-support is-${task.support}`}>{task.supportLabel}</p>
+          {requirementReady ? null : (
+            <p className="re-clarify-hold">
+              Stay search waits until destination and dates are on the stay requirement.
+            </p>
+          )}
         </>
       )}
     </section>
@@ -720,13 +781,50 @@ function searchSourceLabel(search: AgentStaySearch): string {
   return search.source;
 }
 
-function FlightDomainLane({ task, search }: { task: PlanTask; search: AgentFlightSearch | null }) {
+function FlightDomainLane({
+  task,
+  search,
+  facts,
+  pending,
+  ready = false,
+  onRemove,
+  onAccept,
+}: {
+  task: PlanTask;
+  search: AgentFlightSearch | null;
+  facts: ExtractedFacts;
+  pending: AgentPendingSearchAuthorization | null;
+  ready?: boolean;
+  onRemove?: () => void;
+  onAccept?: () => void;
+}) {
+  const pendingReady = pending?.capabilities.includes("flight.search") === true;
+  const origin = facts.originCity || facts.departureAirport;
+  const dest = facts.destination || facts.destinationAirport;
+  const requirementReady =
+    origin.trim() !== "" && dest.trim() !== "" && facts.startDate.trim() !== "";
+  const unconfirmed = !task.accepted;
+  const inferredOrProposed = task.provenance === "inferred" || task.provenance === "proposed";
+  const status = search
+    ? search.stale === true
+      ? "stale"
+      : search.status === "ok"
+        ? "offers"
+        : search.status
+    : pendingReady
+      ? "Ready to search"
+      : task.provenance === "proposed"
+        ? "Proposed"
+        : requirementReady
+          ? "Ready"
+          : "waiting";
   return (
-    <section
+    <article
       className={`re-domain-lane re-flight-lane${search?.stale === true ? " is-stale" : ""}`}
     >
       <div className="re-clarify-plan-head">
         <span className="re-clarify-kicker">FLIGHT</span>
+        <span className="re-clarify-task-title">{task.title}</span>
         <span className={`re-clarify-provenance is-${task.provenance}`}>
           {provenanceLabel(task.provenance)}
         </span>
@@ -734,8 +832,13 @@ function FlightDomainLane({ task, search }: { task: PlanTask; search: AgentFligh
         {search ? (
           <span className="re-stay-search-source">{search.source}</span>
         ) : (
-          <span className="re-clarify-status">waiting</span>
+          <span className={`re-clarify-status${pendingReady ? " is-ready" : ""}`}>{status}</span>
         )}
+      </div>
+      <div className="re-domain-chips">
+        {origin ? <span className="re-fact-chip">{origin}</span> : null}
+        {dest ? <span className="re-fact-chip">{dest}</span> : null}
+        {facts.startDate ? <span className="re-fact-chip">{facts.startDate}</span> : null}
       </div>
       {search?.stale === true ? (
         <p className="re-clarify-hold" role="status">
@@ -748,13 +851,36 @@ function FlightDomainLane({ task, search }: { task: PlanTask; search: AgentFligh
         <>
           <p className="re-clarify-task-detail">{task.detail}</p>
           <p className="re-clarify-task-why">{provenanceNote(task.provenance)}</p>
-          <p className="re-clarify-hold">
-            Flight search waits until origin, destination, and date are known, then a chat
-            confirmation.
-          </p>
+          <p className={`re-clarify-support is-${task.support}`}>{task.supportLabel}</p>
+          {task.provenance === "proposed" ? (
+            <p className="re-clarify-hold">
+              Inactive until you confirm you want flight help. Prefer a departure window or
+              direct-only is optional.
+            </p>
+          ) : requirementReady ? null : (
+            <p className="re-clarify-hold">
+              Flight search waits until origin, destination, and date are known, then a chat
+              confirmation.
+            </p>
+          )}
+          <div className="re-clarify-task-actions">
+            {unconfirmed && inferredOrProposed && !ready && onAccept && onRemove ? (
+              <>
+                <button type="button" className="re-ghost-fill itaa-focus-ring" onClick={onAccept}>
+                  {task.provenance === "proposed" ? "Add to plan" : "Confirm task"}
+                </button>
+                <button type="button" className="re-ghost itaa-focus-ring" onClick={onRemove}>
+                  Not needed
+                </button>
+              </>
+            ) : null}
+            {ready && task.support === "unsupported" ? (
+              <span className="re-clarify-no-exec">No supplier execution in this build.</span>
+            ) : null}
+          </div>
         </>
       )}
-    </section>
+    </article>
   );
 }
 
@@ -821,16 +947,32 @@ function experienceSourceLabel(search: AgentExperienceSearch): string {
 function ExperienceDomainLane({
   task,
   search,
+  destination,
+  pending,
 }: {
   task: PlanTask;
   search: AgentExperienceSearch | null;
+  destination: string;
+  pending: AgentPendingSearchAuthorization | null;
 }) {
+  const destReady = destination.trim() !== "";
+  const pendingReady = pending?.capabilities.includes("experience.search") === true;
+  const status = search
+    ? search.stale === true
+      ? "stale"
+      : "offers"
+    : pendingReady
+      ? "Ready to search"
+      : destReady
+        ? "Ready"
+        : "waiting";
   return (
     <section
       className={`re-domain-lane re-experience-lane${search?.stale === true ? " is-stale" : ""}`}
     >
       <div className="re-clarify-plan-head">
         <span className="re-clarify-kicker">EXPERIENCE</span>
+        <span className="re-clarify-task-title">{task.title}</span>
         <span className={`re-clarify-provenance is-${task.provenance}`}>
           {provenanceLabel(task.provenance)}
         </span>
@@ -838,9 +980,14 @@ function ExperienceDomainLane({
         {search ? (
           <span className="re-experience-search-source">{experienceSourceLabel(search)}</span>
         ) : (
-          <span className="re-clarify-status">waiting</span>
+          <span className={`re-clarify-status${pendingReady ? " is-ready" : ""}`}>{status}</span>
         )}
       </div>
+      {destination ? (
+        <div className="re-domain-chips">
+          <span className="re-fact-chip">{destination}</span>
+        </div>
+      ) : null}
       {search?.stale === true ? (
         <p className="re-clarify-hold" role="status">
           Experience results are stale after an experience preference change. Other domains are
@@ -853,9 +1000,12 @@ function ExperienceDomainLane({
         <>
           <p className="re-clarify-task-detail">{task.detail}</p>
           <p className="re-clarify-task-why">{provenanceNote(task.provenance)}</p>
-          <p className="re-clarify-hold">
-            Experience search waits until a destination is on the experience requirement.
-          </p>
+          <p className={`re-clarify-support is-${task.support}`}>{task.supportLabel}</p>
+          {destReady ? null : (
+            <p className="re-clarify-hold">
+              Experience search waits until a destination is on the experience requirement.
+            </p>
+          )}
         </>
       )}
     </section>
@@ -1171,12 +1321,41 @@ function fieldValue(domain: AgentDomainState, id: string): string {
   return String(held.value);
 }
 
+function parkingInstantChip(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (!match) {
+    return value;
+  }
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const month = months[Number(match[2]) - 1] ?? match[2];
+  const day = String(Number(match[3]));
+  if (match[4] && match[5]) {
+    return `${day} ${month} ${match[4]}:${match[5]}`;
+  }
+  return `${day} ${month}`;
+}
+
 function ParkingDomainPane({
+  task,
   domain,
   busy,
   onEdit,
   onTake,
 }: {
+  task: PlanTask;
   domain: AgentDomainState;
   busy: boolean;
   onEdit: (fieldId: string, value: string) => void;
@@ -1184,10 +1363,23 @@ function ParkingDomainPane({
 }) {
   const offers = domain.offerSet.snapshot?.offers ?? [];
   const stale = domain.offerSet.stale;
+  const [expanded, setExpanded] = useState(false);
+  const airport = fieldDisplay(domain, "airportCode");
+  const start = fieldValue(domain, "start");
+  const end = fieldValue(domain, "end");
+  const covered = fieldValue(domain, "covered");
+  const vehicle = fieldValue(domain, "vehicleClass");
   return (
     <article className={`re-domain-lane re-domain-pane${stale ? " is-stale" : ""}`}>
       <div className="re-clarify-plan-head">
         <span className="re-clarify-kicker">PARKING</span>
+        <span className="re-clarify-task-title">{task.title}</span>
+        <span className={`re-clarify-task-status is-${task.accepted ? "confirmed" : "pending"}`}>
+          {taskStatusLabel(task)}
+        </span>
+        <span className={`re-clarify-provenance is-${task.provenance}`}>
+          {provenanceLabel(task.provenance)}
+        </span>
         <span className="re-domain-capability">parking.search</span>
         <span className="re-sim-label">simulated</span>
         <span
@@ -1200,40 +1392,62 @@ function ParkingDomainPane({
               : domain.completeness}
         </span>
       </div>
+      <p className={`re-clarify-support is-${task.support}`}>{task.supportLabel}</p>
       <p className="re-clarify-task-why">
-        Simulated parking path. Direct field edits are an alternative to chat. Same validator either
-        way. Selection is not a booking.
+        Simulated parking path. Conversation is the primary editor. Selection is not a booking.
       </p>
-      <p className="re-domain-summary">
-        {fieldDisplay(domain, "airportCode") || "airport unset"} ·{" "}
-        {fieldDisplay(domain, "start") || "start unset"} →{" "}
-        {fieldDisplay(domain, "end") || "end unset"}
-      </p>
-      <dl className="re-domain-fields">
-        {["airportCode", "start", "end", "vehicleClass", "covered"].map((id) => (
-          <div key={id} className="re-domain-field">
-            <dt>{id}</dt>
-            <dd>
-              <input
-                key={`${id}-${fieldValue(domain, id)}`}
-                className="re-clarify-text itaa-focus-ring"
-                defaultValue={fieldValue(domain, id)}
-                disabled={busy}
-                aria-label={`Parking ${id}`}
-                onBlur={(event) => {
-                  const next = event.target.value.trim();
-                  if (next !== fieldValue(domain, id)) {
-                    onEdit(id, next);
-                  }
-                }}
-              />
-              <span className="re-domain-src">
-                {domain.fields[id]?.provenance ?? "missing"} · {domain.fields[id]?.source ?? "—"}
-              </span>
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="re-domain-chips">
+        {airport ? <span className="re-fact-chip">{airport}</span> : null}
+        {start && end ? (
+          <span className="re-fact-chip">
+            {parkingInstantChip(start)} → {parkingInstantChip(end)}
+          </span>
+        ) : null}
+        {covered === "preferred" || covered === "required" ? (
+          <span className="re-fact-chip">Covered</span>
+        ) : covered === "none" ? (
+          <span className="re-fact-chip">Uncovered</span>
+        ) : null}
+        {vehicle ? (
+          <span className="re-fact-chip">
+            {vehicle.charAt(0).toUpperCase() + vehicle.slice(1)} vehicle
+          </span>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        className="re-domain-edit itaa-focus-ring"
+        onClick={() => setExpanded((on) => !on)}
+      >
+        {expanded ? "Hide details" : "Edit details"}
+      </button>
+      {expanded ? (
+        <dl className="re-domain-fields">
+          {["airportCode", "start", "end", "vehicleClass", "covered"].map((id) => (
+            <div key={id} className="re-domain-field">
+              <dt>{id}</dt>
+              <dd>
+                <input
+                  key={`${id}-${fieldValue(domain, id)}`}
+                  className="re-clarify-text itaa-focus-ring"
+                  defaultValue={fieldValue(domain, id)}
+                  disabled={busy}
+                  aria-label={`Parking ${id}`}
+                  onBlur={(event) => {
+                    const next = event.target.value.trim();
+                    if (next !== fieldValue(domain, id)) {
+                      onEdit(id, next);
+                    }
+                  }}
+                />
+                <span className="re-domain-src">
+                  {domain.fields[id]?.provenance ?? "missing"} · {domain.fields[id]?.source ?? "—"}
+                </span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       {domain.missing.length > 0 ? (
         <p className="re-clarify-hold">Missing: {domain.missing.join(", ")}</p>
       ) : null}
@@ -1244,42 +1458,56 @@ function ParkingDomainPane({
         </p>
       ) : null}
       {offers.length > 0 ? (
-        <ol className="re-domain-offers">
-          {offers.map((offer) => (
-            <li key={offer.offerId}>
-              {supplierDisplayName(offer.supplierToken)}
-              {offer.recommended ? " · recommended" : ""}
-              {offer.simulation ? " · simulated" : ""}
-              {offer.currency && offer.totalMinor !== undefined
-                ? ` · ${offer.currency} ${(offer.totalMinor / 100).toFixed(2)}`
-                : ""}
-              {stale ? " · not selectable" : ""}
-              {offer.recommended && !stale ? (
-                <button
-                  type="button"
-                  className="re-primary itaa-focus-ring"
-                  disabled={busy}
-                  onClick={() => onTake(offer.offerId)}
-                >
-                  Take this one
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ol>
+        <ul className="re-parking-offer-cards" aria-label="Simulated parking offers">
+          {offers.map((offer) => {
+            const amount =
+              offer.currency && offer.totalMinor !== undefined
+                ? formatMoney(offer.totalMinor, offer.currency)
+                : "";
+            return (
+              <li key={offer.offerId} className="re-parking-offer-card">
+                <strong>{supplierDisplayName(offer.supplierToken)}</strong>
+                <span>
+                  {offer.recommended ? "Recommended · " : ""}
+                  {offer.simulation ? "simulated" : "labelled"}
+                  {amount ? ` · ${amount}` : ""}
+                </span>
+                {stale ? <span>not selectable</span> : null}
+                {offer.recommended && !stale ? (
+                  <button
+                    type="button"
+                    className="re-primary itaa-focus-ring"
+                    disabled={busy}
+                    onClick={() => onTake(offer.offerId)}
+                  >
+                    Take this one
+                  </button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
       ) : null}
     </article>
   );
 }
 
-function RentalDomainPane({ domain }: { domain: AgentDomainState | undefined }) {
+function RentalDomainPane({
+  domain,
+  task,
+}: {
+  domain: AgentDomainState | undefined;
+  task: PlanTask;
+}) {
   return (
     <article className="re-domain-lane re-domain-pane">
       <div className="re-clarify-plan-head">
         <span className="re-clarify-kicker">RENTAL</span>
+        <span className="re-clarify-task-title">{task.title}</span>
         <span className="re-domain-capability">rental.search</span>
         <span className="re-clarify-status">no adapter</span>
       </div>
+      <p className={`re-clarify-support is-${task.support}`}>{task.supportLabel}</p>
       <p className="re-clarify-task-why">
         Requirement only. No rental inventory adapter is integrated, so no offers are shown and none
         are invented.
