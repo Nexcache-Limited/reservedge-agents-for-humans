@@ -6,11 +6,13 @@ Reservedge turns one natural-language trip objective into coordinated flight, ho
 
 ## Judge links
 
-- **Live competition demo:** https://bookingdemo.reservedge.com — competition staging, process-local sessions (a refresh or API restart ends the chat; use **New intent**)
-- **Demo video:** placeholder until the final public video URL is known
+- **Live competition demo:** https://bookingdemo.reservedge.com — Competition staging — sessions are process-local; an API process restart discards active chats.
+- **Demo video:** https://vimeo.com/1226748038?share=copy&fl=sv&fe=ci
 - **Architecture:** [docs/demo-aws/architecture.svg](docs/demo-aws/architecture.svg) ([source](docs/demo-aws/architecture.mmd))
 - **Honesty / simulation boundary:** [docs/submissions-aws/HONESTY.md](docs/submissions-aws/HONESTY.md)
 - **Build provenance:** [docs/submissions-aws/BUILD_PROVENANCE.md](docs/submissions-aws/BUILD_PROVENANCE.md)
+- **Demo script:** [docs/demo-aws/SCRIPT.md](docs/demo-aws/SCRIPT.md)
+- **Devpost copy:** [docs/submissions-aws/DEVPOST.md](docs/submissions-aws/DEVPOST.md)
 
 **SIMULATED — NO REAL CHARGES OR RESERVATIONS**
 

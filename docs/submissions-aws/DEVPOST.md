@@ -1,10 +1,10 @@
-# Devpost description draft
+# Devpost description
 
-**Status:** Ready for Product Owner paste after the private checkpoint merges and the public export is published.  
+**Status:** Final submission copy  
 **Working title:** Reservedge — Intent-to-Action booking agent  
 **Track:** Everyday Agents  
 **Built with:** Strands Agents SDK, Amazon Bedrock, local FastAPI + React UI, LiteAPI sandbox (flights/hotels), Prioticket (experiences), simulated parking Curated offers  
-**Do not check or imply:** Amazon Bedrock AgentCore, real bookings, real payment, live curated marketplaces, or RDN.
+**Do not check or imply:** Amazon Bedrock AgentCore, real bookings, real payment, or live curated marketplaces.
 
 ---
 
@@ -66,17 +66,18 @@ See [BUILD_PROVENANCE.md](BUILD_PROVENANCE.md) and [PROVENANCE.md](PROVENANCE.md
 
 Maximum 5 minutes. Target finished length **4:40–4:55**. Script: [`docs/demo-aws/SCRIPT.md`](../demo-aws/SCRIPT.md) — Script A only (Dubai → London). Architecture: [`docs/demo-aws/architecture.svg`](../demo-aws/architecture.svg). Honesty: [HONESTY.md](HONESTY.md).
 
-**Demo video URL:** _placeholder until the final public video URL is known._
+**Demo video URL:** https://vimeo.com/1226748038?share=copy&fl=sv&fe=ci
 
 ---
 
 ## Submission fields
 
-| Field                    | Value                                                                                      |
-| ------------------------ | ------------------------------------------------------------------------------------------ |
-| Live demo URL            | https://bookingdemo.reservedge.com (competition staging — process-local sessions)          |
-| Public repo URL          | _Product Owner gated — publish after private main merge and sanitized export_              |
-| License                  | Apache-2.0 on the public export; private tree stays all-rights-reserved until that publish |
-| AWS Builder ID           | Operator-only; not in this tree                                                            |
-| Amazon Bedrock AgentCore | Not deployed                                                                               |
-| builder.aws.com post     | Bonus; title must include “Agents for Humans”                                              |
+| Field                    | Value                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| Live demo URL            | https://bookingdemo.reservedge.com (competition staging — process-local sessions) |
+| Demo video URL           | https://vimeo.com/1226748038?share=copy&fl=sv&fe=ci                               |
+| Public repo URL          | https://github.com/Nexcache-Limited/reservedge-agents-for-humans                  |
+| License                  | Apache License 2.0                                                                |
+| AWS Builder ID           | Operator-only; not in this tree                                                   |
+| Amazon Bedrock AgentCore | Not deployed                                                                      |
+| builder.aws.com post     | Bonus; title must include “Agents for Humans”                                     |
