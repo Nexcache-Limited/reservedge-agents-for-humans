@@ -542,6 +542,83 @@ function providerApi(): ItaaApi {
             },
           },
         });
+      } else if (body.gate === "A3") {
+        const offerId = body.offerId ?? "of_01k2m3n4p5q6r7s8t9v0w1x2a2";
+        const held = parking.offerSet?.snapshot;
+        nextView = view(sessionId, {
+          ...current.view,
+          confirmed: true,
+          pendingAuthorization: {
+            gate: "A4",
+            domain: "parking",
+            prompt: "Authorize a simulated reservation of USD 148.00?",
+            resourceId: parking.intentId ?? "pi_01k2m3n4p5q6r7s8t9v0w1x2ag",
+          },
+          domains: {
+            ...current.view.domains,
+            parking: {
+              ...parking,
+              completeness: "accepted",
+              offerSet: {
+                stale: false,
+                intentId: parking.intentId ?? "pi_01k2m3n4p5q6r7s8t9v0w1x2ag",
+                snapshot: {
+                  ...(held ?? {}),
+                  intentId: parking.intentId ?? "pi_01k2m3n4p5q6r7s8t9v0w1x2ag",
+                  state: "ACCEPTANCE_RECORDED",
+                  recommendedOfferId: held?.recommendedOfferId ?? offerId,
+                  offers: held?.offers ?? [],
+                  acceptance: {
+                    acceptanceId: "ac_01k2m3n4p5q6r7s8t9v0w1x2d1",
+                    offerId,
+                    offerVersion: 1,
+                    status: "recorded",
+                  },
+                },
+              },
+            },
+          },
+        });
+      } else if (body.gate === "A4") {
+        const held = parking.offerSet?.snapshot;
+        nextView = view(sessionId, {
+          ...current.view,
+          confirmed: true,
+          pendingAuthorization: null,
+          domains: {
+            ...current.view.domains,
+            parking: {
+              ...parking,
+              completeness: "authorized",
+              offerSet: {
+                stale: false,
+                intentId: parking.intentId ?? "pi_01k2m3n4p5q6r7s8t9v0w1x2ag",
+                snapshot: {
+                  ...(held ?? {}),
+                  intentId: parking.intentId ?? "pi_01k2m3n4p5q6r7s8t9v0w1x2ag",
+                  state: "TRANSACTION_AUTHORIZED_SIMULATED",
+                  offers: held?.offers ?? [],
+                  recommendedOfferId: held?.recommendedOfferId ?? null,
+                  acceptance: held?.acceptance ?? {
+                    acceptanceId: "ac_01k2m3n4p5q6r7s8t9v0w1x2d1",
+                    offerId: "of_01k2m3n4p5q6r7s8t9v0w1x2a2",
+                    offerVersion: 1,
+                    status: "recorded",
+                  },
+                  transaction: {
+                    authorizationId: "ta_01k2m3n4p5q6r7s8t9v0w1x2e1",
+                    acceptanceId: "ac_01k2m3n4p5q6r7s8t9v0w1x2d1",
+                    action: "reserve_parking",
+                    mode: "SIMULATED",
+                    amountMinor: 14800,
+                    currency: "USD",
+                    resultRef: "rr_01k2m3n4p5q6r7s8t9v0w1x2g1",
+                  },
+                },
+              },
+            },
+          },
+        });
       }
       store.set(sessionId, { objective: current.objective, view: nextView });
       return nextView;
@@ -836,6 +913,9 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Updating your plan");
     expect(screen.getByRole("button", { name: "Add note" })).toHaveAttribute("aria-busy", "true");
     expect(document.querySelector(".re-processing-spinner")).not.toBeNull();
+    expect(document.querySelector(".re-clarify-log")?.textContent).toContain(
+      "14 to 19 October 2026",
+    );
     expect(screen.queryByText(/global\.anthropic|itaa-comp-aws|eu-west-2|Bedrock/i)).toBeNull();
   });
 
@@ -895,7 +975,7 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
     expect(screen.queryByRole("button", { name: "Send to Reservedge" })).toBeNull();
     await user.type(await screen.findByLabelText("Add anything else about this trip"), "yes");
     await user.click(screen.getByRole("button", { name: "Add note" }));
-    expect(await screen.findByRole("button", { name: "Take this one" })).toBeInTheDocument();
+    expect((await screen.findAllByRole("button", { name: "Take this one" })).length).toBe(3);
     expect(screen.getAllByText(/SkyShield/).length).toBeGreaterThan(0);
     expect(await screen.findByText("Continue this booking")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Running" })).toHaveAttribute("aria-selected", "true");
@@ -904,27 +984,36 @@ describe("COMP-AWS-03 Clarify & plan agent UI", () => {
     expect(
       within(runningChat as HTMLElement).getByLabelText("Add anything else about this trip"),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Accept recommended offer" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Accept recommended offer" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Begin parking requirement" })).toBeNull();
     expect(screen.queryByText(/SEPARATE FROM DISCLOSURE/i)).toBeNull();
   });
 
-  it("records the selected offer in Running chat and moves a finished booking to History", async () => {
+  it("records the selected offer in Running chat and keeps the conversation after authorization", async () => {
     const user = await startObjective(DEMO_A);
     await user.type(await screen.findByLabelText("Add anything else about this trip"), "yes");
     await user.click(screen.getByRole("button", { name: "Add note" }));
-    await user.click(await screen.findByRole("button", { name: "Take this one" }));
+    await user.click((await screen.findAllByRole("button", { name: "Take this one" }))[0]!);
     expect(
       await screen.findByText(/You accepted the SkyShield offer at USD 148\.00/),
     ).toBeInTheDocument();
     expect(screen.queryByText("Updating your plan")).toBeNull();
     expect(screen.queryByRole("button", { name: "Accept recommended offer" })).toBeNull();
     await user.click(await screen.findByRole("button", { name: /Authorize USD 148\.00/ }));
+    expect(await screen.findByText("Authorization recorded")).toBeInTheDocument();
+    expect(screen.getByLabelText("Simulated parking receipt")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Running" })).toHaveAttribute("aria-selected", "true");
+    const runningChat = document.querySelector(".re-list-chat");
+    expect(runningChat).not.toBeNull();
     expect(
-      (await screen.findByText(/Authorization recorded|This booking is complete/)).textContent,
-    ).toMatch(/Authorization recorded|This booking is complete/);
-    expect(screen.getByRole("tab", { name: "History" })).toHaveAttribute("aria-selected", "true");
-    expect(document.querySelector(".re-list-chat")).toBeNull();
+      within(runningChat as HTMLElement).getByLabelText("Add anything else about this trip"),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "History" }));
+    const historyList = document.querySelector(".re-list") as HTMLElement;
+    expect(within(historyList).getByText("Airport parking · JFK")).toBeInTheDocument();
+    expect(within(historyList).getAllByText("Authorized · simulated").length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("tab", { name: "Running" }));
+    expect(document.querySelector(".re-list-chat")).not.toBeNull();
   });
 
   it("parks an unfinished booking in Pending when a new intent starts", async () => {

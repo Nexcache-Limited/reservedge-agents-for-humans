@@ -8,6 +8,7 @@ import type {
   AgentDomainState,
   AgentPendingAuthorization,
   AgentPendingSearchAuthorization,
+  AgentSessionView,
   AgentSharedBookingContext,
   AgentExperienceSearch,
   AgentFlightSearch,
@@ -93,10 +94,15 @@ export interface AgentPlanBinding {
   domains: Record<string, AgentDomainState>;
   pendingAuthorization: AgentPendingAuthorization | null;
   pendingSearchAuthorization?: AgentPendingSearchAuthorization | null;
+  stayDraft?: {
+    checkIn?: string | null;
+    checkOut?: string | null;
+  } | null;
   buyerSafeMessage: string;
   staySearch: AgentStaySearch | null;
   experienceSearch?: AgentExperienceSearch | null;
   flightSearch?: AgentFlightSearch | null;
+  lastRevisedKind?: AgentSessionView["lastRevisedKind"];
   sharedBookingContext?: AgentSharedBookingContext | null;
   workspace?: AgentWorkspaceMeta | null;
 }
@@ -1258,58 +1264,17 @@ export function sortPlanTasks(
   });
 }
 
-const CAPABILITY_KIND: Record<string, PlanTask["kind"]> = {
-  "flight.search": "flight",
-  "stay.search": "hotel",
-  "parking.search": "parking",
-  "experience.search": "experience",
-};
-
-function domainHadResults(agent: AgentPlanBinding, kind: PlanTask["kind"]): boolean {
-  if (kind === "flight") {
-    return agent.flightSearch != null;
-  }
-  if (kind === "hotel") {
-    return agent.staySearch != null;
-  }
-  if (kind === "parking") {
-    return (agent.domains?.parking?.offerSet.snapshot?.offers?.length ?? 0) > 0;
-  }
-  if (kind === "experience") {
-    return agent.experienceSearch != null;
-  }
-  return false;
-}
-
 export function refinementPinKind(session: PlanSession): PlanTask["kind"] | null {
-  const agent = session.agent;
-  if (agent == null) {
-    return null;
-  }
-  if (agent.flightSearch?.stale === true) {
-    return "flight";
-  }
-  if (agent.staySearch?.stale === true) {
-    return "hotel";
-  }
-  if (agent.domains?.rental?.completeness === "stale") {
-    return "rental";
-  }
+  const revised = session.agent?.lastRevisedKind;
   if (
-    agent.domains?.parking?.offerSet.stale === true ||
-    agent.domains?.parking?.completeness === "stale"
+    revised === "flight" ||
+    revised === "hotel" ||
+    revised === "rental" ||
+    revised === "parking" ||
+    revised === "experience" ||
+    revised === "ents"
   ) {
-    return "parking";
-  }
-  if (agent.experienceSearch?.stale === true) {
-    return "experience";
-  }
-  const pending = agent.pendingSearchAuthorization?.capabilities ?? [];
-  if (pending.length === 1) {
-    const kind = CAPABILITY_KIND[pending[0] ?? ""];
-    if (kind && domainHadResults(agent, kind)) {
-      return kind;
-    }
+    return revised;
   }
   return null;
 }
@@ -1459,6 +1424,12 @@ function parseRoute(text: string): { destination: string; origin: string } {
   );
   if (fromTo?.[1] && fromTo[2]) {
     return { destination: fromTo[2].trim(), origin: fromTo[1].trim() };
+  }
+  const toTo = text.match(
+    /\b(?:travell?ing|going|flying)\s+to\s+([A-Za-z][A-Za-z .'-]+?)\s+to\s+([A-Za-z][A-Za-z .'-]+?)(?=\s+from\s+\d|\s+on\b|\s*$|[.,])/i,
+  );
+  if (toTo?.[1] && toTo[2]) {
+    return { destination: toTo[2].trim(), origin: toTo[1].trim() };
   }
   return { destination: "", origin: "" };
 }

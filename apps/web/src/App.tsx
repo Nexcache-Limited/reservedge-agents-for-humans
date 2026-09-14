@@ -25,7 +25,7 @@ function InboxHome({ api }: { api: ItaaApi }) {
   if (selected?.id.startsWith("pi_")) {
     return <LiveParkingWorkspace api={api} intentId={selected.id} />;
   }
-  if (selected && isLiveChatRow(planSession, selected.id) && selected.status !== "done") {
+  if (selected && isLiveChatRow(planSession, selected.id)) {
     return <Navigate to="/intents/clarify" replace />;
   }
   if (selected) {
@@ -69,7 +69,7 @@ function IntentOrSeed({ api }: { api: ItaaApi }) {
   if (intentId?.startsWith("pi_")) {
     return <LiveParkingWorkspace api={api} />;
   }
-  if (row?.domain === "stay" && isLiveChatRow(planSession, row.id) && row.status !== "done") {
+  if (row?.domain === "stay" && isLiveChatRow(planSession, row.id)) {
     return <Navigate to="/intents/clarify" replace />;
   }
   return <SeedWorkspace selected={row} />;

@@ -2,6 +2,7 @@ import {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type FormEvent,
@@ -9,9 +10,7 @@ import {
   type SetStateAction,
 } from "react";
 import { flushSync } from "react-dom";
-import { useNavigate } from "react-router-dom";
 import type { ItaaApi } from "../api/types.js";
-import type { AgentGrantBody, RankedOffer } from "../api/types.js";
 import {
   AGENT_FAILURE_COPY,
   AGENT_FALLBACK_COPY,
@@ -20,12 +19,10 @@ import {
   isProgressActivity,
   mergeAgentView,
   projectAgentSession,
-  syncPlanSessionWithSnapshot,
   withoutUpdatingActivity,
   withUpdatingActivity,
 } from "../intent-first/agent.js";
 import { firstTurnCopy, projectPlan, type PlanSession } from "../intent-first/plan.js";
-import { formatMoney } from "../fixtures/golden.js";
 
 export function AgentChatPanel({
   api,
@@ -46,7 +43,6 @@ export function AgentChatPanel({
   headingId?: string;
   children?: ReactNode;
 }) {
-  const navigate = useNavigate();
   const generatedId = useId();
   const labelId = headingId ?? generatedId;
   const [draftNote, setDraftNote] = useState("");
@@ -59,19 +55,10 @@ export function AgentChatPanel({
   const failed = session.agent?.failed === true;
   const fallback = session.agent?.fallback === true;
   const agentBacked = session.agent !== undefined && session.agent !== null;
-  const parkingOffers = session.agent?.domains?.parking?.offerSet.snapshot?.offers ?? [];
-  const completeness = session.agent?.domains?.parking?.completeness;
-  const pendingGrant = session.agent?.pendingAuthorization;
-  const blockedA3 =
-    pendingGrant?.gate === "A3" &&
-    (parkingOffers.length === 0 || completeness === "accepted" || completeness === "authorized");
-  const showGrant =
-    pendingGrant != null &&
-    completeness !== "authorized" &&
-    !blockedA3 &&
-    pendingGrant.gate !== "A2" &&
-    pendingGrant.gate !== "A1";
   const inputId = compact ? "running-note" : "clarify-note";
+  const threadRef = useRef<HTMLDivElement>(null);
+  const composeRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
 
   useEffect(() => {
     const sessionId = session.agent?.sessionId;
@@ -106,57 +93,14 @@ export function AgentChatPanel({
     };
   }, [api, failed, session.agent?.sessionId, setPlanSession]);
 
-  async function sendGrant(body: AgentGrantBody) {
-    if (!session.agent || failed || busy) {
+  useEffect(() => {
+    const thread = threadRef.current;
+    if (thread === null || !stickToBottom.current) {
       return;
     }
-    const parking = session.agent.domains?.parking;
-    const intentId = typeof parking?.intentId === "string" ? parking.intentId : "";
-    const liveParking = intentId.startsWith("pi_") && (body.gate === "A3" || body.gate === "A4");
-    flushSync(() => {
-      setBusy(true);
-      setPlanSession(withUpdatingActivity(session));
-    });
-    try {
-      if (liveParking && body.gate === "A3") {
-        const offers = parking?.offerSet.snapshot?.offers ?? [];
-        const offerId =
-          body.offerId ??
-          parking?.offerSet.snapshot?.recommendedOfferId ??
-          offers.find((item) => item.recommended)?.offerId;
-        const offer = offers.find((item) => item.offerId === offerId);
-        if (offerId === undefined || offer === undefined) {
-          throw new Error("missing offer");
-        }
-        const next = await api.intakeAccept(intentId, {
-          offerId,
-          offerVersion: offer.version,
-        });
-        flushSync(() => {
-          setPlanSession(syncPlanSessionWithSnapshot(session, next));
-        });
-        return;
-      }
-      if (liveParking && body.gate === "A4") {
-        const next = await api.intakeAuthorize(intentId);
-        flushSync(() => {
-          setPlanSession(syncPlanSessionWithSnapshot(session, next));
-        });
-        navigate(`/intents/${intentId}/confirmation`);
-        return;
-      }
-      const view = await api.grantAgentSession(session.agent.sessionId, body);
-      flushSync(() => {
-        setPlanSession(mergeAgentView(session, view));
-      });
-    } catch {
-      flushSync(() => {
-        setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY));
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
+    thread.scrollTop = thread.scrollHeight;
+    composeRef.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [session.agent?.transcript, session.agent?.activity, session.agent?.buyerSafeMessage, busy]);
 
   async function sendNote(event: FormEvent) {
     event.preventDefault();
@@ -165,35 +109,33 @@ export function AgentChatPanel({
     }
     const message = draftNote.trim();
     setDraftNote("");
-    const pending = session.agent?.pendingAuthorization;
-    if (
-      session.agent &&
-      !failed &&
-      pending &&
-      (pending.gate === "A3" || pending.gate === "A4") &&
-      isAffirmativeGrant(message)
-    ) {
-      await sendGrant({
-        gate: pending.gate as AgentGrantBody["gate"],
-        domain: "parking",
-        ...(typeof pending.offerId === "string" ? { offerId: pending.offerId } : {}),
-      });
-      return;
-    }
     const extraNote = `${session.extraNote} ${message}`.trim();
     if (session.agent && !failed) {
+      const agent = session.agent;
+      const last = agent.transcript[agent.transcript.length - 1];
+      const alreadyShown = last?.role === "user" && last.text === message;
+      const withUser = alreadyShown
+        ? { ...session, extraNote }
+        : {
+            ...session,
+            extraNote,
+            agent: {
+              ...agent,
+              transcript: [...agent.transcript, { role: "user", text: message }],
+            },
+          };
       flushSync(() => {
         setBusy(true);
-        setPlanSession(withUpdatingActivity({ ...session, extraNote }));
+        setPlanSession(withUpdatingActivity(withUser));
       });
       try {
-        const view = await api.postAgentTurn(session.agent.sessionId, { message });
+        const view = await api.postAgentTurn(agent.sessionId, { message });
         flushSync(() => {
-          setPlanSession(mergeAgentView({ ...session, extraNote }, view));
+          setPlanSession(mergeAgentView(withUser, view));
         });
       } catch {
         flushSync(() => {
-          setPlanSession(failAgentSession({ ...session, extraNote }, AGENT_FAILURE_COPY));
+          setPlanSession(failAgentSession(withUser, AGENT_FAILURE_COPY));
         });
       } finally {
         setBusy(false);
@@ -217,7 +159,17 @@ export function AgentChatPanel({
           {compact ? "Continue this booking" : agentBacked ? "Active session" : "Intake only"}
         </span>
       </div>
-      <div className="re-clarify-thread">
+      <div
+        className="re-clarify-thread"
+        ref={threadRef}
+        onScroll={() => {
+          const thread = threadRef.current;
+          if (thread === null) {
+            return;
+          }
+          stickToBottom.current = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 72;
+        }}
+      >
         <div className="re-clarify-log">
           {agentBacked && (session.agent?.transcript.length ?? 0) > 0 ? (
             <>
@@ -255,26 +207,6 @@ export function AgentChatPanel({
                 {event.message}
               </p>
             ))}
-          {showGrant && session.agent?.pendingAuthorization ? (
-            <button
-              type="button"
-              className="re-primary itaa-focus-ring re-clarify-update"
-              disabled={busy}
-              aria-busy={busy || undefined}
-              onClick={() =>
-                sendGrant({
-                  gate: session.agent?.pendingAuthorization?.gate as AgentGrantBody["gate"],
-                  domain: "parking",
-                  ...(typeof session.agent?.pendingAuthorization?.offerId === "string"
-                    ? { offerId: session.agent.pendingAuthorization.offerId }
-                    : {}),
-                })
-              }
-            >
-              {busy ? <span className="re-processing-spinner" aria-hidden /> : null}
-              {grantLabel(session.agent.pendingAuthorization.gate, parkingOffers)}
-            </button>
-          ) : null}
           {fallback ? (
             <p className="re-clarify-enough" role="status">
               {AGENT_FALLBACK_COPY}
@@ -289,7 +221,7 @@ export function AgentChatPanel({
           )}
         </div>
       </div>
-      <div className="re-clarify-compose-wrap" aria-busy={busy || undefined}>
+      <div className="re-clarify-compose-wrap" ref={composeRef} aria-busy={busy || undefined}>
         {busy ? (
           <p className="re-clarify-progress" role="status">
             <span className="re-processing-spinner" aria-hidden />
@@ -322,33 +254,4 @@ export function AgentChatPanel({
       </div>
     </section>
   );
-}
-
-function isAffirmativeGrant(text: string): boolean {
-  return /^(yes|yeah|yep|ok|okay|please|confirm|go ahead|request offers|authorize|accept)([.!]?)$/i.test(
-    text.trim(),
-  );
-}
-
-function grantLabel(gate: string, offers: RankedOffer[] = []): string {
-  if (gate === "A1") {
-    return "Confirm parking requirement";
-  }
-  if (gate === "A2") {
-    return "Request parking offers";
-  }
-  if (gate === "A3") {
-    return "Accept recommended offer";
-  }
-  const selected =
-    offers.find((item) => item.recommended) ?? offers.find((item) => item.totalMinor !== undefined);
-  if (
-    selected !== undefined &&
-    selected.totalMinor !== undefined &&
-    typeof selected.currency === "string" &&
-    selected.currency !== ""
-  ) {
-    return `Authorize ${formatMoney(selected.totalMinor, selected.currency)}`;
-  }
-  return "Authorize simulated reservation";
 }

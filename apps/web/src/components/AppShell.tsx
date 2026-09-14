@@ -7,6 +7,7 @@ import {
   isLiveChatRow,
   mergeAgentInboxRows,
   parkPlanSession,
+  parkingHistoryRow,
   planSessionToRow,
 } from "../reservedge/plan-inbox.js";
 import { PortfolioContext, usePortfolio } from "../reservedge/portfolio.js";
@@ -79,6 +80,7 @@ export function PortfolioLayout({ api }: { api: ItaaApi }) {
   useEffect(() => {
     const agentRows = [
       planSessionToRow(planSession),
+      parkingHistoryRow(planSession),
       ...parkedSessions.map((item) => planSessionToRow(item)),
     ];
     if (agentRows.every((row) => row == null)) {
@@ -117,12 +119,7 @@ export function PortfolioLayout({ api }: { api: ItaaApi }) {
   function selectIntent(id: string) {
     const restored = activateParked(id);
     setSelectedId(id);
-    const row = intents.find((item) => item.id === id) ?? null;
-    if (
-      (isLiveChatRow(planSession, id) || restored) &&
-      row?.status !== "done" &&
-      row?.status !== "cancelled"
-    ) {
+    if (isLiveChatRow(planSession, id) || restored) {
       navigate("/intents/clarify");
       return;
     }

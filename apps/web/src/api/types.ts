@@ -437,6 +437,7 @@ export interface AgentFlightSearch {
     origin?: string;
     destination?: string;
     date?: string;
+    dateEnd?: string;
   } | null;
   offers: AgentFlightOffer[];
   buyerSafeMessage: string;
@@ -510,6 +511,8 @@ export interface AgentOfferSet {
     recommendedOfferId?: string | null;
     acceptance?: AcceptanceView | null;
     transaction?: TransactionView | null;
+    windowStart?: string | null;
+    windowEnd?: string | null;
   } | null;
 }
 
@@ -559,6 +562,32 @@ export interface AgentSessionView {
   pendingAuthorizations: Array<Record<string, string>>;
   pendingAuthorization?: AgentPendingAuthorization | null;
   pendingSearchAuthorization?: AgentPendingSearchAuthorization | null;
+  searchExecution?: Array<{
+    capability: string;
+    authorized: boolean;
+    dispatched: boolean;
+    outcome: string;
+  }>;
+  pendingDateCascade?: {
+    source?: string;
+    start?: string;
+    end?: string;
+    originalStart?: string;
+    originalEnd?: string;
+  } | null;
+  lastRevisedKind?:
+    | "flight"
+    | "hotel"
+    | "rental"
+    | "parking"
+    | "experience"
+    | "ents"
+    | "trip"
+    | null;
+  stayDraft?: {
+    checkIn?: string | null;
+    checkOut?: string | null;
+  } | null;
   parkingHandoff: AgentParkingHandoff | null;
   confirmed: boolean;
   fallback: boolean;

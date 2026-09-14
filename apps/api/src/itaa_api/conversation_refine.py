@@ -7,25 +7,41 @@ updated only by these parsers.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal
 
 from itaa_api.agent_requirements import NAMED_AIRPORTS, normalize_iata
 from itaa_api.calendar_resolve import resolve_ymd
 
-DateScope = Literal["all", "stay", "parking"]
+DateScope = Literal["all", "stay", "parking", "flight"]
 
 _MONTH = (
     r"(january|february|march|april|may|june|july|august|september|october|"
     r"november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)"
 )
-_MUTATION = re.compile(r"\b(change|update|switch|move|instead)\b", re.I)
+_MUTATION = re.compile(r"\b(change|update|modify|switch|move|instead)\b", re.I)
 _STAY_ONLY = re.compile(
     r"\b(only(?: the)? (?:hotel|stay)|hotel dates|stay dates|change only the hotel)\b",
     re.I,
 )
 _PARKING_ONLY = re.compile(
     r"\b(only(?: the)? parking|parking dates|change only(?: the)? parking)\b",
+    re.I,
+)
+_FLIGHT_ONLY = re.compile(
+    r"\b(?:only(?: the)? flight|flight dates|"
+    r"(?:change|update|modify|switch|move)(?: the)? flight(?:s| dates| booking)?|"
+    r"change only(?: the)? flight)\b",
+    re.I,
+)
+_CASCADE_FOLLOW = re.compile(
+    r"\b(same dates(?: for everything)?|follow(?: the same dates)?|"
+    r"hotel and parking (?:too|as well)|everything)\b",
+    re.I,
+)
+_CASCADE_HOLD = re.compile(
+    r"\b(keep(?: hotel| parking| them)?|stay on|as they are|"
+    r"original dates|don't change(?: the)? (?:hotel|parking)|keep hotel)\b",
     re.I,
 )
 _HOLD_PARKING = re.compile(
@@ -53,11 +69,46 @@ _DESTINATION = re.compile(
     r"|\bchange(?: the)? hotel to\s+([A-Za-z][A-Za-z .'-]{1,40})",
     re.I,
 )
+_CHECKIN_HINT = re.compile(r"\b(check[\s-]?in|hotel|stay)\b", re.I)
+_INSTEAD_DAY = re.compile(
+    r"(?:to|on)\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?"
+    r"(?:\s+" + _MONTH + r")?"
+    r"(?:\s+(\d{4}))?"
+    r"\s+instead\s+of(?:\s+(?:the\s+)?)?(\d{1,2})(?:st|nd|rd|th)?",
+    re.I,
+)
+_CHECKIN_ON = re.compile(
+    r"\bcheck[\s-]?in\s+(?:to|on|from)\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?"
+    r"(?:\s+" + _MONTH + r")?(?:\s+(\d{4}))?",
+    re.I,
+)
+_BARE_RANGE = re.compile(
+    r"\b(\d{1,2})(?:st|nd|rd|th)?\s*(?:to|[–-]|until|through)\s*"
+    r"(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\b",
+    re.I,
+)
+_CLOCKISH = re.compile(r"\b(?:am|pm)\b|\d:\d{2}", re.I)
+_PLACE = r"([A-Za-z]{3}|[A-Za-z][A-Za-z .'-]{1,40}?)"
 _FLIGHT_LEG = re.compile(
     r"\b(?:flight|flights|fly)\s+from\s+([A-Za-z][A-Za-z .'-]{1,40}?)\s+to\s+"
     r"([A-Za-z][A-Za-z .'-]{1,40}?)"
     r"(?:\s+on\s+(\d{1,2}(?:st|nd|rd|th)?\s+" + _MONTH + r"(?:\s+\d{4})?))?"
     r"(?=\s*[.,]|$)",
+    re.I,
+)
+_FLIGHT_ORIGIN_CHANGE = re.compile(
+    r"\b(?:change|update|modify|switch|move)\s+"
+    r"(?:the\s+)?(?:flight\s+)?"
+    r"(?:departure|origin)(?:\s+airport)?\s+"
+    r"(?:from\s+" + _PLACE + r"\s+)?to\s+" + _PLACE + r"(?=\s*[.,;!?]|$)",
+    re.I,
+)
+_DEPARTURE_AIRPORT_HINT = re.compile(
+    r"\b(?:departure|origin)\s+airport\b|\bflight\s+origin\b|\bdeparting\s+airport\b",
+    re.I,
+)
+_TO_PLACE = re.compile(
+    r"\bto\s+" + _PLACE + r"(?=\s*[.,;!?]|$)",
     re.I,
 )
 
@@ -75,14 +126,20 @@ class BuyerRefinement:
     stay_max_minor: int | None = None
     stay_currency: str | None = None
     flight_origin: str | None = None
+    flight_origin_place: str | None = None
     flight_destination: str | None = None
     flight_date: str | None = None
+    start_day: int | None = None
+    end_day: int | None = None
+    instead_of_day: int | None = None
 
     def applies(self) -> bool:
         return any(
             (
                 self.start_date,
                 self.end_date,
+                self.start_day,
+                self.end_day,
                 self.destination,
                 self.parking_airport,
                 self.drop_parking,
@@ -97,9 +154,13 @@ class BuyerRefinement:
 def is_explicit_date_mutation(text: str, change: BuyerRefinement) -> bool:
     """True when the buyer is mutating dates, not first stating them."""
 
+    if change.start_day is not None and change.end_day is not None:
+        return True
+    if change.start_day is not None and change.instead_of_day is not None:
+        return True
     if not change.start_date or not change.end_date:
         return False
-    if change.date_scope in {"stay", "parking"}:
+    if change.date_scope in {"stay", "parking", "flight"}:
         return True
     return _MUTATION.search(text) is not None
 
@@ -131,6 +192,22 @@ def parse_trip_dates(text: str) -> tuple[str, str] | None:
         end = resolve_ymd(dashed.group(3), int(dashed.group(2)), dashed.group(4))
         if start and end:
             return _ordered(start, end)
+    leading = re.search(
+        rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?{_MONTH}(?:\s+(\d{{4}}))?\s*"
+        rf"(?:to|[–-]|until|through)\s*(?:the\s+)?(\d{{1,2}})(?:st|nd|rd|th)?"
+        rf"(?:\s+(?:of\s+)?{_MONTH})?(?:\s+(\d{{4}}))?\b",
+        text,
+        re.I,
+    )
+    if leading:
+        start = resolve_ymd(leading.group(2), int(leading.group(1)), leading.group(3))
+        end = resolve_ymd(
+            leading.group(5) or leading.group(2),
+            int(leading.group(4)),
+            leading.group(6) or leading.group(3),
+        )
+        if start and end:
+            return _ordered(start, end)
     return None
 
 
@@ -152,28 +229,43 @@ def parse_refinement(text: str) -> BuyerRefinement:
     cleaned = text.strip()
     dates = parse_trip_dates(cleaned)
     date_scope: DateScope = "all"
-    if dates is not None:
-        if _STAY_ONLY.search(cleaned):
-            date_scope = "stay"
-        elif _PARKING_ONLY.search(cleaned):
-            date_scope = "parking"
+    if _FLIGHT_ONLY.search(cleaned):
+        date_scope = "flight"
+    elif _STAY_ONLY.search(cleaned):
+        date_scope = "stay"
+    elif _PARKING_ONLY.search(cleaned):
+        date_scope = "parking"
     hold_parking = _HOLD_PARKING.search(cleaned) is not None
     destination = None
     dest_match = _DESTINATION.search(cleaned)
     if dest_match:
         destination = _place_name(dest_match.group(1) or dest_match.group(2) or "")
+    origin_change = _FLIGHT_ORIGIN_CHANGE.search(cleaned)
+    parking_hint = bool(re.search(r"\bparking\b", cleaned, re.I))
+    airport_hint = bool(re.search(r"\bairport\b", cleaned, re.I))
+    is_parking_airport = parking_hint or (
+        airport_hint and origin_change is None and _DEPARTURE_AIRPORT_HINT.search(cleaned) is None
+    )
     airport = None
-    if re.search(r"\b(airport|parking)\b", cleaned, re.I):
-        airport = normalize_iata(cleaned)
+    if is_parking_airport:
+        target = _TO_PLACE.search(cleaned)
+        airport = _place_to_iata(target.group(1)) if target else ""
+        if not airport:
+            airport = normalize_iata(cleaned)
         if not airport:
             for name, code in NAMED_AIRPORTS.items():
                 if name in cleaned.lower():
                     airport = code
                     break
     flight_origin = None
+    flight_origin_place = None
     flight_destination = None
     flight_date = None
-    flight = _FLIGHT_LEG.search(cleaned)
+    if origin_change:
+        raw_origin = (origin_change.group(2) or origin_change.group(1) or "").strip()
+        flight_origin = _place_to_iata(raw_origin)
+        flight_origin_place = _place_name(raw_origin) if raw_origin else None
+    flight = None if origin_change else _FLIGHT_LEG.search(cleaned)
     if flight:
         flight_origin = _place_to_iata(flight.group(1))
         flight_destination = _place_to_iata(flight.group(2))
@@ -190,24 +282,146 @@ def parse_refinement(text: str) -> BuyerRefinement:
         currency = "GBP"
     start = dates[0] if dates else None
     end = dates[1] if dates else None
+    start_day = None
+    end_day = None
+    instead_of_day = None
+    if start is None:
+        bare = _BARE_RANGE.search(cleaned)
+        if bare and _CLOCKISH.search(cleaned) is None:
+            has_ordinal = re.search(r"\d(?:st|nd|rd|th)", bare.group(0), re.I) is not None
+            if has_ordinal or _MUTATION.search(cleaned) is not None:
+                start_day = int(bare.group(1))
+                end_day = int(bare.group(2))
+        shifted = _INSTEAD_DAY.search(cleaned) or _CHECKIN_ON.search(cleaned)
+        if shifted and end_day is None:
+            start_day = int(shifted.group(1))
+            if shifted.re is _INSTEAD_DAY:
+                instead_of_day = int(shifted.group(4))
+            month = shifted.group(2)
+            year = shifted.group(3)
+            if month:
+                resolved = resolve_ymd(month, start_day, year)
+                if resolved:
+                    start = resolved
+        if (
+            start_day is not None
+            and end_day is None
+            and date_scope == "all"
+            and _CHECKIN_HINT.search(cleaned)
+        ):
+            date_scope = "stay"
     return BuyerRefinement(
         start_date=start,
         end_date=end,
         date_scope=date_scope,
         hold_parking_dates=hold_parking,
         destination=destination,
-        parking_airport=airport if re.search(r"\b(parking|airport)\b", cleaned, re.I) else None,
+        parking_airport=airport if is_parking_airport else None,
         drop_parking=_DROP_PARKING.search(cleaned) is not None,
         add_experience=_ADD_EXPERIENCE.search(cleaned) is not None,
         stay_max_minor=budget_minor,
         stay_currency=currency,
         flight_origin=flight_origin,
+        flight_origin_place=flight_origin_place,
         flight_destination=flight_destination,
         flight_date=flight_date,
+        start_day=start_day,
+        end_day=end_day,
+        instead_of_day=instead_of_day,
     )
 
 
-def refinement_copy(change: BuyerRefinement) -> str:
+def bind_day_shift(
+    change: BuyerRefinement,
+    *,
+    stay_start: str,
+    stay_end: str,
+    parking_authorized: bool = False,
+    last_text: str = "",
+    flight_start: str = "",
+    flight_end: str = "",
+) -> BuyerRefinement:
+    """Resolve month-less day shifts against the current trip window."""
+
+    if change.start_date and change.end_date:
+        return change
+    if change.start_day is not None and change.end_day is not None:
+        anchor = _latest_iso(stay_start, stay_end, flight_start, flight_end)
+        if len(anchor) != 10:
+            return change
+        start = _iso_with_day(anchor, change.start_day)
+        end = _iso_with_day(anchor, change.end_day)
+        if not start or not end:
+            return change
+        if start > end:
+            end = _shift_month(end, 1)
+        return replace(change, start_date=start, end_date=end)
+    anchor_start = stay_start.strip()[:10]
+    anchor_end = stay_end.strip()[:10]
+    if len(anchor_start) != 10 or len(anchor_end) != 10:
+        return change
+    scope = change.date_scope
+    if scope == "all":
+        if _CHECKIN_HINT.search(last_text) or parking_authorized:
+            scope = "stay"
+        elif re.search(r"\bparking\b", last_text, re.I):
+            scope = "parking"
+        else:
+            scope = "stay"
+    if scope != "stay":
+        return change
+    start = change.start_date or (
+        _iso_with_day(anchor_start, change.start_day) if change.start_day is not None else ""
+    )
+    if not start or start > anchor_end:
+        return change
+    return replace(
+        change,
+        start_date=start,
+        end_date=anchor_end,
+        date_scope="stay",
+        hold_parking_dates=True,
+    )
+
+
+def parse_date_cascade_reply(text: str) -> Literal["follow", "hold"] | None:
+    cleaned = text.strip()
+    if not cleaned:
+        return None
+    if _CASCADE_HOLD.search(cleaned) and not re.search(
+        r"\b(same dates|follow|everything)\b", cleaned, re.I
+    ):
+        return "hold"
+    if _CASCADE_FOLLOW.search(cleaned):
+        return "follow"
+    if re.fullmatch(
+        r"(?:yes|yeah|yep|yup|ok|okay|sure|proceed)(?:[,.]?\s+"
+        r"(?:please|they should|they can|go ahead|do it))?[.!]?",
+        cleaned,
+        re.I,
+    ):
+        return "follow"
+    if re.fullmatch(r"(?:go ahead|please do|do it|search (?:them|those) too)[.!]?", cleaned, re.I):
+        return "follow"
+    return None
+
+
+def cascade_copy(change: BuyerRefinement, *, original_start: str, original_end: str) -> str:
+    if not change.start_date or not change.end_date:
+        return ""
+    window = f"{_buyer_day(change.start_date)} to {_buyer_day(change.end_date)}"
+    held = (
+        f"{_buyer_day(original_start)} to {_buyer_day(original_end)}"
+        if original_start and original_end
+        else "the original dates"
+    )
+    return (
+        f"I'll change the flight to {window}. Should the hotel and parking follow the same dates, "
+        f"or stay on {held}?"
+    )
+
+
+def refinement_copy(change: BuyerRefinement, *, had_results: bool = False) -> str:
     parts: list[str] = []
     if change.start_date and change.end_date:
         window = f"{_buyer_day(change.start_date)} to {_buyer_day(change.end_date)}"
@@ -215,6 +429,8 @@ def refinement_copy(change: BuyerRefinement) -> str:
             parts.append(f"I've updated the hotel dates to {window}. Parking dates are unchanged.")
         elif change.date_scope == "parking":
             parts.append(f"I've updated the parking dates to {window}. Hotel dates are unchanged.")
+        elif change.date_scope == "flight":
+            parts.append(f"I've updated the flight dates to {window}.")
         elif change.hold_parking_dates:
             parts.append(
                 f"I've updated the trip and hotel dates to {window}. "
@@ -239,9 +455,13 @@ def refinement_copy(change: BuyerRefinement) -> str:
         parts.append(
             f"I've noted a flight from {change.flight_origin} to {change.flight_destination}."
         )
+    elif change.flight_origin:
+        label = change.flight_origin_place or change.flight_origin
+        parts.append(f"I've updated the departure airport to {label}.")
     if not parts:
         return ""
-    parts.append("Previous search results for the changed tasks are out of date.")
+    if had_results:
+        parts.append("Previous search results for the changed tasks are out of date.")
     return " ".join(parts)
 
 
@@ -249,6 +469,31 @@ def _ordered(start: str, end: str) -> tuple[str, str]:
     if start <= end:
         return start, end
     return end, start
+
+
+def _latest_iso(*values: str) -> str:
+    dates = [item.strip()[:10] for item in values if len(item.strip()) >= 10]
+    return max(dates) if dates else ""
+
+
+def _iso_with_day(iso: str, day: int) -> str:
+    if day < 1 or day > 31 or len(iso) < 10:
+        return ""
+    return f"{iso[:8]}{day:02d}"
+
+
+def _shift_month(iso: str, months: int) -> str:
+    if len(iso) < 10:
+        return iso
+    year = int(iso[:4])
+    month = int(iso[5:7]) + months
+    while month > 12:
+        month -= 12
+        year += 1
+    while month < 1:
+        month += 12
+        year -= 1
+    return f"{year:04d}-{month:02d}-{iso[8:10]}"
 
 
 def _month_num(raw: str) -> str:
@@ -311,6 +556,8 @@ def _place_name(raw: str) -> str:
         return "Edinburgh"
     if lower in {"london"}:
         return "London"
+    if lower in {"mumbai"}:
+        return "Mumbai"
     return cleaned.title()
 
 
@@ -325,6 +572,9 @@ def _place_to_iata(raw: str) -> str:
     mapped = _AIRPORT_PLACES.get(lower)
     if mapped:
         return mapped
+    upper = re.sub(r"[^A-Za-z]+", "", raw).upper()
+    if len(upper) == 3 and upper in set(_AIRPORT_PLACES.values()):
+        return upper
     return ""
 
 
@@ -333,4 +583,8 @@ _AIRPORT_PLACES: dict[str, str] = {
     "london heathrow": "LHR",
     "gatwick": "LGW",
     "stansted": "STN",
+    "mumbai": "BOM",
+    "bom": "BOM",
+    "milan": "MXP",
+    "dubai": "DXB",
 }

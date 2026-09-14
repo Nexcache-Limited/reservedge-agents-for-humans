@@ -1,10 +1,63 @@
-# UAT instructions — fake mode (COMP-AWS-05)
+# UAT — final human checkpoint (14 September 2026)
 
-Run against the green fake-mode implementation for the default demo pack. Do not set `ITAA_AWS_MODEL_MODE=live` for this fake-mode checklist. Live Plan UAT is in [LIVE_UAT.md](LIVE_UAT.md).
+Primary evidence is the hosted competition staging at https://bookingdemo.reservedge.com with **Simulation mode** on and live Bedrock behind `/v1/agent/**`. Local fake-mode remains available for `make check` and credential-free clones.
 
-Browser: `http://127.0.0.1:5180` after the setup in [README.md](README.md). Product path is `/v1/agent/**`.
+Product path: `/v1/agent/**`. Sessions are process-local. After restart, use **New intent**.
 
-Paste objectives **exactly** (spacing included). Fake PlanTurns key off normalized full-string match. A free-form follow-up note is concatenated onto the objective and will **miss** the Demo A/B fixtures — use structured answers for same-session refinement.
+## Final human UAT truth (accepted)
+
+| Script                                                                                                  | Result                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **A** Dubai → London, search, date cascade, month-less second shift, optional simulated parking receipt | **PASS**                                                                                                                             |
+| **B** Hotel-only date change after parking exists                                                       | **PASS**                                                                                                                             |
+| **C** Keep hotel/parking when changing flight                                                           | **PASS**                                                                                                                             |
+| **D** Mumbai → Milan / MXP honesty                                                                      | **PASS** on honesty (no invented JFK/Heathrow lots). **MXP airport-clarification usability issue accepted.** Video avoids Milan/MXP. |
+| **E** Messy human chat                                                                                  | **Functional PASS.** Typo-spam may repeat running-search messages. **Accepted.** Video does not use typo-spam.                       |
+
+Additional known low-severity presentation issue: raw baggage JSON on some sandbox flight cards. No further product fixes for typo-spam, MXP, or baggage JSON unless required for build correctness.
+
+## Script A — primary demo (must still pass)
+
+Start a **New intent**. Paste exactly:
+
+```text
+I am travelling from Dubai to London on the the 12th of october. flight booking needed. hotel in London needed fro 12 to 16 October. covered parking also needed in heathrow from 12 to 16 from 7 am to 10 pm
+```
+
+1. If asked which airports for the flight: `dxb to London` or `all airports`.
+2. When asked to search: `yes`.
+3. **Pass:** Flight, then Hotel, then Airport parking. Shared context ~12–16 Oct, LHR parking 07:00–22:00. Three **Curated offer** parking cards. No JFK. No “this booking is complete”.
+4. `change the flight search to 19 to 22nd october` — agent asks whether hotel and parking should follow.
+5. `yes` — all three move to 19–22 Oct and re-search. Lane order unchanged.
+6. `change the dates to 23rd to 25th` (no month) — **23–25 October 2026**. All three update.
+7. Optional: **Take this one** → authorize simulated reservation. Receipt is simulated. Flight and hotel remain changeable.
+
+## Script B — hotel-only after parking exists
+
+Same opening, search with `yes`. Then `check-in to 13th instead of 12`. **Pass:** hotel window shifts; parking dates held; parking does not jump to the top.
+
+## Script C — keep hotel/parking when changing flight
+
+Search first. `modify the flight booking to 15th October to 18th.` When asked: `keep hotel and parking`. **Pass:** only flight dates/search change.
+
+## Script D — honesty / empty catalog
+
+```text
+Travelling from Mumbai to Milan from 20 to 30 October. Need flight, hotel and parking at the airport.
+```
+
+**Pass:** does not collapse to JFK. Empty or declined parking at MXP is acceptable if labelled honestly. Do not invent Heathrow/JFK lots. Clarification quality at unnamed Milan airports is an accepted usability weakness.
+
+## Script E — messy human chat
+
+Typos, `proceed`, `okay`, mid-search notes. Watch spinner-before-bubble, lost history, duplicate searches. Repeating running-search copy under typo-spam is accepted.
+
+## Honesty / durability checks
+
+- [ ] Restart the API process: agent `unknown_resource`. Start **New intent**.
+- [ ] No AWS account id or operator profile in buyer-visible projection JSON.
+- [ ] Parking receipt `mode` is `SIMULATED`.
+- [ ] Flight/hotel copy remains sandbox research, not a ticket/reservation.
 
 ## Automated evidence
 
@@ -12,53 +65,8 @@ Paste objectives **exactly** (spacing included). Fake PlanTurns key off normaliz
 /usr/bin/make check
 ```
 
-Expect Python coverage ≥ 90% and web statement coverage at the Vite threshold. COMP-AWS-04 evals/adversarial/security files must stay green.
+Python coverage ≥ 90% and web statement coverage at the Vite threshold.
 
-## Demo C — arbitrary objective, clarification, same-session refinement
+## Local fake-mode (credential-free)
 
-1. Open the composer: “What are you planning or trying to get done?”
-2. Paste: `I'm going away next month and I'll need a car.`
-3. Click **Start booking**.
-4. **Pass:** Clarify & Plan is `clarify`. At least one blocking question (exact dates; often also departing-from). Parking is **not** canned JFK. No SkyShield.
-5. Enter exact dates in the schedule fields **one at a time** (any valid future range). Optionally set departing-from to a real IATA code that is **not** implied by a JFK collapse.
-6. Click **Answer and update plan**.
-7. **Pass:** Same `as_*` session. Plan updates. Still not a single-task JFK parking plan.
-
-## Demo B — Explicit / Inferred / Proposed
-
-1. New objective (new session after API restart or a fresh Start booking):  
-   `I'm travelling from London to Edinburgh for a conference 14–19 October 2026 and I'll need a car when I land, somewhere near the venue.`
-2. **Pass:** Rental **Explicit**; parking **Inferred**; hotel **Proposed**. Flight is not Explicit. Destination Edinburgh; inferred parking airport EDI.
-3. Click **Confirm plan**.
-4. **Pass:** Status “Plan confirmed”. Nothing dispatched to suppliers. Honesty copy still visible.
-
-Parking on Demo B is inferred at EDI. The locked SkyShield 671000 vector is the **JFK** fixture — do not use Demo B for the ranking screenshot.
-
-## Demo A — confirm and simulated parking A1–A4
-
-1. New session. Paste exactly:  
-   `I'm flying from JFK on September 3 at 1 PM and returning September 8 at 10 PM. I have a standard EV, prefer covered parking, and don't want a shuttle longer than 20 minutes.`
-2. **Pass:** Parking **Explicit**. No false Explicit hotel.
-3. **Confirm plan**.
-4. On the parking task, **Begin parking requirement**.
-5. On intake, **Use the example** (exact Demo A sentence) then **Send to Reservedge**. The reconstructed handoff draft misses the fake extractor fixture.
-6. **A1** **Confirm requirement** — copy says no supplier has been contacted yet.
-7. **A2** **Send this request** (live parking chrome) — ParkDirect, SkyShield, TerminalFlex; isolated lanes. Progress: “Suppliers are answering.”
-8. **See the recommendation**. **Pass:** SkyShield **USD 148.00** (do not expect a numeric ranking overlay or the prototype JetPark $71.40).
-9. **A3** **Confirm offer selection**.
-10. **A4** **Authorize USD 148.00**. Mode on screen is simulated.
-11. **Pass:** **SIMULATED RECEIPT**. Copy: no card charged, no supplier reservation created.
-
-Say on camera: supplier execution and payment are simulated.
-
-## Honesty / durability checks
-
-- [ ] Restart the Python process, reload Clarify & Plan: “No plan in this session” / agent `unknown_resource`.
-- [ ] No AWS account id, model id, or `global.anthropic` in buyer-visible projection JSON.
-- [ ] Receipt `mode` is `SIMULATED`.
-
-## Live Bedrock UAT
-
-Agreement is `AVAILABLE`. Dedicated-role smoke test and local product-path Plan UAT succeeded 7 September 2026. One Bedrock cycle per planning turn (~6–8 s HTTP); the earlier two-cycle ~10–16 s figures are superseded. Default live mode without `ITAA_AWS_LIVE_INVOKE=1` still fails closed. The live Plan path is frozen for the competition unless a demonstrated defect appears.
-
-See [LIVE_UAT.md](LIVE_UAT.md) for configuration and results. Authorized live recording shot list: [LIVE_RECORDING.md](../demo-aws/LIVE_RECORDING.md) (do not record until Product Owner authorizes). Remaining gates: AgentCore, live-demo recording, public publish.
+For clones without Bedrock: keep `ITAA_AWS_MODEL_MODE=fake`. Historical Demo A/B/C fixtures and A1–A4 parking grants remain in the test suite. They are not the judge video. Live hosted UAT superseded them as the camera script on 14 September 2026.

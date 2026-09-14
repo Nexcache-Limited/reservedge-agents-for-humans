@@ -25,9 +25,11 @@ PREBOOK_PATH = "/v3.0/rates/prebook"
 BOOK_PATH = "/v3.0/rates/book"
 DEFAULT_BASE_URL = "https://api.liteapi.travel"
 DEFAULT_BOOK_BASE_URL = "https://book.liteapi.travel"
-DEFAULT_TIMEOUT_MS = 18_000
-MAX_TIMEOUT_MS = 20_000
-MIN_TIMEOUT_MS = 3_000
+DEFAULT_TIMEOUT_MS = 45_000
+MAX_TIMEOUT_MS = 55_000
+MIN_TIMEOUT_MS = 8_000
+PROVIDER_TIMEOUT_HEADROOM_S = 3
+MAX_PROVIDER_TIMEOUT_S = 50
 SANDBOX_HOLDER = {
     "firstName": "Reservedge",
     "lastName": "Sandbox",
@@ -52,6 +54,15 @@ def liteapi_timeout_ms(raw: str | None = None) -> int:
     return max(MIN_TIMEOUT_MS, min(value, MAX_TIMEOUT_MS))
 
 
+def provider_timeout_s(timeout_ms: int | None = None) -> int:
+    seconds = (liteapi_timeout_ms() if timeout_ms is None else timeout_ms) // 1000
+    return max(4, min(seconds - PROVIDER_TIMEOUT_HEADROOM_S, MAX_PROVIDER_TIMEOUT_S))
+
+
+def _iso_date(raw: str) -> str:
+    return raw.strip()[:10]
+
+
 def liteapi_api_key(raw: str | None = None) -> str:
     text = os.environ.get("ITAA_LITEAPI_API_KEY", "") if raw is None else raw
     return "" if text is None else str(text).strip()
@@ -70,13 +81,13 @@ def rates_request_body(query: ExternalSearchQuery) -> dict[str, object]:
         "adults": query.guests if query.guests and query.guests > 0 else 2
     }
     body: dict[str, object] = {
-        "checkin": query.start,
-        "checkout": query.end,
+        "checkin": _iso_date(query.start),
+        "checkout": _iso_date(query.end),
         "currency": currency,
         "guestNationality": guest_nationality(origin, country),
         "occupancies": [occupancy],
-        "limit": 6,
-        "timeout": max(4, min(liteapi_timeout_ms() // 1000, 16)),
+        "limit": 4,
+        "timeout": provider_timeout_s(),
         "includeHotelData": True,
         "maxRatesPerHotel": 1,
     }

@@ -20,7 +20,7 @@ export interface ApiClientOptions {
   fetchImpl?: typeof fetch;
 }
 
-export const AGENT_REQUEST_TIMEOUT_MS = 45_000;
+export const AGENT_REQUEST_TIMEOUT_MS = 90_000;
 
 function intentPath(intentId: string, suffix = ""): string {
   return `${API_PREFIX}/intents/${encodeURIComponent(intentId)}${suffix}`;

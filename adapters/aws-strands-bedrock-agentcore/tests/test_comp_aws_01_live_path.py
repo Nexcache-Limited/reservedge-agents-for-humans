@@ -64,7 +64,7 @@ def test_live_authorized_uses_injected_invoker_not_fake(
     assert all(event["kind"] != "FAILED_CLOSED" for event in events)
     dumped = model.model_dump_json() + projection.model_dump_json() + str(events)
     assert "global.anthropic" not in dumped
-    assert "123456789012" not in dumped
+    assert "156332912967" not in dumped
     assert "bedrock" not in dumped.lower()
 
 

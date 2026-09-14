@@ -17,6 +17,7 @@ import {
   agentLanesActive,
   hideDesktopWorkspaceChat,
   mergeAgentInboxRows,
+  parkingHistoryRow,
   planSessionToRow,
   showRunningInboxChat,
   withParked,
@@ -61,6 +62,7 @@ export function InboxScreen({
     () =>
       mergeAgentInboxRows(intents, [
         planSessionToRow(planSession),
+        parkingHistoryRow(planSession),
         ...parkedSessions.map((item) => planSessionToRow(item)),
       ]),
     [intents, parkedSessions, planSession],
@@ -72,22 +74,22 @@ export function InboxScreen({
   const liveRow = planSessionToRow(planSession);
 
   useEffect(() => {
-    if (liveRow?.status === "done") {
-      const doneId = liveRow.id;
-      if (switchedToHistory.current !== doneId) {
-        switchedToHistory.current = doneId;
-        setFilter("history");
-      }
-      return;
-    }
     if (planSession == null) {
       return;
     }
     const startedId = liveRow?.id ?? "";
     if (showRunningInboxChat(planSession)) {
-      if (filter === "history" || switchedToRunning.current !== startedId) {
+      if (switchedToRunning.current !== startedId) {
         switchedToRunning.current = startedId;
         setFilter("running");
+      }
+      return;
+    }
+    if (liveRow?.status === "done") {
+      const doneId = liveRow.id;
+      if (switchedToHistory.current !== doneId) {
+        switchedToHistory.current = doneId;
+        setFilter("history");
       }
       return;
     }
@@ -139,15 +141,19 @@ export function InboxScreen({
   const shown = useMemo(() => rows.filter((row) => matchesFilter(row, filter)), [rows, filter]);
   const compact = location.pathname !== "/" && location.pathname !== "/bookings";
   const onClarify = location.pathname === "/intents/clarify";
-  const runningChat =
-    showRunningInboxChat(planSession) &&
-    ((onClarify && hideDesktopWorkspaceChat(planSession)) || (filter === "running" && !onClarify));
+  const liveRunningChat = showRunningInboxChat(planSession);
+  const runningChat = Boolean(
+    liveRunningChat &&
+      filter !== "history" &&
+      ((onClarify && hideDesktopWorkspaceChat(planSession)) ||
+        (filter === "running" && !onClarify)),
+  );
   const cardRows = useMemo(() => {
-    if (!runningChat || liveRow == null) {
-      return shown;
+    if (runningChat || (liveRunningChat && filter === "running")) {
+      return [];
     }
-    return shown.filter((row) => row.id !== liveRow.id);
-  }, [liveRow, runningChat, shown]);
+    return shown;
+  }, [filter, liveRunningChat, runningChat, shown]);
   const groups = useMemo(() => groupIntents(cardRows), [cardRows]);
   const needsCount = rows.filter(
     (row) => row.status === "decision" || row.status === "needs",
@@ -161,7 +167,7 @@ export function InboxScreen({
     switchedToHistory.current = "";
     switchedToRunning.current = "";
     setFilter("all");
-    navigate("/intents/new");
+    navigate("/", { state: { composerReset: Date.now() } });
   }
 
   function removeBooking(row: IntentRow) {
@@ -259,7 +265,7 @@ export function InboxScreen({
             ))}
           </div>
         ))}
-        {cardRows.length === 0 && !runningChat ? (
+        {cardRows.length === 0 && !runningChat && !liveRunningChat ? (
           <div className="re-empty">
             <div className="re-empty-title">Nothing here.</div>
             <p>No intents match this filter.</p>

@@ -16,9 +16,10 @@ import type {
   AgentFlightSearch,
   AgentPendingSearchAuthorization,
   AgentStaySearch,
+  BuyerSnapshot,
   ItaaApi,
 } from "../api/types.js";
-import { formatMoney, supplierDisplayName } from "../fixtures/golden.js";
+import { formatMoney, offerCatalog, supplierDisplayName } from "../fixtures/golden.js";
 import {
   AGENT_FAILURE_COPY,
   failAgentSession,
@@ -275,6 +276,60 @@ function ClarifyPlanBody({
     }
   }
 
+  async function grantParking(gate: "A3" | "A4", offerId?: string) {
+    if (!session.agent || busy || failed) {
+      return;
+    }
+    const parking = session.agent.domains?.parking;
+    const offer = (parking?.offerSet.snapshot?.offers ?? []).find(
+      (item) => item.offerId === offerId,
+    );
+    flushSync(() => {
+      setBusy(true);
+      setPlanSession(withUpdatingActivity(session));
+    });
+    try {
+      const view = await api.grantAgentSession(session.agent.sessionId, {
+        gate,
+        domain: "parking",
+        ...(offerId ? { offerId } : {}),
+        ...(offer?.version ? { offerVersion: offer.version } : {}),
+      });
+      flushSync(() => {
+        const merged = mergeAgentView(session, view);
+        const snapshot = view.domains?.parking?.offerSet?.snapshot;
+        setPlanSession(
+          snapshot != null && snapshot.intentId
+            ? syncPlanSessionWithSnapshot(merged, {
+                environment: "local_simulation",
+                simulation: true,
+                intentId: snapshot.intentId,
+                state: (snapshot.state as BuyerSnapshot["state"] | undefined) ?? "OFFERS_RANKED",
+                airport: "",
+                category: "airport_parking",
+                createdAt: "",
+                updatedAt: "",
+                expiresAt: "",
+                marketEvidence: [],
+                supplierOutcomes: [],
+                offers: snapshot.offers ?? [],
+                recommendedOfferId: snapshot.recommendedOfferId ?? null,
+                downside: null,
+                acceptance: snapshot.acceptance ?? null,
+                transaction: snapshot.transaction ?? null,
+              })
+            : merged,
+        );
+      });
+    } catch {
+      flushSync(() => {
+        setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY));
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function beginParking() {
     if (session.agent?.domains?.parking) {
       return;
@@ -449,6 +504,7 @@ function ClarifyPlanBody({
                       task={task}
                       search={session.agent?.staySearch ?? null}
                       facts={projection.facts}
+                      stayDraft={session.agent?.stayDraft ?? null}
                       pending={session.agent?.pendingSearchAuthorization ?? null}
                       busy={busy}
                       onSandboxHold={holdStay}
@@ -465,6 +521,7 @@ function ClarifyPlanBody({
                       task={task}
                       search={session.agent?.flightSearch ?? null}
                       facts={projection.facts}
+                      domain={session.agent?.domains?.flight}
                       pending={session.agent?.pendingSearchAuthorization ?? null}
                       ready={ready}
                       onRemove={() => removeTask(task.id)}
@@ -489,35 +546,10 @@ function ClarifyPlanBody({
                           );
                       }}
                       onTake={(offerId) => {
-                        if (!session.agent) {
-                          return;
-                        }
-                        const intentId =
-                          typeof parkingDomain.intentId === "string" ? parkingDomain.intentId : "";
-                        const offer = (parkingDomain.offerSet.snapshot?.offers ?? []).find(
-                          (item) => item.offerId === offerId,
-                        );
-                        if (intentId.startsWith("pi_") && offer !== undefined) {
-                          void api
-                            .intakeAccept(intentId, { offerId, offerVersion: offer.version })
-                            .then((next) =>
-                              setPlanSession(syncPlanSessionWithSnapshot(session, next)),
-                            )
-                            .catch(() =>
-                              setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)),
-                            );
-                          return;
-                        }
-                        void api
-                          .grantAgentSession(session.agent.sessionId, {
-                            gate: "A3",
-                            domain: "parking",
-                            offerId,
-                          })
-                          .then((view) => setPlanSession(mergeAgentView(session, view)))
-                          .catch(() =>
-                            setPlanSession(failAgentSession(session, AGENT_FAILURE_COPY)),
-                          );
+                        void grantParking("A3", offerId);
+                      }}
+                      onAuthorize={() => {
+                        void grantParking("A4");
                       }}
                     />
                   ) : rentalLane ? (
@@ -563,6 +595,7 @@ function ClarifyPlanBody({
             }
             search={session.agent.staySearch}
             facts={projection.facts}
+            stayDraft={session.agent?.stayDraft ?? null}
             pending={session.agent?.pendingSearchAuthorization ?? null}
             busy={busy}
             onSandboxHold={holdStay}
@@ -602,6 +635,7 @@ function ClarifyPlanBody({
             }}
             search={session.agent.flightSearch}
             facts={projection.facts}
+            domain={session.agent?.domains?.flight}
             pending={session.agent?.pendingSearchAuthorization ?? null}
           />
         ) : null}
@@ -701,6 +735,7 @@ function StayDomainLane({
   task,
   search,
   facts,
+  stayDraft,
   pending,
   busy,
   onSandboxHold,
@@ -708,14 +743,26 @@ function StayDomainLane({
   task: PlanTask;
   search: AgentStaySearch | null;
   facts: ExtractedFacts;
+  stayDraft?: { checkIn?: string | null; checkOut?: string | null } | null;
   pending: AgentPendingSearchAuthorization | null;
   busy: boolean;
   onSandboxHold: (offerId: string) => Promise<void>;
 }) {
   const destReady = facts.destination.trim() !== "";
-  const datesReady = facts.startDate.trim() !== "" && facts.endDate.trim() !== "";
+  const draftStart = stayDraft?.checkIn?.trim() || facts.startDate;
+  const draftEnd = stayDraft?.checkOut?.trim() || facts.endDate;
+  const datesReady = draftStart.trim() !== "" && draftEnd.trim() !== "";
   const requirementReady = destReady && datesReady;
   const pendingReady = pending?.capabilities.includes("stay.search") === true;
+  const snapshotStart = search?.query?.checkIn ?? "";
+  const snapshotEnd = search?.query?.checkOut ?? "";
+  const headerStart = snapshotStart || draftStart;
+  const headerEnd = snapshotEnd || draftEnd;
+  const pendingChange =
+    search != null &&
+    snapshotStart !== "" &&
+    draftStart !== "" &&
+    (draftStart !== snapshotStart || draftEnd !== snapshotEnd);
   const status = search
     ? search.stale === true
       ? "stale"
@@ -744,8 +791,13 @@ function StayDomainLane({
       </div>
       <div className="re-domain-chips">
         {facts.destination ? <span className="re-fact-chip">{facts.destination}</span> : null}
-        {facts.startDate && facts.endDate ? (
-          <span className="re-fact-chip">{formatHumanRange(facts.startDate, facts.endDate)}</span>
+        {headerStart && headerEnd ? (
+          <span className="re-fact-chip">{formatHumanRange(headerStart, headerEnd)}</span>
+        ) : null}
+        {pendingChange ? (
+          <span className="re-fact-chip">
+            Pending change: {formatHumanRange(draftStart, draftEnd)}
+          </span>
         ) : null}
       </div>
       {search?.stale === true ? (
@@ -785,6 +837,7 @@ function FlightDomainLane({
   task,
   search,
   facts,
+  domain,
   pending,
   ready = false,
   onRemove,
@@ -793,16 +846,28 @@ function FlightDomainLane({
   task: PlanTask;
   search: AgentFlightSearch | null;
   facts: ExtractedFacts;
+  domain?: AgentDomainState | undefined;
   pending: AgentPendingSearchAuthorization | null;
   ready?: boolean;
   onRemove?: () => void;
   onAccept?: () => void;
 }) {
   const pendingReady = pending?.capabilities.includes("flight.search") === true;
-  const origin = facts.originCity || facts.departureAirport;
-  const dest = facts.destination || facts.destinationAirport;
-  const requirementReady =
-    origin.trim() !== "" && dest.trim() !== "" && facts.startDate.trim() !== "";
+  const origin = optionalFieldText(domain, "origin") || facts.originCity || facts.departureAirport;
+  const dest =
+    optionalFieldText(domain, "destination") || facts.destination || facts.destinationAirport;
+  const draftDate = optionalFieldText(domain, "date") || facts.startDate.trim();
+  const draftEnd = optionalFieldText(domain, "dateEnd") || draftDate;
+  const snapshotDate = search?.query?.date ?? "";
+  const snapshotEnd = search?.query?.dateEnd ?? snapshotDate;
+  const headerDate = snapshotDate || draftDate;
+  const headerEnd = snapshotEnd || draftEnd;
+  const pendingChange =
+    search != null &&
+    snapshotDate !== "" &&
+    draftDate !== "" &&
+    (draftDate !== snapshotDate || draftEnd !== snapshotEnd);
+  const requirementReady = origin.trim() !== "" && dest.trim() !== "" && draftDate !== "";
   const unconfirmed = !task.accepted;
   const inferredOrProposed = task.provenance === "inferred" || task.provenance === "proposed";
   const status = search
@@ -816,7 +881,7 @@ function FlightDomainLane({
       : task.provenance === "proposed"
         ? "Proposed"
         : requirementReady
-          ? "Ready"
+          ? "waiting"
           : "waiting";
   return (
     <article
@@ -838,7 +903,14 @@ function FlightDomainLane({
       <div className="re-domain-chips">
         {origin ? <span className="re-fact-chip">{origin}</span> : null}
         {dest ? <span className="re-fact-chip">{dest}</span> : null}
-        {facts.startDate ? <span className="re-fact-chip">{facts.startDate}</span> : null}
+        {headerDate ? (
+          <span className="re-fact-chip">{formatHumanRange(headerDate, headerEnd)}</span>
+        ) : null}
+        {pendingChange ? (
+          <span className="re-fact-chip">
+            Pending change: {formatHumanRange(draftDate, draftEnd)}
+          </span>
+        ) : null}
       </div>
       {search?.stale === true ? (
         <p className="re-clarify-hold" role="status">
@@ -1321,6 +1393,14 @@ function fieldValue(domain: AgentDomainState, id: string): string {
   return String(held.value);
 }
 
+function optionalFieldText(domain: AgentDomainState | undefined, id: string): string {
+  if (domain == null) {
+    return "";
+  }
+  const held = domain.fields[id];
+  return typeof held?.value === "string" ? held.value.trim() : "";
+}
+
 function parkingInstantChip(value: string): string {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   if (!match) {
@@ -1354,12 +1434,14 @@ function ParkingDomainPane({
   busy,
   onEdit,
   onTake,
+  onAuthorize,
 }: {
   task: PlanTask;
   domain: AgentDomainState;
   busy: boolean;
   onEdit: (fieldId: string, value: string) => void;
   onTake: (offerId: string) => void;
+  onAuthorize: () => void;
 }) {
   const offers = domain.offerSet.snapshot?.offers ?? [];
   const stale = domain.offerSet.stale;
@@ -1367,6 +1449,28 @@ function ParkingDomainPane({
   const airport = fieldDisplay(domain, "airportCode");
   const start = fieldValue(domain, "start");
   const end = fieldValue(domain, "end");
+  const snapshotStart = domain.offerSet.snapshot?.windowStart ?? "";
+  const snapshotEnd = domain.offerSet.snapshot?.windowEnd ?? "";
+  const headerStart = (offers.length > 0 && snapshotStart) || start;
+  const headerEnd = (offers.length > 0 && snapshotEnd) || end;
+  const pendingChange =
+    offers.length > 0 &&
+    snapshotStart !== "" &&
+    start !== "" &&
+    (start.slice(0, 10) !== snapshotStart.slice(0, 10) ||
+      end.slice(0, 10) !== snapshotEnd.slice(0, 10));
+  const awaitingAuth =
+    domain.completeness === "awaiting_grant" || domain.completeness === "accepted";
+  const selectedId =
+    domain.offerSet.snapshot?.acceptance?.offerId ??
+    domain.offerSet.snapshot?.recommendedOfferId ??
+    "";
+  const selected =
+    offers.find((item) => item.offerId === selectedId) ?? offers.find((item) => item.recommended);
+  const authAmount =
+    selected?.currency && selected.totalMinor !== undefined
+      ? formatMoney(selected.totalMinor, selected.currency)
+      : "";
   const covered = fieldValue(domain, "covered");
   const vehicle = fieldValue(domain, "vehicleClass");
   return (
@@ -1398,9 +1502,14 @@ function ParkingDomainPane({
       </p>
       <div className="re-domain-chips">
         {airport ? <span className="re-fact-chip">{airport}</span> : null}
-        {start && end ? (
+        {headerStart && headerEnd ? (
           <span className="re-fact-chip">
-            {parkingInstantChip(start)} → {parkingInstantChip(end)}
+            {parkingInstantChip(headerStart)} → {parkingInstantChip(headerEnd)}
+          </span>
+        ) : null}
+        {pendingChange ? (
+          <span className="re-fact-chip">
+            Pending change: {parkingInstantChip(start)} → {parkingInstantChip(end)}
           </span>
         ) : null}
         {covered === "preferred" || covered === "required" ? (
@@ -1451,29 +1560,82 @@ function ParkingDomainPane({
       {domain.missing.length > 0 ? (
         <p className="re-clarify-hold">Missing: {domain.missing.join(", ")}</p>
       ) : null}
+      {domain.completeness === "authorized" ? (
+        <div className="re-receipt" aria-label="Simulated parking receipt">
+          <div className="re-receipt-head">
+            <span className="re-check-disc" aria-hidden>
+              ✓
+            </span>
+            <div>
+              <h3 className="re-h3">Authorization recorded</h3>
+              <p className="re-muted">Simulated. No card charged, nothing reserved.</p>
+            </div>
+          </div>
+          <div className="re-receipt-card">
+            <div className="re-stamp">SIMULATED</div>
+            <div className="re-eyebrow">SIMULATED RECEIPT</div>
+            <p className="re-lead">
+              This demonstration keeps requests in this browser session only.
+            </p>
+            <div className="re-dims" style={{ marginTop: 16 }}>
+              <div>
+                <div className="re-muted">Supplier</div>
+                <div style={{ fontWeight: 600 }}>
+                  {selected ? supplierDisplayName(selected.supplierToken) : "Simulated supplier"}
+                </div>
+              </div>
+              <div>
+                <div className="re-muted">Amount</div>
+                <div className="re-mono" style={{ fontWeight: 600 }}>
+                  {authAmount || "Not provided"}
+                </div>
+              </div>
+              <div>
+                <div className="re-muted">Authorized</div>
+                <div>Simulated reservation</div>
+              </div>
+              <div>
+                <div className="re-muted">Newly shared</div>
+                <div>
+                  Name and plate with{" "}
+                  {selected ? supplierDisplayName(selected.supplierToken) : "the supplier"} only
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {stale ? (
         <p className="re-clarify-hold">
           Parking offers are stale. Updated offers require a new authorization. Other domains are
           unchanged.
         </p>
       ) : null}
-      {offers.length > 0 ? (
-        <ul className="re-parking-offer-cards" aria-label="Simulated parking offers">
+      {domain.completeness !== "authorized" && offers.length > 0 ? (
+        <ul className="re-parking-offer-cards" aria-label="Parking offers, scroll sideways">
           {offers.map((offer) => {
             const amount =
               offer.currency && offer.totalMinor !== undefined
                 ? formatMoney(offer.totalMinor, offer.currency)
                 : "";
+            const catalog = offerCatalog(offer.supplierToken);
             return (
               <li key={offer.offerId} className="re-parking-offer-card">
+                <span className="re-curated-label">Curated offer</span>
                 <strong>{supplierDisplayName(offer.supplierToken)}</strong>
                 <span>
                   {offer.recommended ? "Recommended · " : ""}
-                  {offer.simulation ? "simulated" : "labelled"}
-                  {amount ? ` · ${amount}` : ""}
+                  {amount || "Price not provided"}
                 </span>
-                {stale ? <span>not selectable</span> : null}
-                {offer.recommended && !stale ? (
+                <div className="re-parking-offer-facts">
+                  <span>Cover {catalog?.covered ?? "not provided"}</span>
+                  <span>Shuttle {catalog ? `${catalog.shuttleMinutes} min` : "not provided"}</span>
+                  <span>Distance {catalog ? `${catalog.distanceMeters} m` : "not provided"}</span>
+                  <span>Cancel {catalog?.cancellation ?? "not provided"}</span>
+                </div>
+                {stale ? (
+                  <span>not selectable until you search again</span>
+                ) : awaitingAuth ? null : (
                   <button
                     type="button"
                     className="re-primary itaa-focus-ring"
@@ -1482,11 +1644,21 @@ function ParkingDomainPane({
                   >
                     Take this one
                   </button>
-                ) : null}
+                )}
               </li>
             );
           })}
         </ul>
+      ) : null}
+      {awaitingAuth && !stale ? (
+        <button
+          type="button"
+          className="re-primary itaa-focus-ring"
+          disabled={busy}
+          onClick={onAuthorize}
+        >
+          {authAmount ? `Authorize ${authAmount}` : "Authorize simulated reservation"}
+        </button>
       ) : null}
     </article>
   );

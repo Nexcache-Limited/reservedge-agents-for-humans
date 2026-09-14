@@ -51,6 +51,6 @@ def test_plan_events_are_buyer_safe() -> None:
 def test_plan_output_omits_account_and_model_ids() -> None:
     model, projection, events = compose_orchestrator().plan_turn(DEMO_A)
     dumped = model.model_dump_json() + projection.model_dump_json() + str(events)
-    assert "123456789012" not in dumped
+    assert "156332912967" not in dumped
     assert "global.anthropic" not in dumped
     assert "bedrock" not in dumped.lower()

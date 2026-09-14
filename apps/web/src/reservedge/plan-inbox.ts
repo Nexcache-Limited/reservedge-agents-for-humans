@@ -21,7 +21,7 @@ export function planSessionToRow(session: PlanSession | null): IntentRow | null 
   const domain = primaryInboxDomain(projection.tasks, parking);
   const airport = fieldValue(parking, "airportCode") || facts.parkingAirport;
   const title = inboxTitle(projection.tasks, facts.destination, airport, domain);
-  const status = rowStatus(session, parking);
+  const status = rowStatus(session);
   const sub = rowSub(status, session);
   const now = new Date();
   return {
@@ -72,6 +72,25 @@ export function mergeAgentInboxRows(
   return agentRows.reduce((current, row) => mergeAgentInboxRow(current, row), rows);
 }
 
+export function parkingHistoryRow(session: PlanSession | null): IntentRow | null {
+  const live = planSessionToRow(session);
+  const parking = session?.agent?.domains?.parking;
+  if (live == null || parking?.completeness !== "authorized") {
+    return null;
+  }
+  const airport = fieldValue(parking, "airportCode");
+  return {
+    ...live,
+    id: parkingHistoryId(live.id),
+    domain: "parking",
+    title: airport !== "" ? `Airport parking · ${airport}` : live.title,
+    sub: "Authorized · simulated",
+    status: "done",
+    stage: "done",
+    canDelete: false,
+  };
+}
+
 export function parkPlanSession(session: PlanSession): PlanSession {
   const parking = session.agent?.domains?.parking;
   if (parking?.completeness === "authorized") {
@@ -93,23 +112,16 @@ export function isLiveChatRow(session: PlanSession | null, id: string): boolean 
   if (session?.agent == null) {
     return false;
   }
-  const parking = session.agent.domains?.parking;
-  if (parking?.completeness === "authorized") {
-    return false;
-  }
-  if (id === session.agent.sessionId) {
+  const liveId = session.agent.sessionId;
+  if (id === liveId || id === parkingHistoryId(liveId)) {
     return true;
   }
-  const intentId = parking?.intentId;
+  const intentId = session.agent.domains?.parking?.intentId;
   return typeof intentId === "string" && intentId === id;
 }
 
 export function showRunningInboxChat(session: PlanSession | null): boolean {
-  const parking = session?.agent?.domains?.parking;
-  if (parking?.completeness === "authorized" || session?.shelf === "history") {
-    return false;
-  }
-  if (session?.shelf === "pending") {
+  if (session?.shelf === "history" || session?.shelf === "pending") {
     return false;
   }
   if (session?.agent == null) {
@@ -200,8 +212,8 @@ function inboxTitle(
   return "Current booking";
 }
 
-function rowStatus(session: PlanSession, parking?: AgentDomainState): IntentStatus {
-  if (parking?.completeness === "authorized" || session.shelf === "history") {
+function rowStatus(session: PlanSession): IntentStatus {
+  if (session.shelf === "history") {
     return "done";
   }
   if (session.shelf === "pending") {
@@ -214,6 +226,10 @@ function rowStatus(session: PlanSession, parking?: AgentDomainState): IntentStat
     return "needs";
   }
   return "running";
+}
+
+function parkingHistoryId(sessionId: string): string {
+  return `${sessionId}:parking`;
 }
 
 function rowSub(status: IntentStatus, session: PlanSession): string {

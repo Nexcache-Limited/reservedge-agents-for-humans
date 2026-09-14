@@ -89,6 +89,30 @@ def test_typed_yes_authorizes_pending_parking_search() -> None:
     assert body["pendingAuthorization"]["gate"] == "A3"
 
 
+def test_typed_yes_then_take_offer_authorizes_simulation() -> None:
+    client, _provider = _wired()
+    created = client.post(f"{PREFIX}/sessions", json={"objective": DEMO_A}).json()
+    session_id = created["sessionId"]
+    turned = client.post(f"{PREFIX}/sessions/{session_id}/turns", json={"message": "yes"})
+    assert turned.status_code == 200, turned.text
+    snapshot = turned.json()["domains"]["parking"]["offerSet"]["snapshot"]
+    offer_id = snapshot["recommendedOfferId"]
+    a3 = client.post(
+        f"{PREFIX}/sessions/{session_id}/grants",
+        json={"gate": "A3", "domain": "parking", "offerId": offer_id},
+    )
+    assert a3.status_code == 200, a3.text
+    assert a3.json()["pendingAuthorization"]["gate"] == "A4"
+    a4 = client.post(
+        f"{PREFIX}/sessions/{session_id}/grants",
+        json={"gate": "A4", "domain": "parking"},
+    )
+    assert a4.status_code == 200, a4.text
+    txn = a4.json()["domains"]["parking"]["offerSet"]["snapshot"]["transaction"]
+    assert txn["mode"] == "SIMULATED"
+    assert a4.json()["pendingAuthorization"] is None
+
+
 def test_direct_patch_and_stale_flag() -> None:
     client, _provider = _wired()
     created = client.post(f"{PREFIX}/sessions", json={"objective": DEMO_A}).json()
@@ -131,7 +155,8 @@ def test_grants_run_a1_a4_without_leaving_agent_prefix() -> None:
     assert a2.json()["pendingAuthorization"]["gate"] == "A3"
     a3_prompt = (a2.json()["pendingAuthorization"].get("prompt") or "").lower()
     assert "rank 1" in a3_prompt
-    assert "accept the recommended offer" in a3_prompt
+    assert "select a simulated offer on the parking card" in a3_prompt
+    assert "accept the recommended offer" not in a3_prompt
     a3 = client.post(
         f"{PREFIX}/sessions/{session_id}/grants",
         json={

@@ -39,7 +39,22 @@ VEHICLE = frozenset({"standard", "compact", "suv", "oversized"})
 COVERED = frozenset({"none", "preferred", "required"})
 ACCESS = frozenset({"step_free", "wheelchair", "ev_charging"})
 KNOWN_IATA = frozenset(
-    {"JFK", "LGA", "EWR", "EDI", "MAN", "LHR", "LGW", "STN", "AMS", "CDG", "DUB", "GLA"}
+    {
+        "JFK",
+        "LGA",
+        "EWR",
+        "EDI",
+        "MAN",
+        "LHR",
+        "LGW",
+        "STN",
+        "AMS",
+        "CDG",
+        "DUB",
+        "GLA",
+        "DXB",
+        "DWC",
+    }
 )
 NAMED_AIRPORTS: dict[str, str] = {
     "heathrow": "LHR",
@@ -62,6 +77,9 @@ NAMED_AIRPORTS: dict[str, str] = {
     "charles de gaulle": "CDG",
     "dublin airport": "DUB",
     "glasgow airport": "GLA",
+    "dubai international": "DXB",
+    "dubai airport": "DXB",
+    "al maktoum": "DWC",
 }
 MATERIAL_PARKING = frozenset(
     {"airportCode", "start", "end", "vehicleClass", "covered", "shuttleMaxMinutes", "currency"}
@@ -103,14 +121,24 @@ PLACE_CITIES: dict[str, str] = {
 }
 CITY_AIRPORT_CANDIDATES: dict[str, tuple[str, ...]] = {
     "manchester": ("MAN",),
+    "manchester airport": ("MAN",),
     "edinburgh": ("EDI",),
+    "edinburgh airport": ("EDI",),
     "glasgow": ("GLA",),
+    "glasgow airport": ("GLA",),
     "amsterdam": ("AMS",),
     "paris": ("CDG",),
     "dublin": ("DUB",),
+    "heathrow": ("LHR",),
+    "london heathrow": ("LHR",),
+    "gatwick": ("LGW",),
+    "london gatwick": ("LGW",),
+    "stansted": ("STN",),
+    "london stansted": ("STN",),
     "london": ("LHR", "LGW", "STN"),
     "new york": ("JFK", "LGA", "EWR"),
     "nyc": ("JFK", "LGA", "EWR"),
+    "dubai": ("DXB", "DWC"),
 }
 AIRPORT_CHOICE_LABELS: dict[str, str] = {
     "LHR": "Heathrow (LHR)",
@@ -125,6 +153,8 @@ AIRPORT_CHOICE_LABELS: dict[str, str] = {
     "AMS": "Schiphol (AMS)",
     "CDG": "Charles de Gaulle (CDG)",
     "DUB": "Dublin Airport (DUB)",
+    "DXB": "Dubai International (DXB)",
+    "DWC": "Al Maktoum (DWC)",
 }
 IATA_STAY_PLACE: dict[str, str] = {
     "LHR": "Heathrow",
@@ -1284,7 +1314,14 @@ def _window_patches(
             end = f"{year}-{month}-{int(end_day):02d}"
         else:
             start = _ordinal_date(context, start_day)
-            end = _ordinal_date(context, end_day)
+            end = f"{start[:7]}-{int(end_day):02d}"
+            if end < start:
+                wrap_year = int(start[:4])
+                wrap_month = int(start[5:7]) + 1
+                if wrap_month == 13:
+                    wrap_month = 1
+                    wrap_year += 1
+                end = f"{wrap_year:04d}-{wrap_month:02d}-{int(end_day):02d}"
         start, end = _attach_clock_range(conversation, start, end)
         patches.append({"kind": "parking", "fieldId": "start", "value": start, "source": source})
         patches.append({"kind": "parking", "fieldId": "end", "value": end, "source": source})
@@ -1371,10 +1408,10 @@ def _attach_clock_range(conversation: str, start: str, end: str) -> tuple[str, s
     if clocks is None:
         return start, end
     start_clock, end_clock = clocks
-    if "T" not in start:
-        start = f"{start}T{start_clock}"
-    if "T" not in end:
-        end = f"{end}T{end_clock}"
+    if "T" not in start or re.search(r"T00:00(?::00)?(?:Z)?$", start):
+        start = f"{start[:10]}T{start_clock}"
+    if "T" not in end or re.search(r"T00:00(?::00)?(?:Z)?$", end):
+        end = f"{end[:10]}T{end_clock}"
     return start, end
 
 

@@ -6,7 +6,7 @@ import { AppRoutes } from "../App.js";
 import type { AgentSessionView } from "../api/types.js";
 import { mockApi } from "../test/fixtures.js";
 import { sessionFromAgentView } from "../intent-first/agent.js";
-import { isLiveChatRow, planSessionToRow } from "../reservedge/plan-inbox.js";
+import { isLiveChatRow, parkingHistoryRow, planSessionToRow } from "../reservedge/plan-inbox.js";
 
 afterEach(() => {
   cleanup();
@@ -133,6 +133,20 @@ describe("COMP-REMEDIATION-01 resume identity", () => {
     expect(row?.id.startsWith("as_")).toBe(true);
     expect(isLiveChatRow(session, view.sessionId)).toBe(true);
     expect(isLiveChatRow(session, "pi_01k2m3n4p5q6r7s8t9v0w1x2zz")).toBe(true);
+  });
+
+  it("keeps the live chat identity after parking is authorized", () => {
+    const view = readyParkingView();
+    const parking = view.domains?.parking;
+    if (parking != null) {
+      parking.completeness = "authorized";
+    }
+    const session = sessionFromAgentView("need hotel and parking", view);
+    expect(isLiveChatRow(session, view.sessionId)).toBe(true);
+    expect(isLiveChatRow(session, `${view.sessionId}:parking`)).toBe(true);
+    expect(planSessionToRow(session)?.status).toBe("running");
+    expect(parkingHistoryRow(session)?.status).toBe("done");
+    expect(parkingHistoryRow(session)?.title).toBe("Airport parking · LHR");
   });
 
   it("reopens a Running chat into Clarify & plan instead of Unknown intent", async () => {

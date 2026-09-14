@@ -9,7 +9,7 @@ from wp06_fakes import build_facade
 from itaa_api.agent_session import PREFIX, build_agent_app
 from itaa_api.app import create_app
 from itaa_api.composition import build_facade as api_facade
-from itaa_api.conversation_refine import parse_refinement, parse_trip_dates
+from itaa_api.conversation_refine import bind_day_shift, parse_refinement, parse_trip_dates
 from itaa_aws_adapter.agent import compose_orchestrator
 
 HEATHROW = "I need a hotel and covered parking at Heathrow from 10 to 15 November."
@@ -175,17 +175,68 @@ def test_stay_only_date_change_preserves_parking() -> None:
         f"{PREFIX}/sessions/{session_id}/turns",
         json={"message": "change only the hotel dates to 9 to 14 November"},
     ).json()
-    assert _ctx(changed, "startDate") == "2026-11-09"
-    assert _ctx(changed, "endDate") == "2026-11-14"
+    assert _ctx(changed, "startDate") == "2026-11-10"
+    assert _ctx(changed, "endDate") == "2026-11-15"
+    assert changed["stayDraft"]["checkIn"] == "2026-11-09"
+    assert changed["stayDraft"]["checkOut"] == "2026-11-14"
     assert str(_parking_start(changed)).startswith("2026-11-10T08:00:00")
     assert str(_parking_end(changed)).startswith("2026-11-15T18:00:00")
-    assert changed["staySearch"].get("stale") is True
+    assert changed["staySearch"].get("stale") is not True
     assert not _parking_stale(changed)
     pending = changed.get("pendingSearchAuthorization")
-    assert isinstance(pending, dict)
-    assert pending["capabilities"] == ["stay.search"]
-    assert provider.execute_tools.count("search_stay_offers") == stay_count
+    assert pending in (None, {})
+    assert provider.execute_tools.count("search_stay_offers") == stay_count + 1
     assert "parking dates are unchanged" in (changed.get("buyerSafeMessage") or "").lower()
+    assert "search results are ready" in (changed.get("buyerSafeMessage") or "").lower()
+
+
+def test_checkin_day_shift_parses_truncated_instead_of() -> None:
+    change = parse_refinement("king to 13th instead of 12")
+    assert change.start_day == 13
+    assert change.instead_of_day == 12
+    bound = bind_day_shift(
+        change,
+        stay_start="2026-10-12",
+        stay_end="2026-10-16",
+        parking_authorized=True,
+        last_text="king to 13th instead of 12",
+    )
+    assert bound.start_date == "2026-10-13"
+    assert bound.end_date == "2026-10-16"
+    assert bound.date_scope == "stay"
+    checkin = parse_refinement("check-in to 13th instead of 12")
+    assert checkin.start_day == 13
+    bound_checkin = bind_day_shift(
+        checkin,
+        stay_start="2026-10-12",
+        stay_end="2026-10-16",
+        parking_authorized=True,
+        last_text="check-in to 13th instead of 12",
+    )
+    assert bound_checkin.start_date == "2026-10-13"
+    assert bound_checkin.end_date == "2026-10-16"
+
+
+def test_checkin_day_shift_after_results_auto_reruns_stay() -> None:
+    client, provider = _wired()
+    session_id, _ready = _open_heathrow(client)
+    searched = _yes(client, session_id)
+    stay_count = provider.execute_tools.count("search_stay_offers")
+    parking_start = str(_parking_start(searched))
+    changed = client.post(
+        f"{PREFIX}/sessions/{session_id}/turns",
+        json={"message": "king to 13th instead of 10"},
+    ).json()
+    assert changed["stayDraft"]["checkIn"] == "2026-11-13"
+    assert changed["stayDraft"]["checkOut"] == "2026-11-15"
+    assert str(_parking_start(changed)) == parking_start
+    assert changed["staySearch"].get("stale") is not True
+    assert changed.get("pendingSearchAuthorization") in (None, {})
+    assert provider.execute_tools.count("search_stay_offers") == stay_count + 1
+    note = (changed.get("buyerSafeMessage") or "").lower()
+    assert "hotel dates" in note
+    assert "parking dates are unchanged" in note
+    assert "search results are ready" in note
 
 
 def test_parking_only_date_change_preserves_stay() -> None:
@@ -221,17 +272,14 @@ def test_date_change_after_results_stales_and_requires_new_auth() -> None:
         f"{PREFIX}/sessions/{session_id}/turns",
         json={"message": "change the dates to 9 to 14 november"},
     ).json()
-    assert changed["staySearch"].get("stale") is True
-    assert _parking_stale(changed)
+    assert changed["stayDraft"]["checkIn"] == "2026-11-09"
+    assert changed["stayDraft"]["checkOut"] == "2026-11-14"
     assert _ctx(changed, "startDate") == "2026-11-09"
-    pending = changed.get("pendingSearchAuthorization")
-    assert isinstance(pending, dict)
-    assert set(pending["capabilities"]) >= {"stay.search", "parking.search"}
-    assert provider.execute_tools.count("search_stay_offers") == stay_count
-    yes = _yes(client, session_id)
+    assert changed["staySearch"].get("stale") is not True
+    assert not _parking_stale(changed)
+    assert changed.get("pendingSearchAuthorization") in (None, {})
+    assert changed.get("lastRevisedKind") == "trip"
     assert provider.execute_tools.count("search_stay_offers") == stay_count + 1
-    assert yes["staySearch"].get("stale") is not True
-    assert _ctx(yes, "startDate") == "2026-11-09"
 
 
 def test_date_change_while_search_auth_pending_invalidates() -> None:

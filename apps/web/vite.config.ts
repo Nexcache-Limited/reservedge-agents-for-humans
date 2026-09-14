@@ -50,6 +50,8 @@ export default defineConfig({
       "src/**/*.remediation01.test.tsx",
       "src/**/*.recordingfinal.test.ts",
       "src/**/*.recordingfinal.test.tsx",
+      "src/**/*.compfinalhumanuat02.test.ts",
+      "src/**/*.compfinalhumanuat02.test.tsx",
     ],
     coverage: {
       provider: "v8",
@@ -80,6 +82,8 @@ export default defineConfig({
         "src/**/*.remediation01.test.tsx",
         "src/**/*.recordingfinal.test.ts",
         "src/**/*.recordingfinal.test.tsx",
+        "src/**/*.compfinalhumanuat02.test.ts",
+        "src/**/*.compfinalhumanuat02.test.tsx",
         "src/test/**",
         "src/main.tsx",
         "src/**/*.d.ts",

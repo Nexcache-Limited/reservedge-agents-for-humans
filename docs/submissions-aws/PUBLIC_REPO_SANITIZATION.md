@@ -1,38 +1,44 @@
 # Public-repo sanitization checklist
 
-This public export is licensed under **Apache License 2.0**. The private product repository license is unchanged. Source checkpoint: `c79d0a667b1605cf4cfbe338e7a0509ec0ffd867`.
+**Do not publish from an agent.** Public export happens only after private `main` merge, from a git archive of that SHA.
+
+Use this list before any public copy of the tree is created. The private `LICENSE` is all-rights-reserved until the export writes Apache-2.0.
 
 ## License and provenance
 
-- [x] Product Owner chose **Apache-2.0**. See root `LICENSE` and `NOTICE`.
-- [x] [PROVENANCE.md](PROVENANCE.md) distinguishes pre-existing platform work from competition-period AWS work.
-- [x] Root `README.md` does **not** claim AgentCore, a public live URL, real booking, or that Prioticket currently has Milan city inventory.
+- [ ] Public `LICENSE` is **Apache-2.0**.
+- [ ] `NOTICE` is present.
+- [ ] [BUILD_PROVENANCE.md](BUILD_PROVENANCE.md) and [PROVENANCE.md](PROVENANCE.md) are included and do not claim the whole platform was built this week.
+- [ ] Root `README.md` links the live demo, honesty, architecture, and provenance. It does **not** claim AgentCore.
 
 ## Secrets and identity
 
-- [x] No `.env`, `credentials`, `*.pem`, or AWS access keys. `.env.example` and `infra/aws/env.example` stay names-only.
-- [x] Operator IAM/account Bedrock setup material, Builder ID details, and `iam/*.json` are excluded.
-- [x] No AWS account ids, IAM ARNs, or IAM user ids in README/Devpost/demo script.
-- [x] Negative test assertions that previously used a real account number now use the synthetic AWS example account `123456789012`.
-- [x] `.claude/` and other local agent config stay out of this tree.
-- [x] LiteAPI and Prioticket configuration names only; no client secrets or API keys.
+- [ ] No `.env`, `credentials`, `*.pem`, or AWS access keys. `.env.example` and `infra/aws/env.example` stay names-only.
+- [ ] Operator IAM, Builder ID, `docs/submissions-aws/iam/`, `LIVE_BEDROCK_*` operator notes, and `LIVE_RECORDING.md` are omitted.
+- [ ] No AWS account ids, IAM ARNs, operator profile names, or Builder ID email.
+- [ ] No LiteAPI/Prioticket credentials.
+- [ ] No hosted backend origin IP, SSH keys, or local filesystem paths (`/Users/...`).
+- [ ] `.claude/` stays out of the public commit.
+- [ ] Private git history is not copied; export is a fresh tree from `git archive`.
 
 ## Product honesty
 
-- [x] Public README states fake-mode demo, simulated parking/payment, LiteAPI research-only, Prioticket catalog-limited, rental requirement-only, process-local sessions.
-- [x] `/v1/aws/**` is not documented as the browser UI path.
-- [x] Google/Gemini adapter is not claimed as part of this Devpost.
-- [x] No production AgentCore, public live-demo URL, or “judge video is live Bedrock” unless actually recorded.
+- [ ] README states hosted staging is process-local; local default is fake mode.
+- [ ] Flight/hotel = sandbox research; parking Curated offers = simulated; A4 = simulated reservation action / simulated receipt.
+- [ ] `/v1/aws/**` is not documented as the browser UI path.
+- [ ] Google/Gemini adapter is not claimed as part of this Devpost.
+- [ ] No production AgentCore.
 
 ## Git hygiene
 
-- [x] Export from a dedicated public-export sandbox, not by flipping the private remote to public.
-- [ ] `git log` / `git rev-list --all` on the public repo after the checkpoint commit (this sandbox has no `.git` history by design).
-- [x] `make secrets` on this export tree (passed during export finalization).
-- [x] No customer PII, real card data, or non-fixture addresses.
+- [ ] Export from `docs/submissions-aws/prepare_public_export.py` or an equivalent archive, not by flipping the private remote to public.
+- [ ] `make secrets` passes on the export tree.
+- [ ] No customer PII, real card data, or non-fixture addresses.
 
 ## Submission assets
 
-- [x] Architecture SVG + mermaid source
-- [ ] ≤5-minute demo video (recording still gated)
-- [x] Setup instructions that run **without** cloud credentials (`ITAA_AWS_MODEL_MODE=fake`)
+- [ ] Architecture SVG + mermaid source
+- [ ] ≤5-minute demo video (Script A) without AWS console or credentials
+- [ ] Setup instructions that run **without** cloud credentials (`ITAA_AWS_MODEL_MODE=fake`)
+- [ ] Honesty / simulation statement
+- [ ] Final demo script

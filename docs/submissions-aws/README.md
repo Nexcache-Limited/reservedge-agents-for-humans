@@ -1,63 +1,60 @@
 # AWS Agents for Humans — submission pack
 
-**Status:** Public Apache-2.0 competition export of private-main `c79d0a667b1605cf4cfbe338e7a0509ec0ffd867`.
-**Default demo:** fake mode (`ITAA_AWS_MODEL_MODE=fake`) at `http://127.0.0.1:5180`.
-**Track (recommended):** Everyday Agents.
-**Local live Bedrock Plan UAT succeeded 7 September 2026** (allowlisted `global.anthropic.claude-sonnet-4-6`, one Bedrock cycle per planning turn). **This pack does not claim Amazon Bedrock AgentCore.**
+**Status:** Final private checkpoint for Product Owner review. Not merged. Public export is blocked until this pack merges to private `main`.  
+**Track:** Everyday Agents.  
+**Hosted staging:** https://bookingdemo.reservedge.com (live Bedrock, process-local sessions).  
+**AgentCore:** not deployed.
 
-Browser product HTTP is `/v1/agent/**`. Do not document `/v1/aws/**` as the UI path.
+This directory plus [`docs/demo-aws/`](../demo-aws/README.md) is the competition documentation pack. Browser product HTTP is `/v1/agent/**`. The browser never calls Bedrock. Do not document `/v1/aws/**` as the UI path.
 
-| Document | Role |
-| ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| This README | Setup path, honesty, what is and is not claimed |
-| [DEVPOST.md](DEVPOST.md) | Devpost description draft |
-| [PROVENANCE.md](PROVENANCE.md) | Pre-existing vs competition-new |
-| [HONESTY.md](HONESTY.md) | Simulation and human-approval wording |
-| [UAT.md](UAT.md) | Fake-mode UAT (default demo) |
-| [LIVE_UAT.md](LIVE_UAT.md) | Live Plan path UAT (generic credentials; no operator identifiers) |
-| [PUBLIC_REPO_SANITIZATION.md](PUBLIC_REPO_SANITIZATION.md) | Public-export checklist |
-| [COMP_AWS_06_EXPORT.md](COMP_AWS_06_EXPORT.md) | How this export was prepared |
+| Document                                                   | Role                                                           |
+| ---------------------------------------------------------- | -------------------------------------------------------------- |
+| This README                                                | Pack index                                                     |
+| [DEVPOST.md](DEVPOST.md)                                   | Devpost description draft                                      |
+| [BUILD_PROVENANCE.md](BUILD_PROVENANCE.md)                 | Judge-facing provenance                                        |
+| [PROVENANCE.md](PROVENANCE.md)                             | Pre-existing vs competition-new (detail)                       |
+| [HONESTY.md](HONESTY.md)                                   | Simulation, Curated offers, A4 wording                         |
+| [UAT.md](UAT.md)                                           | Final human UAT Scripts A–E                                    |
+| [COMP_AWS_06_EXPORT.md](COMP_AWS_06_EXPORT.md)             | Sanitized public-export sandbox (do not publish from an agent) |
+| [PUBLIC_REPO_SANITIZATION.md](PUBLIC_REPO_SANITIZATION.md) | Public-export checklist                                        |
+| [LIVE_UAT.md](LIVE_UAT.md)                                 | Live Bedrock configuration (no operator identities)            |
 
-Operator IAM JSON, account-scoped Bedrock setup notes, Builder ID details, and local agreement evidence are **not** in this public tree.
+Operator IAM, Builder ID, and `iam/*.json` stay out of version control and out of the public export.
 
 ## What judges should see
 
-Reservedge is a conversation-first buyer agent: an arbitrary free-form objective becomes clarification, a labelled multi-task plan, closed capability routing, then **simulated** parking execution behind A1–A4 when parking is actually in the plan. Stay research may call LiteAPI. Experience search may call Prioticket and can truthfully return empty when the provider catalog does not expose city inventory. Rental stays requirement-only.
+Reservedge — Intent-to-Action booking agent — turns one natural-language trip into coordinated **flight**, **hotel**, and **parking** work in one Booking Chat.
 
-**Strands decides what work is needed. Deterministic governance decides what is allowed.** Models cannot approve, dispatch, rank, or charge.
+- LiteAPI **sandbox research** for flights and hotels (not a ticket / not a reservation).
+- Simulated **Curated offers** for parking, then a governed simulated reservation and simulated receipt.
+- Strands Agents SDK + Amazon Bedrock interpret; code owns provenance, authorization, ranking, and money-sensitive state.
 
 ## What this cut claims
 
-- Local fake-mode Strands Plan/Execute turns behind `/v1/agent/**` (default demo pack).
-- Local live Bedrock Plan turns behind `ITAA_AWS_MODEL_MODE=live` and `ITAA_AWS_LIVE_INVOKE=1` (UAT 7 Sep 2026; one cycle per turn, ~6–8 s HTTP). See [LIVE_UAT.md](LIVE_UAT.md).
-- Code projector assigns **Explicit / Inferred / Proposed**. The model cannot upgrade provenance.
-- LiteAPI sandbox stay **research** (not booking). Configuration names only.
-- Prioticket experience adapter integrated; city catalog currently provider-limited.
-- Parking after plan confirm uses the existing governed façade (A1–A4, isolated simulated suppliers, locked JFK ranking vector) when parking is on the plan.
-- Rental is requirement-only. No live car inventory.
-- Supplier execution and payment are **simulated**. A4 `mode` must be `SIMULATED`.
+- Hosted staging uses live Bedrock behind `/v1/agent/**`.
+- Local clone defaults to fake model mode (no cloud credentials).
+- Code projector assigns **Explicit / Inferred / Proposed**.
+- Parking Curated offers and A4 are **simulated**.
+- Experience search is Prioticket / provider-limited. Rental is requirement-only.
 
 ## What this cut does not claim
 
-- Amazon Bedrock AgentCore, or a recorded live-Bedrock judge video
-- A production Bedrock deployment or public live URL
+- Amazon Bedrock AgentCore
 - Real bookings, inventory holds, supplier contact, or card charges
-- Prioticket as a working Milan experience catalog until the provider provisions it
-- Durable sessions (restart discards `as_*` sessions → `unknown_resource`)
+- Live curated / reverse-bid marketplaces (do not name RDN)
+- Durable sessions
 - Production authentication
-- Google/Gemini on this path
-
-Default live mode without `ITAA_AWS_LIVE_INVOKE=1` still fails closed (`model: unavailable`). Do not set the invoke flag for the fake-mode demo.
 
 ## Honesty (say this on camera)
 
-Use the canonical lines in [HONESTY.md](HONESTY.md):
+Use [HONESTY.md](HONESTY.md):
 
-- Supplier execution and payment are simulated. There are no real charges, reservations, or supplier bookings.
-- `SIMULATED - NO REAL CHARGES OR RESERVATIONS`
-- A4 is not a booking. Mode is `SIMULATED`.
+- Flights/hotels = sandbox research only.
+- Parking Curated offers = simulated supplier replies.
+- A4 authorizes the simulated booking step. It never creates a real booking.
+- `SIMULATED — NO REAL CHARGES OR RESERVATIONS`
 - Session state is process-local and non-durable.
-- Until a live recording is authorized: this recording uses fake model mode. It does not demonstrate live Bedrock or AgentCore.
+- AgentCore is not deployed.
 
 ## Local setup (fake mode)
 
@@ -73,7 +70,10 @@ Copy names from [`infra/aws/env.example`](../../infra/aws/env.example). Keep `IT
 ### Combined process (simplest local demo)
 
 ```bash
-ITAA_AWS_MODEL_MODE=fake uv run uvicorn itaa_aws_adapter.app:app   --app-dir adapters/aws-strands-bedrock-agentcore/src   --host 127.0.0.1 --port 8011
+ITAA_AWS_MODEL_MODE=fake \
+uv run uvicorn itaa_aws_adapter.app:app \
+  --app-dir adapters/aws-strands-bedrock-agentcore/src \
+  --host 127.0.0.1 --port 8011
 ```
 
 ```bash
@@ -82,55 +82,28 @@ pnpm --filter @itaa/web dev
 
 Open `http://127.0.0.1:5180`.
 
-### Preferred split topology
-
-API on `:8011`, adapter on `:8080`. BFF HTTP-calls `/v1/aws/**` only.
-
-```bash
-ITAA_AWS_MODEL_MODE=fake ITAA_AWS_ADAPTER_URL=http://127.0.0.1:8080 uv run uvicorn itaa_api.app:app --app-dir apps/api/src --host 127.0.0.1 --port 8011
-```
-
-```bash
-ITAA_AWS_MODEL_MODE=fake uv run uvicorn itaa_aws_adapter.app:app   --app-dir adapters/aws-strands-bedrock-agentcore/src   --host 127.0.0.1 --port 8080
-```
-
-```bash
-pnpm --filter @itaa/web dev
-```
-
 Restarting Python discards every in-memory agent session.
 
 ## Architecture
 
-Source: [`docs/demo-aws/architecture.mmd`](../demo-aws/architecture.mmd)
+Source: [`docs/demo-aws/architecture.mmd`](../demo-aws/architecture.mmd)  
 Rendered: [`docs/demo-aws/architecture.svg`](../demo-aws/architecture.svg)
 
 ## Demo script
 
-[`docs/demo-aws/SCRIPT.md`](../demo-aws/SCRIPT.md) — ≤5-minute storyboard covering the seven required beats.
-[`docs/demo-aws/LIVE_RECORDING.md`](../demo-aws/LIVE_RECORDING.md) — live env and shot list (recording remains gated).
+[`docs/demo-aws/SCRIPT.md`](../demo-aws/SCRIPT.md) — Script A (Dubai → London), target 4:40–4:55.
 
 ## Tests
-
-From the repository root, after `make setup`:
 
 ```bash
 /usr/bin/make check
 ```
 
-Narrower fake-mode evidence:
+Human UAT: [UAT.md](UAT.md).
 
-```bash
-PYTHONPATH=adapters/aws-strands-bedrock-agentcore/src   uv run pytest adapters/aws-strands-bedrock-agentcore/tests tests/evals/test_comp_aws_04_*.py   tests/adversarial/test_comp_aws_04_*.py tests/security/test_comp_aws_04_strands_lock.py
-pnpm --filter @itaa/web test
-```
+## Still gated from this pack
 
-Step-by-step UAT is in [UAT.md](UAT.md).
-
-## Still gated
-
-- Hosted public live demo / deploy
-- Final live-demo recording
+- Merge to private `main` (Product Owner)
+- Public repository publish
 - Devpost submit
 - AgentCore deploy
-- Real Prioticket booking or catalog enablement

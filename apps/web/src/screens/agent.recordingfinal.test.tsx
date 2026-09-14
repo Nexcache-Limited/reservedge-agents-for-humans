@@ -224,15 +224,18 @@ describe("COMP-RECORDING-FINAL-UX workspace", () => {
       }),
     );
     expect(await screen.findByText("parking.search")).toBeInTheDocument();
-    const cards = await screen.findByRole("list", { name: "Simulated parking offers" });
+    const cards = await screen.findByRole("list", { name: "Parking offers, scroll sideways" });
     expect(cards.tagName).toBe("UL");
     expect(cards.tagName).not.toBe("OL");
-    expect(await screen.findByRole("button", { name: "Take this one" })).toBeInTheDocument();
+    expect(
+      (await screen.findAllByRole("button", { name: "Take this one" })).length,
+    ).toBeGreaterThan(0);
   });
 
   it("pins a stale hotel card above flight during stay refinement", async () => {
     await start(
       londonView({
+        lastRevisedKind: "hotel",
         staySearch: {
           status: "ok",
           label: "Sandbox hotel search",
@@ -283,6 +286,7 @@ describe("COMP-RECORDING-FINAL-UX workspace", () => {
     expect(within(wrap as HTMLElement).getByRole("status")).toHaveTextContent("Updating your plan");
     const log = document.querySelector(".re-clarify-log");
     expect(log?.textContent).not.toContain("Updating your plan");
+    expect(log?.textContent).toContain("lhr");
   });
 
   it("turns the send arrow Reservedge orange when the composer has content", async () => {

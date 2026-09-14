@@ -65,9 +65,26 @@ _PARKING_CLOCK_WINDOW = re.compile(
     rf"(\d{{1,2}})(?:st|nd|rd|th)?(?:\s+({_MONTH_NAMES}))?",
     re.I | re.S,
 )
+_PARKING_DATES_THEN_CLOCKS = re.compile(
+    rf"parking.{{0,160}}?(?:from|in|on)\s+"
+    rf"(\d{{1,2}})(?:st|nd|rd|th)?(?!\s*(?:am|pm|:))"
+    rf"\s+(?:to|until|through)\s+"
+    rf"(\d{{1,2}})(?:st|nd|rd|th)?(?!\s*(?:am|pm|:))"
+    rf"(?:\s+({_MONTH_NAMES}))?"
+    rf".{{0,80}}?"
+    rf"(\d{{1,2}}(?::\d{{2}})?\s*(?:am|pm))\s+(?:to|until|through)\s+"
+    rf"(\d{{1,2}}(?::\d{{2}})?\s*(?:am|pm))",
+    re.I | re.S,
+)
 _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", re.I)
 _OTHER_TRANSPORT = re.compile(
     r"\b(train|eurostar|ferry|bus|coach|driving|drive there|by car)\b",
+    re.I,
+)
+_BARE_DAY_SPAN = re.compile(
+    r"\b(?:from\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*(?:am|pm|:))"
+    r"\s*(?:to|[–-]|until|through)\s*(?:the\s+)?"
+    r"(\d{1,2})(?:st|nd|rd|th)?(?!\s*(?:am|pm|:))\b",
     re.I,
 )
 _LOCAL_INSTANT = re.compile(r"^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:Z|[+-]\d{2}:\d{2})?$")
@@ -121,6 +138,25 @@ def nearest_future_year(month: int, day: int, *, today: date | None = None) -> i
     if candidate >= now:
         return now.year
     return now.year + 1
+
+
+def parse_bare_day_span(text: str, *, today: date | None = None) -> tuple[str, str] | None:
+    """Bind month-less 'from 14 to 16' onto the current UTC month. Never clocks."""
+
+    match = _BARE_DAY_SPAN.search(text)
+    if match is None:
+        return None
+    now = utc_today(today)
+    month = f"{now.month:02d}"
+    start = resolve_ymd(month, int(match.group(1)), today=today)
+    end = resolve_ymd(month, int(match.group(2)), today=today)
+    if not start or not end:
+        return None
+    if start > end:
+        end = f"{start[:4]}-{end[5:]}"
+        if start > end:
+            return None
+    return start, end
 
 
 def resolve_ymd(
@@ -204,20 +240,31 @@ def parse_parking_clock_window(text: str, *, today: date | None = None) -> tuple
     """Domain-explicit parking start/end instants. Does not use stay checkout."""
 
     match = _PARKING_CLOCK_WINDOW.search(text)
-    if match is None:
-        return None
-    start_clock = _clock_to_hhmm(match.group(1))
-    end_clock = _clock_to_hhmm(match.group(4))
-    start_month = match.group(3)
-    end_month = match.group(6) or start_month
+    if match is not None:
+        start_clock = _clock_to_hhmm(match.group(1))
+        end_clock = _clock_to_hhmm(match.group(4))
+        start_month = match.group(3)
+        end_month = match.group(6) or start_month
+        start_day = int(match.group(2))
+        end_day = int(match.group(5))
+    else:
+        spanned = _PARKING_DATES_THEN_CLOCKS.search(text)
+        if spanned is None:
+            return None
+        start_clock = _clock_to_hhmm(spanned.group(4))
+        end_clock = _clock_to_hhmm(spanned.group(5))
+        start_month = spanned.group(3)
+        end_month = start_month
+        start_day = int(spanned.group(1))
+        end_day = int(spanned.group(2))
     if not start_month:
         start_month = _month_from_context(text)
     if not end_month:
         end_month = start_month
     if not start_clock or not end_clock or not start_month:
         return None
-    start = resolve_ymd(start_month, int(match.group(2)), today=today)
-    end = resolve_ymd(end_month, int(match.group(5)), today=today)
+    start = resolve_ymd(start_month, start_day, today=today)
+    end = resolve_ymd(end_month, end_day, today=today)
     if start is None or end is None:
         return None
     return f"{start}T{start_clock}", f"{end}T{end_clock}"

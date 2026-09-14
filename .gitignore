@@ -9,6 +9,13 @@
 id_rsa
 id_ed25519
 
+# Operator-only (never commit)
+.claude/
+docs/submissions-aws/iam/
+docs/submissions-aws/BUILDER_ID.md
+docs/submissions-aws/LIVE_BEDROCK_PRECHECK.md
+docs/submissions-aws/LIVE_BEDROCK_IAM_DESIGN.md
+
 # Python
 .venv/
 venv/

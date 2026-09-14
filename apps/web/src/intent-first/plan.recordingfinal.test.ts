@@ -98,7 +98,7 @@ describe("COMP-RECORDING-FINAL-UX plan projection", () => {
     ]);
   });
 
-  it("pins a stale stay domain to the top during refinement", () => {
+  it("pins a revised stay domain to the top during refinement", () => {
     const session: PlanSession = {
       ...createPlanSession(LONDON_UAT),
       agent: {
@@ -129,6 +129,7 @@ describe("COMP-RECORDING-FINAL-UX plan projection", () => {
           bookingAuthority: "none",
           stale: true,
         },
+        lastRevisedKind: "hotel",
       },
     };
     expect(refinementPinKind(session)).toBe("hotel");
@@ -137,5 +138,66 @@ describe("COMP-RECORDING-FINAL-UX plan projection", () => {
       refinementPinKind(session),
     ).map((item) => item.kind);
     expect(ordered[0]).toBe("hotel");
+  });
+
+  it("pins only the revised domain and keeps trip-wide order", () => {
+    const searched = {
+      status: "ok" as const,
+      label: "Sandbox search",
+      providerId: "sandbox",
+      source: "sandbox" as const,
+      offers: [],
+      buyerSafeMessage: "",
+      bookingAuthority: "none" as const,
+      stale: true,
+    };
+    const base: PlanSession = {
+      ...createPlanSession(LONDON_UAT),
+      agent: {
+        sessionId: "as_01k2m3n4p5q6r7s8t9v0w1x2rf",
+        fallback: false,
+        confirmed: false,
+        failed: false,
+        failureMessage: "",
+        parkingHandoff: null,
+        activity: [],
+        remote: projectPlan(createPlanSession(LONDON_UAT)),
+        transcript: [],
+        domains: {},
+        pendingAuthorization: null,
+        buyerSafeMessage: "",
+        staySearch: searched,
+        flightSearch: searched,
+        lastRevisedKind: "flight",
+      },
+    };
+    expect(refinementPinKind(base)).toBe("flight");
+    expect(
+      sortPlanTasks([task("parking"), task("hotel"), task("flight")], refinementPinKind(base)).map(
+        (item) => item.kind,
+      ),
+    ).toEqual(["flight", "hotel", "parking"]);
+    const tripWide: PlanSession = {
+      ...base,
+      agent: { ...base.agent!, lastRevisedKind: "trip" },
+    };
+    expect(refinementPinKind(tripWide)).toBeNull();
+    expect(
+      sortPlanTasks(
+        [task("parking"), task("hotel"), task("flight")],
+        refinementPinKind(tripWide),
+      ).map((item) => item.kind),
+    ).toEqual(["flight", "hotel", "parking"]);
+    const afterSearch: PlanSession = {
+      ...base,
+      agent: { ...base.agent!, lastRevisedKind: null },
+    };
+    expect(refinementPinKind(afterSearch)).toBeNull();
+    expect(
+      sortPlanTasks(
+        [task("parking"), task("hotel"), task("flight")],
+        refinementPinKind(afterSearch),
+      ).map((item) => item.kind),
+    ).toEqual(["flight", "hotel", "parking"]);
   });
 });

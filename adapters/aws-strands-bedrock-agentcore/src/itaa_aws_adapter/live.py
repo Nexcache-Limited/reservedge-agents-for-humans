@@ -60,7 +60,16 @@ PLAN_SYSTEM = (
     "buyer asked to fly. Do not offer car rentals as something this build can fulfil. "
     "If the buyer asks to pay for or ticket a flight, say sandbox search is available "
     "but this build does not complete airline payment. "
-    "Search still waits for typed pending search authorization. "
+    "Sandbox search results are not bookings. Changing search dates is not a ticket change. "
+    "Do not mention existing tickets, airline payment, or booking platforms unless the "
+    "buyer asked to pay or said they already hold a ticket. "
+    "Use recentTurns and trusted domain state as memory of this chat. "
+    "sessionFacts.tripDates, stayDates, and flightDates are the held windows; "
+    "day-only follow-ups keep that month. "
+    "When the buyer changes flight dates and hotel or parking is on the plan, ask whether "
+    "those dates should follow. Keep buyerSafeMessage to one or two short sentences. "
+    "No markdown, no emoji, no queued-search summaries. Code dispatches search. "
+    "Code may re-search after an explicit date change; do not ask to re-authorize that search. "
     "If destination is already named, do not ask where. If dates are already named, do not "
     "ask when. Ask only for the missing fact. "
     "Do not emit a helpWith blocking question. Do not invent a vertical. "
@@ -92,7 +101,16 @@ PLAN_SYSTEM = (
     "Do not restrict destinations to a city list. "
     "Ask every remaining material missing parking fact in one buyer-safe message. "
     "Do not claim offers "
-    "are ready, ranked, selected, or refreshed before authorized supplier solicitation."
+    "are ready, ranked, selected, or refreshed before authorized supplier solicitation. "
+    "When lastAgentMessage asked which airports to search for the flight booking, "
+    "interpret the latest buyer message against that flight-airport question. Short "
+    "replies such as all, those, either, any, "
+    "both, everywhere, or all airports mean search every supported airport in the two "
+    "named cities: fill facts.departureAirport and facts.destinationAirport with those "
+    "city metro codes (Dubai=DXB, London=LON, New York=NYC). Named IATA or airport "
+    "names from the offered pair are explicit origin/destination. Do not leave those "
+    "facts empty when the buyer answered the airport question. Do not invent codes for "
+    "a city that was not named, and do not copy a parking airport into origin."
 )
 _INVOKE_STATS: list[dict[str, object]] = []
 
@@ -235,15 +253,24 @@ def _invoke_strands_plan(
     )
     resolved_context = context or PlanTurnContext()
     latest = resolved_context.lastUserMessage.strip() or "(session start)"
-    trusted = json.dumps(resolved_context.trustedDomains, default=str)
+    trusted_raw = (
+        resolved_context.trustedDomains if isinstance(resolved_context.trustedDomains, dict) else {}
+    )
+    last_agent = str(trusted_raw.get("lastAgentMessage") or "").strip()
+    history = json.dumps(trusted_raw.get("recentTurns") or [], default=str)
+    trusted = json.dumps(trusted_raw, default=str)
     prompt = (
         f"Objective / conversation:\n{objective.strip()}\n\n"
+        f"Current chat (oldest to newest):\n{history}\n\n"
         f"Latest buyer message:\n{latest}\n\n"
+        f"Previous assistant message:\n{last_agent or '(none)'}\n\n"
         f"Trusted domain state JSON:\n{trusted}\n\n"
         f"Structured answers JSON:\n{answers.model_dump_json()}\n\n"
         f"{catalog_prompt()}\n"
         "Propose closed RequirementPatch values. Code validates before trusted state changes. "
-        "Never invent JFK from New York. Never copy London into parking.airportCode.\n"
+        "Never invent JFK from New York. Never copy London into parking.airportCode. "
+        "If the previous assistant message asked which airports to search, fill "
+        "facts.departureAirport and facts.destinationAirport from this buyer reply.\n"
     )
 
     def _call() -> Any:

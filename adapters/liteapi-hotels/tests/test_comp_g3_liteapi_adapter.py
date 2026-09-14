@@ -15,7 +15,11 @@ from itaa_application.external_search_port import (
     SearchFailureCode,
     SearchProvenance,
 )
-from itaa_liteapi_hotels.adapter import LiteApiStaySearchAdapter, rates_request_body
+from itaa_liteapi_hotels.adapter import (
+    LiteApiStaySearchAdapter,
+    provider_timeout_s,
+    rates_request_body,
+)
 from itaa_liteapi_hotels.compose import compose_flight_search_port, compose_stay_search_port
 from itaa_liteapi_hotels.fake import FakeStaySearchAdapter
 from itaa_liteapi_hotels.fake_flights import FakeFlightSearchAdapter
@@ -47,7 +51,8 @@ def test_milan_rates_request_uses_city_and_dates() -> None:
     assert body["guestNationality"] == "IN"
     assert body["occupancies"] == [{"adults": 2}]
     assert body["maxRatesPerHotel"] == 1
-    assert body["limit"] == 6
+    assert body["limit"] == 4
+    assert body["timeout"] == provider_timeout_s()
     assert "hotelIds" not in body
 
 
@@ -124,6 +129,23 @@ def test_rejected_credentials_are_not_missing_config() -> None:
     assert "not configured" not in result.buyer_safe_message.lower()
     assert "rejected" in result.buyer_safe_message.lower()
     assert "skyshield" not in result.buyer_safe_message.lower()
+
+
+def test_dubai_origin_uses_ae_nationality_for_london_stay() -> None:
+    body = rates_request_body(
+        ExternalSearchQuery(
+            domain="stay",
+            destination=PlaceRef("city", "London"),
+            start="2026-10-12T07:00:00",
+            end="2026-10-16T22:00:00",
+            origin=PlaceRef("city", "Dubai"),
+        )
+    )
+    assert body["guestNationality"] == "AE"
+    assert body["checkin"] == "2026-10-12"
+    assert body["checkout"] == "2026-10-16"
+    assert body["cityName"] == "London"
+    assert body["countryCode"] == "GB"
 
 
 def test_timeout_is_typed_not_parking(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -18,6 +18,7 @@ import {
   overlayParkingDomainFacts,
   planContextChips,
   applyTaskOverrides,
+  refinementPinKind,
   sortPlanTasks,
   type CarNeed,
   type ClarificationQuestion,
@@ -149,9 +150,9 @@ export function mergeAgentView(session: PlanSession, view: AgentSessionView): Pl
       departureAirport: session.answers.departureAirport || fromFacts.departureAirport,
       carNeed: session.answers.carNeed || fromFacts.carNeed,
       helpWith: session.answers.helpWith || fromFacts.helpWith,
-      dates: session.answers.dates || fromFacts.dates,
-      startDate: session.answers.startDate || fromFacts.startDate,
-      endDate: session.answers.endDate || fromFacts.endDate,
+      dates: fromFacts.dates || session.answers.dates,
+      startDate: fromFacts.startDate || session.answers.startDate,
+      endDate: fromFacts.endDate || session.answers.endDate,
       startPeriod: session.answers.startPeriod || fromFacts.startPeriod,
       endPeriod: session.answers.endPeriod || fromFacts.endPeriod,
       timeFlexible: session.answers.timeFlexible || fromFacts.timeFlexible,
@@ -162,12 +163,22 @@ export function mergeAgentView(session: PlanSession, view: AgentSessionView): Pl
       ...bound,
       transcript: mergeTranscripts(previous?.transcript ?? [], bound.transcript),
       domains: mergeParkingDomains(previous?.domains, bound.domains),
-      pendingAuthorization: bound.pendingAuthorization ?? previous?.pendingAuthorization ?? null,
+      pendingAuthorization:
+        view.pendingAuthorization === undefined
+          ? (previous?.pendingAuthorization ?? null)
+          : view.pendingAuthorization,
       pendingSearchAuthorization:
-        bound.pendingSearchAuthorization ?? previous?.pendingSearchAuthorization ?? null,
+        view.pendingSearchAuthorization === undefined
+          ? (previous?.pendingSearchAuthorization ?? null)
+          : view.pendingSearchAuthorization,
+      stayDraft: view.stayDraft ?? previous?.stayDraft ?? null,
       staySearch: view.staySearch ?? previous?.staySearch ?? null,
       experienceSearch: view.experienceSearch ?? previous?.experienceSearch ?? null,
       flightSearch: view.flightSearch ?? previous?.flightSearch ?? null,
+      lastRevisedKind:
+        view.lastRevisedKind === undefined
+          ? (previous?.lastRevisedKind ?? bound.lastRevisedKind ?? null)
+          : view.lastRevisedKind,
       sharedBookingContext: view.sharedBookingContext ?? previous?.sharedBookingContext ?? null,
       workspace: view.workspace ?? previous?.workspace ?? null,
     },
@@ -274,7 +285,10 @@ export function projectAgentSession(session: PlanSession): PlanProjection {
   }
   const facts = overlayParkingDomainFacts(remote.facts, session.agent?.domains?.parking);
   const questions = presentQuestions(remote.questions, facts);
-  const tasks = sortPlanTasks(applyTaskOverrides(remote.tasks, session.overrides));
+  const tasks = sortPlanTasks(
+    applyTaskOverrides(remote.tasks, session.overrides),
+    refinementPinKind(session),
+  );
   const chips = planContextChips(facts, session.answers, session.extraNote);
   return {
     facts,
@@ -427,10 +441,12 @@ function bindingFromView(
     domains: view.domains ?? {},
     pendingAuthorization: view.pendingAuthorization ?? null,
     pendingSearchAuthorization: view.pendingSearchAuthorization ?? null,
+    stayDraft: view.stayDraft ?? null,
     buyerSafeMessage: view.buyerSafeMessage ?? "",
     staySearch: view.staySearch ?? null,
     experienceSearch: view.experienceSearch ?? null,
     flightSearch: view.flightSearch ?? null,
+    lastRevisedKind: view.lastRevisedKind ?? null,
     sharedBookingContext: view.sharedBookingContext ?? null,
     workspace: view.workspace ?? null,
   };
@@ -563,8 +579,8 @@ export function syncPlanSessionWithSnapshot(
         : "You accepted the recommended offer.";
   const confirmed =
     supplier !== ""
-      ? `Simulated reservation authorized with ${supplier}. This booking is complete.`
-      : "Simulated reservation authorized. This booking is complete.";
+      ? `Simulated reservation authorized with ${supplier}. Other tasks on this trip can still be changed.`
+      : "Simulated reservation authorized. Other tasks on this trip can still be changed.";
   const lines: string[] = [];
   const accepted =
     snapshot.state === "ACCEPTANCE_RECORDED" ||
@@ -579,7 +595,7 @@ export function syncPlanSessionWithSnapshot(
   }
   if (
     snapshot.state === "TRANSACTION_AUTHORIZED_SIMULATED" &&
-    !agent.transcript.some((item) => item.text.includes("booking is complete"))
+    !agent.transcript.some((item) => item.text.includes("parking reservation authorized"))
   ) {
     lines.push(confirmed);
   }
@@ -609,7 +625,6 @@ export function syncPlanSessionWithSnapshot(
   }
   return {
     ...session,
-    ...(completeness === "authorized" ? { shelf: "history" as const } : {}),
     agent: {
       ...agent,
       activity: withoutUpdatingActivity(agent.activity),

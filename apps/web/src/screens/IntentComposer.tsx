@@ -1,6 +1,6 @@
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, useEffect } from "react";
 import { flushSync } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ClosedApiError } from "../api/errors.js";
 import type { ItaaApi } from "../api/types.js";
 import {
@@ -15,6 +15,7 @@ import { listDomains } from "../reservedge/registry.js";
 
 export function IntentComposer({ api }: { api: ItaaApi }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { objective, setObjective, planSession, setPlanSession, setParkedSessions } =
     usePortfolio();
   const [note, setNote] = useState<string | null>(null);
@@ -24,6 +25,14 @@ export function IntentComposer({ api }: { api: ItaaApi }) {
   const headingId = useId();
   const ready = objective.trim() !== "";
   const domains = listDomains();
+
+  useEffect(() => {
+    const reset = (location.state as { composerReset?: number } | null)?.composerReset;
+    if (reset !== undefined) {
+      setObjective("");
+      setNote(null);
+    }
+  }, [location.state, setObjective]);
 
   function applySuggestion(text: string) {
     setObjective(text);

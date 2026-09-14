@@ -1,99 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 640" role="img" aria-labelledby="title desc">
-  <title id="title">Reservedge architecture  fake-mode AWS Agents for Humans demo</title>
-  <desc id="desc">Human buyer to React UI to product BFF /v1/agent to AWS adapter /v1/aws to Strands orchestrator and code projector, then GoldenPathFacade A1A4 and isolated simulated suppliers. Not live Bedrock or AgentCore.</desc>
-  <rect width="1120" height="640" fill="#f7f4ef"/>
-  <text x="40" y="36" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#1c1916">Reservedge  intent-first buyer agent</text>
-  <text x="40" y="58" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="12" fill="#5c574f">Fake-mode demo. Browser uses /v1/agent only. Supplier execution and payment are simulated. Not live Bedrock or AgentCore.</text>
-
-  <g font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">
-    <rect x="40" y="88" width="200" height="72" rx="8" fill="#f4f0e6" stroke="#3d3a34"/>
-    <text x="140" y="118" text-anchor="middle" font-weight="700">Human buyer</text>
-    <text x="140" y="138" text-anchor="middle" font-size="11" fill="#5c574f">objective · answers · A1A4</text>
-
-    <rect x="300" y="80" width="280" height="88" rx="8" fill="#e7f0ea" stroke="#2f5d50"/>
-    <text x="440" y="108" text-anchor="middle" font-weight="700">React / Vite UI :5180</text>
-    <text x="440" y="128" text-anchor="middle" font-size="11" fill="#2f5d50">Composer · Clarify &amp; Plan · parking workspace</text>
-    <text x="440" y="146" text-anchor="middle" font-size="11" fill="#2f5d50">Never calls /v1/aws from the browser</text>
-
-    <rect x="660" y="80" width="200" height="88" rx="8" fill="#e8eef7" stroke="#314a73"/>
-    <text x="760" y="108" text-anchor="middle" font-weight="700">Product BFF</text>
-    <text x="760" y="128" text-anchor="middle" font-size="11" fill="#314a73">apps/api · /v1/agent/**</text>
-    <text x="760" y="146" text-anchor="middle" font-size="11" fill="#314a73">sessions · turns · confirm · SSE</text>
-
-    <rect x="900" y="80" width="180" height="88" rx="8" fill="#e8eef7" stroke="#314a73"/>
-    <text x="990" y="108" text-anchor="middle" font-weight="700">AWS adapter</text>
-    <text x="990" y="128" text-anchor="middle" font-size="11" fill="#314a73">/v1/aws/plan-turns</text>
-    <text x="990" y="146" text-anchor="middle" font-size="11" fill="#314a73">/v1/aws/execute-turns</text>
-  </g>
-
-  <g fill="none" stroke="#3d3a34" stroke-width="1.5" marker-end="url(#arrow)">
-    <line x1="240" y1="124" x2="300" y2="124"/>
-    <line x1="580" y1="124" x2="660" y2="124"/>
-    <line x1="860" y1="124" x2="900" y2="124"/>
-  </g>
-
-  <rect x="40" y="200" width="1040" height="200" rx="10" fill="#eef3fa" stroke="#314a73" stroke-dasharray="4 3"/>
-  <text x="56" y="224" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#314a73">ADAPTER  Strands proposes; code assigns provenance. Combined process may call this in-process. Split: BFF :8011 ’ adapter :8080.</text>
-
-  <g font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">
-    <rect x="64" y="244" width="320" height="128" rx="8" fill="#e8eef7" stroke="#314a73"/>
-    <text x="224" y="276" text-anchor="middle" font-weight="700">Strands buyer orchestrator</text>
-    <text x="224" y="298" text-anchor="middle" font-size="11" fill="#314a73">One agent · Plan then Execute</text>
-    <text x="224" y="316" text-anchor="middle" font-size="11" fill="#314a73">This demo: fake PlanTurns A/B/C</text>
-    <text x="224" y="334" text-anchor="middle" font-size="11" fill="#314a73">Live Bedrock: not demonstrated</text>
-    <text x="224" y="352" text-anchor="middle" font-size="11" fill="#314a73">AgentCore: out of scope</text>
-
-    <rect x="420" y="244" width="300" height="128" rx="8" fill="#f7ead8" stroke="#8a5a12"/>
-    <text x="570" y="280" text-anchor="middle" font-weight="700">Code projector</text>
-    <text x="570" y="302" text-anchor="middle" font-size="11" fill="#8a5a12">Explicit / Inferred / Proposed</text>
-    <text x="570" y="320" text-anchor="middle" font-size="11" fill="#8a5a12">Evidence spans required for Explicit</text>
-    <text x="570" y="338" text-anchor="middle" font-size="11" fill="#8a5a12">Model cannot upgrade provenance</text>
-    <text x="570" y="356" text-anchor="middle" font-size="11" fill="#8a5a12">d3 blocking questions</text>
-
-    <rect x="756" y="244" width="300" height="128" rx="8" fill="#f7ead8" stroke="#8a5a12"/>
-    <text x="906" y="280" text-anchor="middle" font-weight="700">Closed tools</text>
-    <text x="906" y="302" text-anchor="middle" font-size="11" fill="#8a5a12">Plan: capabilities · project_plan</text>
-    <text x="906" y="320" text-anchor="middle" font-size="11" fill="#8a5a12">Execute: parking prep / snapshot</text>
-    <text x="906" y="338" text-anchor="middle" font-size="11" fill="#8a5a12">solicit / explain / accept / A4</text>
-    <text x="906" y="356" text-anchor="middle" font-size="11" fill="#8a5a12">Unknown names fail closed</text>
-  </g>
-
-  <g fill="none" stroke="#314a73" stroke-width="1.5" marker-end="url(#arrow)">
-    <line x1="384" y1="308" x2="420" y2="308"/>
-    <line x1="720" y1="308" x2="756" y2="308"/>
-  </g>
-
-  <rect x="40" y="424" width="1040" height="184" rx="10" fill="#f3eee6" stroke="#8a5a12" stroke-dasharray="4 3"/>
-  <text x="56" y="448" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#8a5a12">GOVERNANCE  human grants required. No real booking or payment.</text>
-
-  <g font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">
-    <rect x="64" y="468" width="300" height="116" rx="8" fill="#f7ead8" stroke="#8a5a12"/>
-    <text x="214" y="500" text-anchor="middle" font-weight="700">GoldenPathFacade</text>
-    <text x="214" y="522" text-anchor="middle" font-size="11" fill="#8a5a12">A1 requirement · A2 disclosure</text>
-    <text x="214" y="540" text-anchor="middle" font-size="11" fill="#8a5a12">A3 offer · A4 SIMULATED only</text>
-    <text x="214" y="558" text-anchor="middle" font-size="11" fill="#8a5a12">Model cannot skip a grant</text>
-
-    <rect x="400" y="468" width="320" height="116" rx="8" fill="#eee9e2" stroke="#6b645b"/>
-    <text x="560" y="500" text-anchor="middle" font-weight="700">Isolated simulated suppliers</text>
-    <text x="560" y="522" text-anchor="middle" font-size="11" fill="#5c574f">ParkDirect · SkyShield · TerminalFlex</text>
-    <text x="560" y="540" text-anchor="middle" font-size="11" fill="#5c574f">Minimum disclosed fields only</text>
-    <text x="560" y="558" text-anchor="middle" font-size="11" fill="#5c574f">No competitor identity leakage</text>
-
-    <rect x="756" y="468" width="300" height="116" rx="8" fill="#f7ead8" stroke="#8a5a12"/>
-    <text x="906" y="500" text-anchor="middle" font-weight="700">Deterministic ranking</text>
-    <text x="906" y="522" text-anchor="middle" font-size="11" fill="#8a5a12">JFK vector unchanged</text>
-    <text x="906" y="540" text-anchor="middle" font-size="11" fill="#8a5a12">SkyShield 671000 fixture</text>
-    <text x="906" y="558" text-anchor="middle" font-size="11" fill="#8a5a12">SIMULATED receipt · no charge</text>
-  </g>
-
-  <g fill="none" stroke="#8a5a12" stroke-width="1.5" marker-end="url(#arrow)">
-    <line x1="364" y1="526" x2="400" y2="526"/>
-    <line x1="720" y1="526" x2="756" y2="526"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 820" role="img" aria-labelledby="title desc">
+  <title id="title">Reservedge architecture — AWS Agents for Humans</title>
+  <desc id="desc">Human buyer to Booking Chat UI to product BFF /v1/agent to /v1/aws plan-turns and execute-turns to Strands Agents SDK to Amazon Bedrock to a code projector. Capabilities: LiteAPI sandbox flight and stay search, simulated Curated parking offers with a simulated receipt, and Prioticket experience search. The browser never calls Bedrock. AgentCore is not deployed.</desc>
+  <rect width="1180" height="820" fill="#f7f4ef"/>
+  <text x="40" y="36" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#1c1916">Reservedge — Intent-to-Action booking agent</text>
+  <text x="40" y="58" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="12" fill="#5c574f">Everyday Agents · Strands Agents SDK + Amazon Bedrock · browser never calls Bedrock · AgentCore not deployed</text>
 
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
       <path d="M0,0 L8,4 L0,8 z" fill="#3d3a34"/>
     </marker>
   </defs>
+
+  <g font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">
+    <rect x="40" y="80" width="200" height="64" rx="8" fill="#f4f0e6" stroke="#3d3a34"/>
+    <text x="140" y="108" text-anchor="middle" font-weight="700">Human buyer</text>
+    <text x="140" y="128" text-anchor="middle" font-size="11" fill="#5c574f">objective · grants</text>
+
+    <rect x="280" y="80" width="280" height="64" rx="8" fill="#e7f0ea" stroke="#2f5d50"/>
+    <text x="420" y="108" text-anchor="middle" font-weight="700">Responsive Reservedge UI</text>
+    <text x="420" y="128" text-anchor="middle" font-size="11" fill="#2f5d50">Booking Chat · domain lanes</text>
+
+    <rect x="600" y="80" width="240" height="64" rx="8" fill="#e8eef7" stroke="#314a73"/>
+    <text x="720" y="108" text-anchor="middle" font-weight="700">Product BFF</text>
+    <text x="720" y="128" text-anchor="middle" font-size="11" fill="#314a73">/v1/agent/**</text>
+
+    <rect x="880" y="80" width="260" height="64" rx="8" fill="#e8eef7" stroke="#314a73"/>
+    <text x="1010" y="104" text-anchor="middle" font-weight="700">/v1/aws/plan-turns</text>
+    <text x="1010" y="124" text-anchor="middle" font-size="11" fill="#314a73">/v1/aws/execute-turns</text>
+  </g>
+  <g fill="none" stroke="#3d3a34" stroke-width="1.5" marker-end="url(#arrow)">
+    <line x1="240" y1="112" x2="280" y2="112"/>
+    <line x1="560" y1="112" x2="600" y2="112"/>
+    <line x1="840" y1="112" x2="880" y2="112"/>
+  </g>
+
+  <g font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">
+    <rect x="280" y="180" width="280" height="72" rx="8" fill="#e8eef7" stroke="#314a73"/>
+    <text x="420" y="208" text-anchor="middle" font-weight="700">Strands Agents SDK</text>
+    <text x="420" y="228" text-anchor="middle" font-size="11" fill="#314a73">interpret · clarify · refine</text>
+
+    <rect x="600" y="180" width="240" height="72" rx="8" fill="#e8eef7" stroke="#314a73"/>
+    <text x="720" y="208" text-anchor="middle" font-weight="700">Amazon Bedrock</text>
+    <text x="720" y="228" text-anchor="middle" font-size="11" fill="#314a73">hosted staging is live</text>
+  </g>
+  <g fill="none" stroke="#3d3a34" stroke-width="1.5" marker-end="url(#arrow)">
+    <line x1="1010" y1="144" x2="1010" y2="216"/>
+    <line x1="1010" y1="216" x2="840" y2="216"/>
+    <line x1="560" y1="216" x2="600" y2="216"/>
+    <line x1="420" y1="252" x2="420" y2="292"/>
+  </g>
+
+  <rect x="40" y="292" width="1100" height="96" rx="10" fill="#f7ead8" stroke="#8a5a12"/>
+  <text x="590" y="324" text-anchor="middle" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1c1916">Code projector / governance</text>
+  <text x="590" y="348" text-anchor="middle" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="12" fill="#8a5a12">Explicit · Inferred · Proposed · authorization · isolation · ranking</text>
+  <text x="590" y="368" text-anchor="middle" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="11" fill="#8a5a12">Code owns money-sensitive state. The model cannot skip a human grant.</text>
+
+  <g font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="12" fill="#1c1916">
+    <rect x="40" y="428" width="250" height="88" rx="8" fill="#eee9e2" stroke="#6b645b"/>
+    <text x="165" y="456" text-anchor="middle" font-weight="700">flight.search</text>
+    <text x="165" y="476" text-anchor="middle" fill="#5c574f">LiteAPI sandbox research</text>
+    <text x="165" y="496" text-anchor="middle" font-size="11" fill="#5c574f">not a ticket</text>
+
+    <rect x="310" y="428" width="250" height="88" rx="8" fill="#eee9e2" stroke="#6b645b"/>
+    <text x="435" y="456" text-anchor="middle" font-weight="700">stay.search</text>
+    <text x="435" y="476" text-anchor="middle" fill="#5c574f">LiteAPI sandbox research</text>
+    <text x="435" y="496" text-anchor="middle" font-size="11" fill="#5c574f">not a reservation</text>
+
+    <rect x="580" y="428" width="250" height="88" rx="8" fill="#f3e6d8" stroke="#8a5a12"/>
+    <text x="705" y="456" text-anchor="middle" font-weight="700">parking.search</text>
+    <text x="705" y="476" text-anchor="middle" fill="#8a5a12">simulated Curated offers</text>
+    <text x="705" y="496" text-anchor="middle" font-size="11" fill="#8a5a12">no live marketplace</text>
+
+    <rect x="850" y="428" width="290" height="88" rx="8" fill="#eee9e2" stroke="#6b645b"/>
+    <text x="995" y="456" text-anchor="middle" font-weight="700">experience.search</text>
+    <text x="995" y="476" text-anchor="middle" fill="#5c574f">Prioticket</text>
+    <text x="995" y="496" text-anchor="middle" font-size="11" fill="#5c574f">provider-limited catalog</text>
+  </g>
+  <g fill="none" stroke="#8a5a12" stroke-width="1.5" marker-end="url(#arrow)">
+    <line x1="165" y1="388" x2="165" y2="428"/>
+    <line x1="435" y1="388" x2="435" y2="428"/>
+    <line x1="705" y1="388" x2="705" y2="428"/>
+    <line x1="995" y1="388" x2="995" y2="428"/>
+    <line x1="705" y1="516" x2="705" y2="548"/>
+  </g>
+
+  <rect x="520" y="548" width="370" height="72" rx="8" fill="#f3e6d8" stroke="#8a5a12"/>
+  <text x="705" y="578" text-anchor="middle" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1c1916">Governed simulated action</text>
+  <text x="705" y="600" text-anchor="middle" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="12" fill="#8a5a12">SIMULATED receipt — no real charge or reservation</text>
+
+  <rect x="40" y="648" width="1100" height="140" rx="10" fill="#fff" stroke="#3d3a34"/>
+  <text x="56" y="678" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1c1916">Legend</text>
+  <text x="56" y="704" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">Sandbox research = external provider research, no booking/ticket</text>
+  <text x="56" y="728" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">Simulated Curated = no real supplier or reservation</text>
+  <text x="56" y="752" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="13" fill="#1c1916">Human authorization at consequential transitions</text>
+  <text x="56" y="776" font-family="ui-sans-serif, Helvetica, Arial, sans-serif" font-size="12" fill="#5c574f">rental.search is requirement-only (no production inventory adapter). AgentCore is not deployed.</text>
 </svg>

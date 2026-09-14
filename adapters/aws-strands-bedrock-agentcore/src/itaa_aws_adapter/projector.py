@@ -9,6 +9,7 @@ from itaa_api.calendar_resolve import (
     apply_stay_duration,
     other_transport_stated,
     parse_anchor_date,
+    parse_bare_day_span,
     resolve_ymd,
     rewrite_past_iso_if_year_omitted,
 )
@@ -131,7 +132,10 @@ _CITY_STOP: Final[frozenset[str]] = frozenset(
         "i've",
         "we're",
         "they're",
+        "fly",
         "flying",
+        "go",
+        "want",
         "returning",
     }
 )
@@ -147,14 +151,34 @@ TASK_META: Final[dict[TaskKind, tuple[str, str, TaskSupport, str]]] = {
 
 _AIRPORT = re.compile(r"\b([A-Za-z]{3})\b")
 _FLIGHT_ROUTE = re.compile(
-    r"\b(?:flight|flights|fly)\s+from\s+[A-Za-z][A-Za-z .'-]{0,40}?\s+to\s+[A-Za-z]",
+    r"\b(?:flight|flights|fly|flying|go(?:ing)?)\s+from\s+"
+    r"[A-Za-z][A-Za-z .'-]{0,40}?\s+to\s+[A-Za-z]",
     re.I,
+)
+_ROUTE_VERBS: Final[frozenset[str]] = frozenset(
+    {
+        "fly",
+        "flying",
+        "go",
+        "going",
+        "travel",
+        "travelling",
+        "traveling",
+        "head",
+        "heading",
+        "come",
+        "coming",
+        "want",
+        "need",
+        "book",
+        "get",
+    }
 )
 _EXPLICIT_KIND_NEEDLES: Final[dict[TaskKind, tuple[str, ...]]] = {
     "parking": ("parking",),
     "rental": ("rental car", "hire car", "car hire", "rent a car", "rental"),
     "ents": ("ticket", "concert", "entertainment", "gig"),
-    "flight": ("flight", "flights", "flying"),
+    "flight": ("flight", "flights", "flying", "fly", "go from", "going from"),
     "hotel": ("hotel", "accommodation", "place to stay", "stay"),
     "experience": (
         "things to do",
@@ -205,7 +229,9 @@ def extract_facts(objective: str, answers: PlanAnswers | None = None) -> Extract
             lower,
         )
     )
-    flight_stated = bool(re.search(r"\b(flight|flights|flying)\b", lower)) and not flight_satisfied
+    flight_stated = (
+        bool(re.search(r"\b(flight|flights|flying|fly)\b", lower)) and not flight_satisfied
+    )
     landing = bool(
         re.search(
             r"\b(when i land|when we land|when i arrive|when we arrive|land(?:ing)?)\b", lower
@@ -216,16 +242,30 @@ def extract_facts(objective: str, answers: PlanAnswers | None = None) -> Extract
     nights = bool(re.search(r"\bnights?\b", lower))
     city = _match_city(lower)
     route_dest, route_origin = _parse_route(text)
+    named_dest_iata = ""
+    named_origin_iata = ""
     if route_dest:
         routed = _match_city(route_dest.lower())
-        if routed is not None:
+        named_dest = _match_airport_place(route_dest.lower())
+        if named_dest is not None:
+            city = (routed[0] if routed is not None else named_dest[0], named_dest[1])
+            named_dest_iata = named_dest[1]
+        elif routed is not None:
             city = routed
         elif _plausible_city(route_dest):
             city = (route_dest.strip().title(), "")
     origin_city = ""
     if route_origin:
         origin_match = _match_city(route_origin.lower())
-        origin_city = origin_match[0] if origin_match is not None else route_origin.strip().title()
+        named_origin = _match_airport_place(route_origin.lower())
+        if origin_match is not None:
+            origin_city = origin_match[0]
+        elif named_origin is not None:
+            origin_city = named_origin[0]
+        elif _plausible_city(route_origin):
+            origin_city = route_origin.strip().title()
+        if named_origin is not None:
+            named_origin_iata = named_origin[1]
     airports = [item.upper() for item in _AIRPORT.findall(text) if item.upper() in KNOWN_AIRPORTS]
     flying_from = re.search(
         r"\b(?:flying|departing|leaving|travell?ing)\s+from\s+([A-Za-z]{3})\b", text, re.I
@@ -244,7 +284,7 @@ def extract_facts(objective: str, answers: PlanAnswers | None = None) -> Extract
         and not rental_stated
     )
     parking_stated = parking_word or airport_led
-    departure = ""
+    departure = named_origin_iata
     if flying_from is not None and flying_from.group(1).upper() in KNOWN_AIRPORTS:
         departure = flying_from.group(1).upper()
     elif origin_city == "" and from_city is not None:
@@ -271,7 +311,13 @@ def extract_facts(objective: str, answers: PlanAnswers | None = None) -> Extract
         if named_place is not None:
             destination = named_place[0]
             city_airport = named_place[1]
-    destination_airport = city_airport
+    destination_airport = named_dest_iata
+    if not destination_airport and city_airport:
+        from itaa_api.agent_requirements import airport_candidates_for_city
+
+        codes = airport_candidates_for_city(destination or (city[0] if city else ""))
+        if len(codes) == 1:
+            destination_airport = codes[0]
     # Trip destination/departure are never parking evidence.
     parking_airport = parking_from_text
     exact = parse_exact_calendar(text)
@@ -501,6 +547,9 @@ def parse_exact_calendar(text: str) -> tuple[str, str] | None:
         )
         if start and end:
             return _ordered_range(start, end)
+    bare = parse_bare_day_span(text)
+    if bare:
+        return bare
     single = parse_anchor_date(text)
     if single:
         return single, single
@@ -802,7 +851,7 @@ def _earned_explicit(objective: str, facts: ExtractedFacts, model_turn: PlanTurn
         earned.add("ents")
     if facts.experienceStated:
         earned.add("experience")
-    if facts.flightStated:
+    if facts.flightStated or _FLIGHT_ROUTE.search(objective):
         earned.add("flight")
     if facts.hotelStated:
         earned.add("hotel")
@@ -916,9 +965,27 @@ def _summary(confirmed: int, proposed: int, questions: int, phase: str) -> str:
     return f"{confirmed} confirmed task(s), {proposed} proposed."
 
 
+def _route_place_ok(token: str) -> bool:
+    cleaned = token.strip()
+    if not cleaned:
+        return False
+    first = cleaned.split()[0].lower()
+    return first not in _ROUTE_VERBS and first not in _CITY_STOP
+
+
 def _parse_route(text: str) -> tuple[str, str]:
     """Return (destination fragment, origin fragment) without treating dates as cities."""
 
+    from_to = re.search(
+        r"\bfrom\s+([A-Za-z][A-Za-z .'-]+?)\s+to\s+([A-Za-z][A-Za-z .'-]+?)"
+        r"(?=\s*[.,;]|\s+for\b|\s+from\s+\d|\s+on\b|\s+and\b|\s*$)",
+        text,
+        re.I,
+    )
+    if from_to:
+        dest, origin = from_to.group(2).strip(), from_to.group(1).strip()
+        if _route_place_ok(dest) and _route_place_ok(origin):
+            return dest, origin
     to_from = re.search(
         r"\bto\s+([A-Za-z][A-Za-z .'-]+?)\s+from\s+([A-Za-z][A-Za-z .'-]+?)"
         r"(?=\s+from\s+\d|\s+on\b|\s+\d{1,2}\b|\s*$)",
@@ -926,15 +993,27 @@ def _parse_route(text: str) -> tuple[str, str]:
         re.I,
     )
     if to_from:
-        return to_from.group(1).strip(), to_from.group(2).strip()
-    from_to = re.search(
-        r"\bfrom\s+([A-Za-z][A-Za-z .'-]+?)\s+to\s+([A-Za-z][A-Za-z .'-]+?)"
-        r"(?=\s+for\b|\s+from\s+\d|\s+on\b|\s*$)",
+        dest, origin = to_from.group(1).strip(), to_from.group(2).strip()
+        if _route_place_ok(dest) and _route_place_ok(origin):
+            return dest, origin
+    to_to = re.search(
+        r"\b(?:travell?ing|going|flying)\s+to\s+([A-Za-z][A-Za-z .'-]+?)\s+to\s+"
+        r"([A-Za-z][A-Za-z .'-]+?)(?=\s+from\s+\d|\s+on\b|\s*$|[.,])",
         text,
         re.I,
     )
-    if from_to:
-        return from_to.group(2).strip(), from_to.group(1).strip()
+    if to_to:
+        dest, origin = to_to.group(2).strip(), to_to.group(1).strip()
+        if _route_place_ok(dest) and _route_place_ok(origin):
+            return dest, origin
+    named_to = re.search(
+        r"\b((?:london\s+)?(?:heathrow|gatwick|stansted))\s+to\s+"
+        r"((?:london\s+)?(?:heathrow|gatwick|stansted))\b",
+        text,
+        re.I,
+    )
+    if named_to:
+        return named_to.group(2).strip(), named_to.group(1).strip()
     return "", ""
 
 

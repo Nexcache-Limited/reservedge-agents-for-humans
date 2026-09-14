@@ -351,10 +351,15 @@ body {
 
 .re-list-chat {
     flex: 1 1 auto;
-    min-height: 240px;
+    min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
     margin-bottom: 10px;
+}
+
+.re-list-body:has(.re-list-chat) > :not(.re-list-chat) {
+    display: none;
 }
 
 .re-clarify-chat.is-running {
@@ -927,20 +932,37 @@ body {
 .re-parking-offer-cards {
     list-style: none;
     margin: 12px 0 0;
-    padding: 0;
-    display: grid;
-    gap: 10px;
+    padding: 8px 4px 12px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
 }
 
 .re-parking-offer-card {
+    flex: 0 0 min(260px, 82%);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
-    padding: 12px 14px;
+    padding: 14px 16px;
     border: 1px solid var(--ws-border);
     border-radius: 12px;
     background: #fff;
+    scroll-snap-align: start;
+}
+
+.re-parking-offer-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+    width: 100%;
+    font-size: 12px;
+    color: var(--ws-ink-2);
 }
 
 .re-parking-offer-card strong {
@@ -969,6 +991,14 @@ body {
 
 .re-sim-label {
     color: var(--ws-ink-2);
+}
+
+.re-curated-label {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ws-accent, #c45c26);
+    font-weight: 600;
 }
 
 .re-workspace-context {
